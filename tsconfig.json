@@ -29,14 +29,16 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@/components/*": ["./components/*"],
-      "@/hooks/*": ["./hooks/*"],
-      "@/services/*": ["./services/*"],
-      "@/styles/*": ["./styles/*"],
-      "@/types/*": ["./types/*"],
-      "@/utils/*": ["./utils/*"],
-      "@/lib/*": ["./lib/*"],
-      "@/stores/*": ["./stores/*"]
+      "@/core/*": ["./src/core/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/components/*": ["./src/shared/components/*"],
+      "@/hooks/*": ["./src/shared/hooks/*"],
+      "@/ui/*": ["./src/shared/components/ui/*"],
+      "@/types": ["./src/core/types"],
+      "@/utils/*": ["./src/core/utils/*"],
+      "@/constants/*": ["./src/core/constants/*"],
+      "@/styles/*": ["./styles/*"]
     },
     "types": ["jest", "@testing-library/jest-dom", "node"]
   },

@@ -17,8 +17,8 @@ export const metadata: Metadata = {
     title: 'StockPulse',
   },
   icons: {
-    icon: '/icons/icon-192x192.png',
-    apple: '/icons/icon-192x192.png',
+    icon: '/icons/icon-192x192.svg',
+    apple: '/icons/icon-192x192.svg',
   },
 };
 
@@ -40,7 +40,7 @@ export default function RootLayout({
         <meta name='msapplication-TileColor' content='#000000' />
         <meta name='msapplication-tap-highlight' content='no' />
         
-        <link rel='apple-touch-icon' href='/icons/icon-192x192.png' />
+        <link rel='apple-touch-icon' href='/icons/icon-192x192.svg' />
         <link rel='manifest' href='/manifest.json' />
         <link rel='shortcut icon' href='/favicon.ico' />
       </head>

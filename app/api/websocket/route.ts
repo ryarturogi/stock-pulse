@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import WebSocket from 'ws';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

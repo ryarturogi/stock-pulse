@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiResponse, ApiError, Timestamp, StockSymbol, isDefined, isString } from '@/types';
+import { ApiError, Timestamp, StockSymbol, isDefined, isString } from '@/core/types';
 
 // Define types for the cron job response
 interface StockPriceUpdate {
@@ -35,9 +35,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<CronRespon
   
   if (!isDefined(authHeader) || !isString(cronSecret) || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json<ApiError>({
-      success: false,
-      error: 'Unauthorized',
-      timestamp: new Date().toISOString(),
+      code: 'UNAUTHORIZED',
+      message: 'Unauthorized',
+      details: { timestamp: new Date().toISOString() },
     }, { status: 401 });
   }
 

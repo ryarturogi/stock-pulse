@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { ApiResponse, ApiError, Timestamp, isString } from '@/types';
+import { NextResponse } from 'next/server';
+import { Timestamp } from '@/core/types';
 
 // Define types for health check response
 interface HealthCheckResponse {
@@ -33,7 +33,7 @@ interface ApiHealthCheck {
  * @param request - The incoming request
  * @returns JSON response with health status
  */
-export async function GET(request: NextRequest): Promise<NextResponse<HealthCheckResponse>> {
+export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
   const startTime = Date.now();
   
   try {

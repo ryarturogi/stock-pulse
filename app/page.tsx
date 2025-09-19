@@ -1,21 +1,25 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import {
-  Search,
-  Moon,
-  RefreshCw
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { 
+  Search, 
+  Moon, 
+  RefreshCw,
+  Bell,
+  BellOff
 } from 'lucide-react';
 import { 
   StockForm, 
   StockCards, 
-  StockChart 
-} from '@/components/stock';
+  StockChart,
+  RefreshIntervalSelector,
+  stockService,
+  useStockStore
+} from '@/features/stocks';
 import { 
   DEFAULT_STOCK_OPTIONS
-} from '@/types';
-import { stockService } from '@/services';
-import { useStockStore } from '@/stores/stockStore';
+} from '@/core/types';
+import { getNotificationService } from '@/features/notifications';
 
 // Use default stock options from types
 const availableStocks = DEFAULT_STOCK_OPTIONS;
@@ -25,30 +29,151 @@ export default function HomePage() {
   // Use Zustand store for persistence
   const { 
     watchedStocks, 
-    webSocketStatus, 
     addStock, 
     removeStock, 
-    updateStockPrice,
-    connectWebSocket,
-    disconnectWebSocket,
-    clearError,
-    error
+    updateStockPrice, 
+    connectWebSocket, 
+    disconnectWebSocket, 
+    startPeriodicRefresh,
+    stopPeriodicRefresh,
+    clearError, 
+    error,
+    refreshTimeInterval,
+    setRefreshTimeInterval
   } = useStockStore();
   
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
 
-  // Connect WebSocket when component mounts
+  // Initialize PWA service and check notification permission
+  useEffect(() => {
+    const initializePWA = async () => {
+      try {
+        const notificationService = getNotificationService();
+        
+        // Load notification preference from localStorage
+        const savedNotificationPref = localStorage.getItem('stockpulse_notifications_enabled');
+        if (savedNotificationPref !== null) {
+          setNotificationsEnabled(JSON.parse(savedNotificationPref));
+        }
+        
+        // Check current notification permission status
+        setNotificationPermission(notificationService.getPermissionStatus());
+        
+        console.log('PWA service initialized successfully');
+        console.log('Webpush notification permission:', notificationService.getPermissionStatus());
+        console.log('Notifications enabled preference:', savedNotificationPref !== null ? JSON.parse(savedNotificationPref) : true);
+      } catch (error) {
+        console.error('Failed to initialize PWA service:', error);
+      }
+    };
+
+    initializePWA();
+  }, []);
+
+  /**
+   * Handle manual notification permission request
+   */
+  const handleRequestNotificationPermission = async () => {
+    try {
+      const notificationService = getNotificationService();
+      
+      // Request webpush notification permission
+      const permission = await notificationService.requestPermission();
+      setNotificationPermission(permission);
+      
+      if (permission === 'granted') {
+        console.log('✅ Webpush notification permission granted! You will receive price alerts.');
+        setNotificationsEnabled(true);
+        localStorage.setItem('stockpulse_notifications_enabled', 'true');
+      } else if (permission === 'denied') {
+        console.log('❌ Notification permission denied. You can enable it later in browser settings.');
+        setNotificationsEnabled(false);
+        localStorage.setItem('stockpulse_notifications_enabled', 'false');
+      } else {
+        console.log('⏳ Notification permission dismissed. You can enable it later.');
+      }
+    } catch (error) {
+      console.error('Failed to request notification permission:', error);
+    }
+  };
+
+  /**
+   * Handle toggling webpush notifications on/off
+   */
+  const handleToggleNotifications = async () => {
+    try {
+      const notificationService = getNotificationService();
+      
+      if (notificationsEnabled) {
+        // Disable notifications
+        console.log('🔕 Disabling webpush notifications...');
+        setNotificationsEnabled(false);
+        localStorage.setItem('stockpulse_notifications_enabled', 'false');
+        console.log('✅ Webpush notifications disabled.');
+      } else {
+        // Enable notifications (request permission if needed)
+        console.log('🔔 Enabling webpush notifications...');
+        
+        if (notificationPermission !== 'granted') {
+          const permission = await notificationService.requestPermission();
+          setNotificationPermission(permission);
+          
+          if (permission === 'granted') {
+            setNotificationsEnabled(true);
+            localStorage.setItem('stockpulse_notifications_enabled', 'true');
+            console.log('✅ Webpush notifications enabled!');
+          } else {
+            console.log('❌ Permission denied, cannot enable notifications');
+            return;
+          }
+        } else {
+          setNotificationsEnabled(true);
+          localStorage.setItem('stockpulse_notifications_enabled', 'true');
+          console.log('✅ Webpush notifications enabled!');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to toggle notifications:', error);
+    }
+  };
+
+  // Use refs to track connection state and prevent multiple calls
+  const isConnectedRef = useRef(false);
+  const isRefreshingRef = useRef(false);
+
+  // Connect WebSocket and start refresh when stocks are added
   useEffect(() => {
     if (watchedStocks.length > 0) {
-      connectWebSocket();
+      // Only connect if not already connected
+      if (!isConnectedRef.current) {
+        console.log('🔌 Initializing WebSocket and periodic refresh...');
+        connectWebSocket();
+        startPeriodicRefresh();
+        isConnectedRef.current = true;
+        isRefreshingRef.current = true;
+      }
+    } else {
+      // If no stocks, disconnect and stop refresh
+      if (isConnectedRef.current || isRefreshingRef.current) {
+        console.log('🔌 Cleaning up WebSocket and periodic refresh...');
+        disconnectWebSocket();
+        stopPeriodicRefresh();
+        isConnectedRef.current = false;
+        isRefreshingRef.current = false;
+      }
     }
     
     // Cleanup on unmount
     return () => {
       disconnectWebSocket();
+      stopPeriodicRefresh();
+      isConnectedRef.current = false;
+      isRefreshingRef.current = false;
     };
-  }, [watchedStocks.length, connectWebSocket, disconnectWebSocket]);
+  }, [watchedStocks.length]); // Only depend on watchedStocks.length
 
   /**
    * Handle adding a new stock to watchlist
@@ -61,73 +186,63 @@ export default function HomePage() {
     }
 
     try {
+      // Request notification permission when user adds their first stock
+      if (watchedStocks.length === 0) {
+        try {
+          const notificationService = getNotificationService();
+          const permission = await notificationService.requestPermission();
+          setNotificationPermission(permission);
+          
+          if (permission === 'granted') {
+            console.log('✅ Webpush notification permission granted! You will receive price alerts.');
+            setNotificationsEnabled(true);
+            localStorage.setItem('stockpulse_notifications_enabled', 'true');
+          } else if (permission === 'denied') {
+            console.log('❌ Notification permission denied. You can enable it later in browser settings.');
+            setNotificationsEnabled(false);
+            localStorage.setItem('stockpulse_notifications_enabled', 'false');
+          } else {
+            console.log('⏳ Notification permission dismissed. You can enable it later.');
+          }
+        } catch (error) {
+          console.error('Failed to request notification permission:', error);
+        }
+      }
+
       // Add stock to store (this will persist to localStorage)
       addStock(symbol, stock.name, alertPrice);
 
-      // Fetch real data from Finnhub API
-      try {
-        const quoteData = await stockService.fetchStockQuote(symbol);
-        
-        if (quoteData && quoteData.current) {
-          const now = Date.now();
+      // Immediately fetch real data for the new stock
+      console.log(`✅ Added ${symbol} to watchlist. Fetching initial data...`);
+      
+      // Small delay to ensure the stock appears in UI before data loads
+      setTimeout(async () => {
+        try {
+          const quoteData = await stockService.fetchStockQuote(symbol);
           
-          // Generate initial price history for the chart (last 20 data points)
-          const priceHistory = [];
-          const basePrice = quoteData.current;
-          
-          for (let i = 0; i < 20; i++) {
-            const time = now - (i * 60000); // 1 minute intervals going back
-            const price = basePrice + (Math.random() - 0.5) * (basePrice * 0.02); // 2% variation
-            priceHistory.push({ time, price });
+          if (quoteData && quoteData.current) {
+            // Update stock price in store (this will persist to localStorage)
+            updateStockPrice(symbol, {
+              symbol: symbol,
+              current: quoteData.current,
+              change: quoteData.change,
+              percentChange: quoteData.percentChange,
+              high: quoteData.high,
+              low: quoteData.low,
+              open: quoteData.open,
+              previousClose: quoteData.previousClose,
+              timestamp: Date.now()
+            });
+            console.log(`💰 Initial data loaded for ${symbol}: $${quoteData.current}`);
           }
-          
-          // Update stock with real data (this will also update price history)
-          updateStockPrice(symbol, {
-            symbol,
-            current: quoteData.current,
-            change: quoteData.change,
-            percentChange: quoteData.percentChange,
-            high: quoteData.high,
-            low: quoteData.low,
-            open: quoteData.open,
-            previousClose: quoteData.previousClose,
-            timestamp: now
-          });
-        } else {
-          throw new Error('No data received from API');
+        } catch (error) {
+          console.error(`Failed to fetch initial data for ${symbol}:`, error);
+          // Don't throw error - periodic refresh will retry
         }
-      } catch (apiError) {
-        console.error('Failed to fetch stock data:', apiError);
-        
-        // Fallback to mock data if API fails
-        const basePrice = 150 + Math.random() * 50;
-        const now = Date.now();
-        
-        const mockPriceHistory = [];
-        for (let i = 0; i < 20; i++) {
-          const time = now - (i * 60000);
-          const price = basePrice + (Math.random() - 0.5) * 10;
-          mockPriceHistory.push({ time, price });
-        }
-        
-        // Update with mock data
-        updateStockPrice(symbol, {
-          symbol,
-          current: basePrice,
-          change: (Math.random() - 0.5) * 5,
-          percentChange: (Math.random() - 0.5) * 3,
-          high: basePrice + 5,
-          low: basePrice - 5,
-          open: basePrice,
-          previousClose: basePrice,
-          timestamp: now
-        });
-      }
+      }, 100);
 
     } catch (error) {
       console.error('Failed to add stock:', error);
-      // Remove the stock if there was an error
-      removeStock(symbol);
     }
   };
 
@@ -138,10 +253,25 @@ export default function HomePage() {
     removeStock(symbol);
   };
 
+  // Add debouncing to prevent rapid manual refresh calls
+  const lastManualRefreshRef = useRef<number>(0);
+  const manualRefreshCooldown = 5000; // 5 second cooldown
+
   /**
-   * Handle manual refresh
+   * Handle manual refresh with debouncing
    */
-  const handleManualRefresh = async () => {
+  const handleManualRefresh = useCallback(async () => {
+    const now = Date.now();
+    
+    // Check if cooldown period has passed
+    if (now - lastManualRefreshRef.current < manualRefreshCooldown) {
+      console.log('⏱️ Manual refresh on cooldown, skipping...');
+      return;
+    }
+    
+    lastManualRefreshRef.current = now;
+    console.log('🔄 Manual refresh triggered...');
+    
     // Refresh all watched stocks with real API data
     const refreshPromises = watchedStocks.map(async (stock) => {
       try {
@@ -171,7 +301,7 @@ export default function HomePage() {
     } catch (error) {
       console.error('Failed to refresh stocks:', error);
     }
-  };
+  }, [watchedStocks, updateStockPrice]);
 
   /**
    * Handle theme toggle
@@ -221,8 +351,8 @@ export default function HomePage() {
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500 dark:text-gray-400" />
-                  <input
-                    type="text"
+                  <input 
+                    type="text" 
                     placeholder="Search stocks..."
                     value={searchQuery}
                     onChange={handleSearchChange}
@@ -231,27 +361,78 @@ export default function HomePage() {
                   <span className="absolute right-3 top-2.5 text-sm text-gray-500 dark:text-gray-400">⌘ K</span>
                 </div>
               </div>
+              
+                  <div className="flex items-center space-x-4">
+                    {/* Refresh Interval Selector */}
+                    {watchedStocks.length > 0 && (
+                      <RefreshIntervalSelector
+                        currentInterval={refreshTimeInterval}
+                        onIntervalChange={setRefreshTimeInterval}
+                        className="mr-2"
+                      />
+                    )}
 
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={handleManualRefresh}
-                  className="p-2 hover:bg-gray-100 rounded disabled:opacity-50"
-                  title="Refresh stock data"
-                >
-                  <RefreshCw className="text-gray-500 w-5 h-5" />
-                </button>
+                    <button
+                      onClick={handleManualRefresh}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded disabled:opacity-50"
+                      title="Refresh stock data"
+                    >
+                      <RefreshCw className="text-gray-500 dark:text-gray-400 w-5 h-5" />
+                    </button>
+                
+                    {/* Webpush Notification Controls */}
+                    {notificationPermission === 'default' && (
+                      <button
+                        onClick={handleRequestNotificationPermission}
+                        className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+                        title="Enable webpush notifications for price alerts"
+                      >
+                        <Bell className="w-4 h-4" />
+                        <span>Enable Alerts</span>
+                      </button>
+                    )}
+                    
+                    {notificationPermission === 'granted' && (
+                      <div className="flex items-center space-x-2">
+                        {notificationsEnabled ? (
+                          <button
+                            onClick={handleToggleNotifications}
+                            className="flex items-center space-x-2 px-3 py-2 text-sm bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors"
+                            title="Disable webpush notifications"
+                          >
+                            <Bell className="w-4 h-4" />
+                            <span>Alerts ON</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleToggleNotifications}
+                            className="flex items-center space-x-2 px-3 py-2 text-sm bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-900/30 transition-colors"
+                            title="Enable webpush notifications"
+                          >
+                            <BellOff className="w-4 h-4" />
+                            <span>Alerts OFF</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    
+                    {notificationPermission === 'denied' && (
+                      <div className="flex items-center space-x-2 px-3 py-2 text-sm bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg">
+                        <BellOff className="w-4 h-4" />
+                        <span>Alerts Disabled</span>
+                      </div>
+                    )}
 
-
-                <button 
-                  onClick={handleThemeToggle}
-                  className="p-2 hover:bg-gray-100 rounded"
-                  title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                >
-                  <Moon className="w-5 h-5 text-gray-500 dark:text-yellow-500" />
+                    <button
+                      onClick={handleThemeToggle}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                      title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                    >
+                      <Moon className="w-5 h-5 text-gray-500 dark:text-yellow-500" />
                 </button>
               </div>
             </div>
-              </header>
+          </header>
 
               {/* Error Display */}
               {error && (
@@ -264,7 +445,7 @@ export default function HomePage() {
                     </div>
                     <div className="ml-3">
                       <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-                    </div>
+              </div>
                     <div className="ml-auto pl-3">
                       <div className="-mx-1.5 -my-1.5">
                         <button
@@ -282,6 +463,7 @@ export default function HomePage() {
                 </div>
               )}
 
+
               {/* Dashboard Content */}
               <main className="p-6">
                 {/* Search Results Info */}
@@ -290,7 +472,7 @@ export default function HomePage() {
                     <p className="text-sm text-blue-800 dark:text-blue-300">
                       Showing {filteredWatchedStocks.length} of {watchedStocks.length} stocks matching "{searchQuery}"
                     </p>
-                  </div>
+            </div>
                 )}
 
                 {/* Top Stock Cards */}
