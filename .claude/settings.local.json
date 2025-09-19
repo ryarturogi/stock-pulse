@@ -9,7 +9,9 @@
       "Bash(pnpm run:*)",
       "Bash(pnpm remove:*)",
       "Bash(pkill:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm add:*)"
     ],
     "deny": []
   }
