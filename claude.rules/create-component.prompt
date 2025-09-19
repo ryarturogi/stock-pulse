@@ -1,0 +1,54 @@
+Goal: Create a React + TypeScript component named <ComponentName>.
+
+Constraints:
+- Use functional component with React.FC
+- Props must be typed and documented with JSDoc
+- Add unit test with React Testing Library
+- Do not hardcode secrets or API keys
+- Follow accessibility best practices
+- Include proper error handling
+- Use TypeScript strict mode
+- Follow existing code style and patterns
+
+Deliverables:
+- src/components/<ComponentName>/index.tsx
+- src/components/<ComponentName>/index.test.tsx
+- Optional: src/components/<ComponentName>/types.ts (if complex props)
+
+Template Structure:
+
+```typescript
+import React from 'react';
+
+/**
+ * Props for the <ComponentName> component
+ */
+export interface <ComponentName>Props {
+  // Define props here with JSDoc comments
+}
+
+/**
+ * <ComponentName> component description
+ * 
+ * @param props - The component props
+ * @returns JSX element
+ */
+export const <ComponentName>: React.FC<<ComponentName>Props> = (props) => {
+  // Component implementation
+  
+  return (
+    <div>
+      {/* Component JSX */}
+    </div>
+  );
+};
+
+export default <ComponentName>;
+```
+
+Testing Requirements:
+- Test rendering
+- Test props handling
+- Test user interactions
+- Test accessibility
+- Test error states

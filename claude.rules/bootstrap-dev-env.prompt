@@ -1,0 +1,64 @@
+Goal
+Prepare an enterprise-grade development environment for a React + TypeScript stock-watcher project.
+Do not implement business logic or UI yet.
+Scaffold the repo with all required configs, docs, CI/CD workflows, Cursor + Claude Code rules.
+
+⸻
+
+Deliverables
+
+Claude must generate all files needed so the project runs with:
+    •    React 18 + TypeScript (strict mode)
+    •    Vite as bundler
+    •    ESLint + Prettier + Husky + lint-staged
+    •    Jest + React Testing Library (unit tests)
+    •    Playwright (E2E tests)
+    •    GitHub Actions CI/CD (lint → test → build → coverage)
+    •    PWA readiness (service worker scaffold, manifest.json, offline.html)
+    •    Secure .env setup (.env.example, .gitignore)
+    •    Docs: README.md, docs/ARCHITECTURE.md, docs/TEST-REVIEW.md
+    •    Rules: .cursorrules, claude.rules/
+
+⸻
+
+Repo Structure
+
+/ (root)
+├─ .github/workflows/ci.yml
+├─ .cursorrules
+├─ claude.rules/
+│  ├─ bootstrap-dev-env.prompt
+│  └─ create-component.prompt
+├─ public/
+│  ├─ manifest.json
+│  └─ offline.html
+├─ src/
+│  ├─ components/
+│  ├─ hooks/
+│  ├─ services/
+│  ├─ sw/
+│  ├─ styles/
+│  └─ main.tsx
+├─ scripts/
+│  └─ generate-vapid.js
+├─ docs/
+│  ├─ ARCHITECTURE.md
+│  └─ TEST-REVIEW.md
+├─ tests/
+├─ package.json
+├─ tsconfig.json
+├─ eslint.config.js
+├─ prettier.config.js
+├─ jest.config.ts
+├─ playwright.config.ts
+├─ .gitignore
+├─ .env.example
+└─ README.md
+
+⸻
+
+Operational Rule
+
+Claude should generate all files listed in the repo structure with placeholder content (ready to edit).
+No business logic, no Finnhub API calls, no UI.
+Stop after scaffolding is complete.

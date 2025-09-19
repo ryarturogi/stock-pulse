@@ -1,0 +1,26 @@
+language: "TypeScript"
+framework: "React"
+preferred-formatters:
+  - "prettier"
+  - "eslint"
+style:
+  quotes: "single"
+  semi: true
+  trailingComma: "es5"
+tests:
+  require-unit-tests: true
+  test-framework: "jest"
+security:
+  disallow-secrets-in-code: true
+  verify-environment-vars: true
+prompts:
+  - "Always include JSDoc for public functions and props."
+  - "Prefer small focused components."
+  - "If state is complex, suggest Zustand store."
+  - "Use TypeScript strict mode and proper typing."
+  - "Follow accessibility best practices."
+  - "Implement error boundaries for components."
+  - "Use React.memo for performance optimization when appropriate."
+  - "Prefer composition over inheritance."
+  - "Use custom hooks for reusable logic."
+  - "Always handle loading and error states."

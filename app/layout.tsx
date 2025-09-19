@@ -1,0 +1,54 @@
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+
+import './globals.css';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'StockPulse - Real-time Stock Market Tracker',
+  description: 'Track stocks, manage portfolios, and stay updated with real-time market data',
+  manifest: '/manifest.json',
+  themeColor: '#000000',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'StockPulse',
+  },
+  icons: {
+    icon: '/icons/icon-192x192.png',
+    apple: '/icons/icon-192x192.png',
+  },
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang='en'>
+      <head>
+        <meta name='application-name' content='StockPulse' />
+        <meta name='apple-mobile-web-app-capable' content='yes' />
+        <meta name='apple-mobile-web-app-status-bar-style' content='default' />
+        <meta name='apple-mobile-web-app-title' content='StockPulse' />
+        <meta name='format-detection' content='telephone=no' />
+        <meta name='mobile-web-app-capable' content='yes' />
+        <meta name='msapplication-config' content='/browserconfig.xml' />
+        <meta name='msapplication-TileColor' content='#000000' />
+        <meta name='msapplication-tap-highlight' content='no' />
+        
+        <link rel='apple-touch-icon' href='/icons/icon-192x192.png' />
+        <link rel='manifest' href='/manifest.json' />
+        <link rel='shortcut icon' href='/favicon.ico' />
+      </head>
+      <body className={inter.className}>
+        <div id='app'>
+          {children}
+        </div>
+      </body>
+    </html>
+  );
+}
