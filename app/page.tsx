@@ -39,7 +39,10 @@ export default function HomePage() {
     clearError, 
     error,
     refreshTimeInterval,
-    setRefreshTimeInterval
+    setRefreshTimeInterval,
+    webSocketStatus,
+    isLiveDataEnabled,
+    setLiveDataEnabled
   } = useStockStore();
   
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -363,8 +366,43 @@ export default function HomePage() {
               </div>
               
                   <div className="flex items-center space-x-4">
-                    {/* Refresh Interval Selector */}
+                    {/* WebSocket Status Indicator */}
                     {watchedStocks.length > 0 && (
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          webSocketStatus === 'connected' ? 'bg-green-500' :
+                          webSocketStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+                          webSocketStatus === 'error' ? 'bg-red-500' :
+                          'bg-gray-400'
+                        }`} />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {webSocketStatus === 'connected' ? 'Live' :
+                           webSocketStatus === 'connecting' ? 'Connecting...' :
+                           webSocketStatus === 'error' ? 'Error' :
+                           'Offline'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Live Data Toggle */}
+                    {watchedStocks.length > 0 && (
+                      <div className="flex items-center space-x-2 mr-2">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isLiveDataEnabled}
+                            onChange={(e) => setLiveDataEnabled(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Live Data
+                          </span>
+                        </label>
+                      </div>
+                    )}
+
+                    {/* Refresh Interval Selector - Only show when live data is enabled */}
+                    {watchedStocks.length > 0 && isLiveDataEnabled && (
                       <RefreshIntervalSelector
                         currentInterval={refreshTimeInterval}
                         onIntervalChange={setRefreshTimeInterval}

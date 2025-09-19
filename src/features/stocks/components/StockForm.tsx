@@ -13,7 +13,7 @@ import React, { useState, useEffect, FormEvent } from 'react';
 
 import { Button } from '@/shared/components/ui/Button';
 import { StockFormProps, DEFAULT_STOCK_OPTIONS } from '@/core/types';
-// import { stockService } from '@/services/stockService';
+import { stockService } from '@/features/stocks/services/stockService';
 
 /**
  * Stock Form Component
@@ -30,6 +30,8 @@ export const StockForm: React.FC<StockFormProps> = ({
 }) => {
   const [selectedStock, setSelectedStock] = useState('');
   const [alertPrice, setAlertPrice] = useState('');
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
   const [errors, setErrors] = useState<{
     stock?: string;
     price?: string;
@@ -39,6 +41,16 @@ export const StockForm: React.FC<StockFormProps> = ({
   const availableStocksToShow = availableStocks.filter(
     stock => !watchedStocks.some(watched => watched.symbol === stock.symbol)
   );
+
+  // Fetch current price when stock is selected
+  useEffect(() => {
+    if (selectedStock) {
+      fetchCurrentPrice(selectedStock);
+    } else {
+      setCurrentPrice(null);
+      setAlertPrice('');
+    }
+  }, [selectedStock]);
 
   // Clear errors when inputs change
   useEffect(() => {
@@ -60,6 +72,23 @@ export const StockForm: React.FC<StockFormProps> = ({
       });
     }
   }, [alertPrice, errors.price]);
+
+  /**
+   * Fetch current price for selected stock
+   */
+  const fetchCurrentPrice = async (symbol: string) => {
+    setIsLoadingPrice(true);
+    try {
+      const quote = await stockService.fetchStockQuote(symbol);
+      setCurrentPrice(quote.current);
+      console.log(`💰 Current price for ${symbol}: $${quote.current}`);
+    } catch (error) {
+      console.error(`Failed to fetch current price for ${symbol}:`, error);
+      setCurrentPrice(null);
+    } finally {
+      setIsLoadingPrice(false);
+    }
+  };
 
   /**
    * Validate form inputs
@@ -110,6 +139,7 @@ export const StockForm: React.FC<StockFormProps> = ({
     // Reset form
     setSelectedStock('');
     setAlertPrice('');
+    setCurrentPrice(null);
     setErrors({});
   };
 
@@ -207,15 +237,33 @@ export const StockForm: React.FC<StockFormProps> = ({
               >
                 Price Alert ($)
               </label>
-              <input
-                id='price-alert'
-                type='text'
-                placeholder='Enter alert price'
-                value={alertPrice}
-                onChange={handlePriceChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 bg-white dark:text-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 ${errors.price ? 'border-red-300' : ''}`}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <input
+                  id='price-alert'
+                  type='text'
+                  placeholder={currentPrice ? `Current: $${currentPrice.toFixed(2)}` : 'Enter alert price'}
+                  value={alertPrice}
+                  onChange={handlePriceChange}
+                  className={`w-full px-3 py-2 pr-20 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 bg-white dark:text-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 ${errors.price ? 'border-red-300' : ''}`}
+                  disabled={isLoading}
+                />
+                {currentPrice && !alertPrice && (
+                  <button
+                    type="button"
+                    onClick={() => setAlertPrice(currentPrice.toFixed(2))}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+                    disabled={isLoading}
+                  >
+                    Use Current
+                  </button>
+                )}
+              </div>
+              {currentPrice && (
+                <p className='mt-1 text-xs text-green-600 dark:text-green-400'>
+                  💰 Current price: ${currentPrice.toFixed(2)}
+                  {isLoadingPrice && ' (loading...)'}
+                </p>
+              )}
               {errors.price && (
                 <div className='flex items-center mt-1 text-sm text-red-600'>
                   <AlertCircle className='mr-1 w-4 h-4' />

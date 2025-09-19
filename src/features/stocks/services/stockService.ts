@@ -331,6 +331,49 @@ export class StockService {
   }
 
   /**
+   * Fetch historical data for a stock symbol
+   */
+  async fetchHistoricalData(
+    symbol: string, 
+    resolution: string = '1', 
+    from: number, 
+    to: number
+  ): Promise<{ time: number; price: number; open: number; high: number; low: number; volume: number }[]> {
+    try {
+      const params = new URLSearchParams({
+        symbol: symbol.toUpperCase(),
+        resolution,
+        from: from.toString(),
+        to: to.toString(),
+      });
+
+      const response = await fetch(`/api/historical?${params}`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Historical data API error: ${response.status} ${response.statusText}`, errorText);
+        throw new Error(`Failed to fetch historical data: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.message === 'No historical data available for this symbol/range' || 
+          data.message === 'Historical data not available on free tier') {
+        console.log(`⚠️ No historical data available for ${symbol}: ${data.message}`);
+        return [];
+      }
+      
+      return data.data || [];
+    } catch (error) {
+      console.error(`Failed to fetch historical data for ${symbol}:`, error);
+      throw new Error(`Failed to fetch historical data for ${symbol}`);
+    }
+  }
+
+  /**
    * Health check for API connectivity
    */
   async healthCheck(): Promise<boolean> {

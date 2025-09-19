@@ -97,7 +97,7 @@ export type WebSocketStatus = 'disconnected' | 'connecting' | 'connected' | 'err
 /**
  * Refresh time intervals for live data
  */
-export type RefreshInterval = '30s' | '1m' | '5m' | '10m' | '30m' | '1h';
+export type RefreshInterval = '10s' | '30s' | '1m' | '5m' | '10m' | '30m' | '1h';
 
 /**
  * Refresh interval configuration
@@ -208,6 +208,9 @@ export interface StockStoreState {
   // Refresh configuration
   refreshTimeInterval: RefreshInterval;
   
+  // Live data toggle
+  isLiveDataEnabled: boolean;
+  
   // UI state
   isLoading: boolean;
   error: string | null;
@@ -222,6 +225,10 @@ export interface StockStoreState {
   setError: (_error: string | null) => void;
   clearError: () => void;
   
+  // Historical data actions
+  fetchHistoricalData: (_symbol: string) => Promise<void>;
+  fetchHistoricalDataForRange: (_symbol: string, _timeRange: '1H' | '1D' | '1W') => Promise<void>;
+  
   // WebSocket actions
   connectWebSocket: () => void;
   disconnectWebSocket: () => void;
@@ -232,6 +239,9 @@ export interface StockStoreState {
   startPeriodicRefresh: () => void;
   stopPeriodicRefresh: () => void;
   setRefreshTimeInterval: (_interval: RefreshInterval) => void;
+  
+  // Live data toggle actions
+  setLiveDataEnabled: (_enabled: boolean) => void;
 }
 
 // ============================================================================

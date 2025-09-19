@@ -32,6 +32,7 @@ export const RefreshIntervalSelector: React.FC<RefreshIntervalSelectorProps> = (
 }) => {
   const handleIntervalChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newInterval = e.target.value as RefreshInterval;
+    console.log(`🔄 RefreshIntervalSelector: Changing interval to ${newInterval}`);
     onIntervalChange(newInterval);
   };
 

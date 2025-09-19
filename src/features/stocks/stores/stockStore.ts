@@ -19,6 +19,7 @@ import {
   REFRESH_INTERVALS
 } from '@/core/types';
 import { getNotificationService } from '@/features/notifications';
+import { stockService } from '@/features/stocks/services';
 
 /**
  * Generate unique ID for watched stocks
@@ -26,47 +27,6 @@ import { getNotificationService } from '@/features/notifications';
 const generateStockId = (): string => {
   return `stock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
-
-/**
- * Generate historical data points for demonstration purposes
- * This creates realistic price history going back in time
- */
-const generateHistoricalDataPoints = (currentPrice: number, symbol: string): PriceDataPoint[] => {
-  const dataPoints: PriceDataPoint[] = [];
-  const now = Date.now();
-  
-  // Generate data points going back 7 days (1 week) with more granular data
-  const daysBack = 7;
-  const pointsPerDay = 48; // 1 point per 30 minutes for better granularity
-  const totalPoints = daysBack * pointsPerDay; // 336 total points
-  
-  // Start with a price slightly different from current
-  let price = currentPrice * (0.95 + Math.random() * 0.1); // 95-105% of current price
-  const baseVolatility = currentPrice * 0.005; // 0.5% volatility
-  
-  for (let i = 0; i < totalPoints; i++) {
-    const intervalsBack = totalPoints - i;
-    const time = now - (intervalsBack * 30 * 60 * 1000); // Go back in 30-minute intervals
-    
-    // Add some realistic price movement
-    const volatility = baseVolatility * (0.5 + Math.random());
-    const change = (Math.random() - 0.5) * volatility;
-    price += change;
-    
-    // Ensure price stays within reasonable bounds
-    price = Math.max(price, currentPrice * 0.7);
-    price = Math.min(price, currentPrice * 1.3);
-    
-    dataPoints.push({
-      time,
-      price: Math.round(price * 100) / 100,
-    });
-  }
-  
-  console.log(`📊 Generated ${dataPoints.length} historical data points for ${symbol} going back ${daysBack} days`);
-  return dataPoints;
-};
-
 
 /**
  * Stock tracking store implementation
@@ -84,6 +44,7 @@ export const useStockStore = create<StockStoreState>()(
       error: null,
       lastUpdateTimes: new Map<string, number>(),
       refreshTimeInterval: '10s', // Default to 10 seconds for more frequent updates
+      isLiveDataEnabled: true, // Default to live data enabled
 
       // Stock management actions
       addStock: (symbol: string, name: string, alertPrice: number) => {
@@ -110,135 +71,202 @@ export const useStockStore = create<StockStoreState>()(
           error: null,
         }));
 
-        // Subscribe to WebSocket if connected
-        const { webSocketConnection } = get();
-        if (webSocketConnection && webSocketConnection.readyState === WebSocket.OPEN) {
-          webSocketConnection.send(JSON.stringify({
-            type: 'subscribe',
-            symbol: symbol,
-          }));
+        // Fetch historical data for the new stock
+        get().fetchHistoricalData(symbol);
+
+        // Reconnect WebSocket to include new stock
+        const { webSocketStatus } = get();
+        if (webSocketStatus === 'connected') {
+          console.log(`📡 Reconnecting WebSocket to include ${symbol}`);
+          setTimeout(() => {
+            const currentState = get();
+            currentState.disconnectWebSocket();
+            currentState.connectWebSocket();
+          }, 200 + Math.random() * 300); // 200-500ms delay for uniqueness
         }
       },
 
       removeStock: (symbol: string) => {
         const state = get();
         
-        set({
+        set(state => ({
           watchedStocks: state.watchedStocks.filter(stock => stock.symbol !== symbol),
-        });
+          error: null,
+        }));
 
-        // Unsubscribe from WebSocket if connected
-        const { webSocketConnection } = get();
-        if (webSocketConnection && webSocketConnection.readyState === WebSocket.OPEN) {
-          webSocketConnection.send(JSON.stringify({
-            type: 'unsubscribe',
-            symbol: symbol,
-          }));
+        // Reconnect WebSocket to remove stock from subscription
+        const { webSocketStatus } = get();
+        if (webSocketStatus === 'connected') {
+          console.log(`📡 Reconnecting WebSocket to remove ${symbol}`);
+          setTimeout(() => {
+            const currentState = get();
+            currentState.disconnectWebSocket();
+            currentState.connectWebSocket();
+          }, 200);
         }
       },
 
+      // Update stock price with throttling to prevent excessive updates
       updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => {
-        if (!isFinnhubStockQuote(quote)) {
-          console.error('Invalid quote data:', quote);
-          return;
-        }
-        
-        // Throttle updates to prevent too frequent rerenders (max once per 1 second per stock)
+        const state = get();
         const now = Date.now();
-        const currentState = get();
-        const lastUpdate = currentState.lastUpdateTimes?.get(symbol) || 0;
-        if (now - lastUpdate < 1000) {
+        const lastUpdate = state.lastUpdateTimes.get(symbol) || 0;
+        const throttleMs = 2000; // 2 seconds throttle
+
+        // Throttle updates to prevent excessive re-renders
+        if (now - lastUpdate < throttleMs) {
           return;
         }
-        
-        console.log(`💰 Updating price for ${symbol}: $${quote.current}`, new Date().toLocaleTimeString());
+
+        // Update last update time
+        set(state => ({
+          lastUpdateTimes: new Map(state.lastUpdateTimes).set(symbol, now)
+        }));
+
+        console.log(`💰 Updating price for ${symbol}: $${quote.current} ${new Date().toLocaleTimeString()}`);
 
         set(state => ({
-          lastUpdateTimes: new Map(state.lastUpdateTimes).set(symbol, now),
           watchedStocks: state.watchedStocks.map(stock => {
-            if (stock.symbol !== symbol) return stock;
-            const isAlertTriggered = stock.alertPrice && 
-              ((quote.current >= stock.alertPrice && !stock.isAlertTriggered) ||
-               (quote.current < stock.alertPrice && !stock.isAlertTriggered));
+            if (stock.symbol === symbol) {
+              const newPriceHistory = [
+                ...(stock.priceHistory || []),
+                { time: quote.timestamp || now, price: quote.current }
+              ].slice(-500); // Keep last 500 data points
 
-            // Check for price alerts and send notifications only when crossing threshold
-            if (stock.alertPrice && quote.current) {
-              const isAboveAlert = quote.current >= stock.alertPrice;
-              const wasAboveAlert = stock.currentPrice ? stock.currentPrice >= stock.alertPrice : false;
-              
-              // Only send notification if price crossed the alert threshold
-              if (isAboveAlert !== wasAboveAlert) {
-                try {
-                  // Check if notifications are enabled by user
-                  const notificationsEnabled = localStorage.getItem('stockpulse_notifications_enabled') !== 'false';
-                  
-                  if (notificationsEnabled) {
-                    // Send webpush notification using Web Notifications API + Service Worker
-                    const notificationService = getNotificationService();
-                    notificationService.showPriceAlert(stock, quote.current);
-                    
-                    console.log(`📬 Webpush notification sent for ${stock.symbol} price alert`);
-                  } else {
-                    console.log(`🔕 Notifications disabled by user, skipping alert for ${stock.symbol}`);
-                  }
-                } catch (error) {
-                  console.error('Failed to check price alert:', error);
-                }
-              }
+              return {
+                ...stock,
+                currentPrice: quote.current,
+                change: quote.change,
+                percentChange: quote.percentChange,
+                high: quote.high || stock.high || quote.current,
+                low: quote.low || stock.low || quote.current,
+                open: quote.open || stock.open || quote.current,
+                previousClose: quote.previousClose || stock.previousClose || quote.current,
+                priceHistory: newPriceHistory,
+                isLoading: false,
+                isAlertTriggered: stock.alertPrice && quote.current >= stock.alertPrice ? true : stock.isAlertTriggered,
+              };
             }
-
-            // Generate historical data if this is the first price update
-            let priceHistory = stock.priceHistory || [];
-            if (priceHistory.length === 0 && quote.current) {
-              console.log(`📊 Generating historical data for ${symbol} starting at $${quote.current}`);
-              priceHistory = generateHistoricalDataPoints(quote.current, symbol);
-            }
-
-            return {
-              ...stock,
-              currentPrice: quote.current,
-              change: quote.change,
-              changePercent: quote.percentChange,
-              high: quote.high,
-              low: quote.low,
-              open: quote.open,
-              previousClose: quote.previousClose,
-              isLoading: false,
-              lastUpdated: now,
-              isAlertTriggered: isAlertTriggered || stock.isAlertTriggered || false,
-              priceHistory: [
-                ...priceHistory,
-                { time: now, price: quote.current }
-              ].slice(-500), // Keep last 500 data points for better chart resolution
-            };
+            return stock;
           }),
         }));
+
+        // Check for price alerts
+        const stock = get().watchedStocks.find(s => s.symbol === symbol);
+        if (stock && stock.alertPrice && quote.current >= stock.alertPrice && !stock.isAlertTriggered) {
+          getNotificationService().showNotification(
+            `Price Alert: ${symbol}`,
+            `${symbol} has reached your target price of $${stock.alertPrice}. Current price: $${quote.current}`
+          );
+        }
       },
 
-      // WebSocket connection management
-      setWebSocketStatus: (status: WebSocketStatus) => {
-        set({ webSocketStatus: status });
+      // Fetch historical data for a stock (one-time fetch)
+      fetchHistoricalData: async (symbol: string) => {
+        try {
+          console.log(`📊 Fetching historical data for ${symbol}`);
+          
+          const historicalData = await stockService.fetchHistoricalData(
+            symbol,
+            '1', // 1-minute resolution
+            Math.floor(Date.now() / 1000) - (7 * 24 * 60 * 60), // 1 week ago
+            Math.floor(Date.now() / 1000) // now
+          );
+          
+          if (historicalData.length > 0) {
+            console.log(`📈 Retrieved ${historicalData.length} historical data points for ${symbol}`);
+            
+            // Update the stock with historical data
+            set(state => ({
+              watchedStocks: state.watchedStocks.map(stock => {
+                if (stock.symbol === symbol) {
+                  const history = historicalData.map(point => ({
+                    time: point.time,
+                    price: point.price
+                  }));
+                  
+                  return {
+                    ...stock,
+                    priceHistory: history
+                  };
+                }
+                return stock;
+              })
+            }));
+          } else {
+            console.log(`⚠️ No historical data available for ${symbol} - will show current price only`);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch historical data for ${symbol}:`, error);
+        }
       },
 
-      setWebSocketConnection: (connection: WebSocket | null) => {
-        set({ webSocketConnection: connection });
+      // Fetch historical data for a specific time range (called once per range)
+      fetchHistoricalDataForRange: async (symbol: string, timeRange: '1H' | '1D' | '1W') => {
+        try {
+          console.log(`📊 Fetching ${timeRange} historical data for ${symbol} (one-time fetch)`);
+          
+          const now = Math.floor(Date.now() / 1000);
+          let from: number;
+          let resolution: string;
+          
+          switch (timeRange) {
+            case '1H':
+              from = now - (60 * 60); // 1 hour ago
+              resolution = '1'; // 1-minute resolution
+              break;
+            case '1D':
+              from = now - (24 * 60 * 60); // 1 day ago
+              resolution = '5'; // 5-minute resolution
+              break;
+            case '1W':
+              from = now - (7 * 24 * 60 * 60); // 1 week ago
+              resolution = '15'; // 15-minute resolution
+              break;
+            default:
+              from = now - (7 * 24 * 60 * 60);
+              resolution = '1';
+          }
+          
+          const historicalData = await stockService.fetchHistoricalData(
+            symbol,
+            resolution,
+            from,
+            now
+          );
+          
+          if (historicalData.length > 0) {
+            console.log(`📈 Retrieved ${historicalData.length} ${timeRange} data points for ${symbol} (static historical data)`);
+            
+            // Update the stock with the historical data for this time range
+            set(state => ({
+              watchedStocks: state.watchedStocks.map(stock => {
+                if (stock.symbol === symbol) {
+                  // For defined ranges, replace the price history with the specific range data
+                  const rangeHistory = historicalData.map(point => ({
+                    time: point.time,
+                    price: point.price
+                  }));
+                  
+                  return {
+                    ...stock,
+                    priceHistory: rangeHistory
+                  };
+                }
+                return stock;
+              })
+            }));
+          } else {
+            console.log(`⚠️ No ${timeRange} historical data available for ${symbol} - will show current price only`);
+            // Don't update priceHistory if no data is available
+            // The chart will show current price only for this range
+          }
+        } catch (error) {
+          console.error(`Failed to fetch ${timeRange} historical data for ${symbol}:`, error);
+        }
       },
 
-      // UI state management
-      setLoading: (loading: boolean) => {
-        set({ isLoading: loading });
-      },
-
-      setError: (error: string | null) => {
-        set({ error });
-      },
-
-      clearError: () => {
-        set({ error: null });
-      },
-
-      // Connect to real-time updates using secure API polling
-      // This approach works in production and keeps API keys secure
+      // Connect to real-time updates using secure WebSocket proxy
       connectWebSocket: async () => {
         // Don't create connections on server side
         if (typeof window === 'undefined') {
@@ -247,42 +275,163 @@ export const useStockStore = create<StockStoreState>()(
 
         const state = get();
         
+        // Don't connect if live data is disabled
+        if (!state.isLiveDataEnabled) {
+          console.log('⚠️ Live data is disabled, skipping WebSocket connection');
+          return;
+        }
+        
         // Check if already connected
-        if (state.webSocketStatus === 'connected') {
-          console.log('✅ Real-time updates already active');
+        if (state.webSocketStatus === 'connected' && state.webSocketConnection) {
+          console.log('✅ WebSocket already connected');
           return;
         }
 
-        console.log('🔌 Initializing secure real-time updates...');
+        // Close existing connection if any
+        if (state.webSocketConnection) {
+          (state.webSocketConnection as EventSource).close();
+        }
+
+        if (state.watchedStocks.length === 0) {
+          console.log('⚠️ No stocks to connect to');
+          return;
+        }
+
+        console.log('🔌 Connecting to secure WebSocket proxy...');
         set({ 
           webSocketStatus: 'connecting', 
           isConnecting: true,
-          error: null,
+          error: null 
         });
 
-        // Simulate successful connection for secure API polling mode
-        setTimeout(() => {
-          set({
-            webSocketStatus: 'connected',
-            isConnecting: false,
-            error: null,
+        try {
+          const symbols = state.watchedStocks.map(stock => stock.symbol).join(',');
+          const proxyUrl = `/api/websocket-proxy?symbols=${symbols}`;
+          console.log('🔗 Proxy URL:', proxyUrl);
+
+          const eventSource = new EventSource(proxyUrl);
+          
+          // Set connection timeout
+          const connectionTimeout = setTimeout(() => {
+            if (get().webSocketStatus === 'connecting') {
+              console.log('⏰ WebSocket proxy connection timeout, retrying...');
+              eventSource.close();
+              setTimeout(() => {
+                const currentState = get();
+                if (currentState.watchedStocks.length > 0) {
+                  currentState.connectWebSocket();
+                }
+              }, 1000);
+            }
+          }, 10000); // 10 second timeout
+
+          eventSource.onopen = () => {
+            console.log('✅ Connected to secure WebSocket proxy');
+            clearTimeout(connectionTimeout);
+            set({ 
+              webSocketStatus: 'connected', 
+              isConnecting: false, 
+              error: null,
+              webSocketConnection: eventSource 
+            });
+          };
+
+          eventSource.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              console.log('📨 WebSocket proxy message received:', data);
+
+              if (data.type === 'trade' && data.data) {
+                const trade = data.data;
+                if (trade.symbol && trade.price) {
+                  const symbol = trade.symbol;
+                  const price = trade.price;
+
+                  console.log(`💰 Real-time trade update: ${symbol} = $${price}`);
+                  
+                  // Update stock price in store
+                  const currentState = get();
+                  const stock = currentState.watchedStocks.find(s => s.symbol === symbol);
+                  if (stock) {
+                    currentState.updateStockPrice(symbol, {
+                      symbol,
+                      current: price,
+                      change: 0, // Trade data doesn't include change
+                      percentChange: 0,
+                      high: stock.high || price,
+                      low: stock.low || price,
+                      open: stock.open || price,
+                      previousClose: stock.previousClose || price,
+                      timestamp: trade.timestamp || Date.now()
+                    });
+                  }
+                }
+              } else if (data.type === 'connected') {
+                console.log('✅ WebSocket proxy connected:', data.message);
+              } else if (data.type === 'error') {
+                console.error('❌ WebSocket proxy error:', data.message);
+                set({ 
+                  webSocketStatus: 'error', 
+                  isConnecting: false, 
+                  error: data.message 
+                });
+              }
+            } catch (error) {
+              console.error('Failed to parse WebSocket proxy message:', error);
+            }
+          };
+
+          eventSource.onerror = (error) => {
+            console.error('❌ WebSocket proxy error:', error);
+            clearTimeout(connectionTimeout);
+            
+            // Check if this is just an initial connection error
+            const currentState = get();
+            if (currentState.webSocketStatus === 'connecting') {
+              console.log('⚠️ Initial WebSocket proxy connection error, will retry...');
+              return;
+            }
+            
+            set({
+              webSocketStatus: 'error',
+              isConnecting: false,
+              error: 'WebSocket proxy connection failed',
+              webSocketConnection: null
+            });
+
+            // Attempt to reconnect after a delay
+            setTimeout(() => {
+              console.log('🔄 Attempting to reconnect WebSocket proxy...');
+              const currentState = get();
+              if (currentState.watchedStocks.length > 0) {
+                currentState.connectWebSocket();
+              }
+            }, 5000);
+          };
+
+        } catch (error) {
+          console.error('Failed to create WebSocket proxy connection:', error);
+          set({ 
+            webSocketStatus: 'error', 
+            isConnecting: false, 
+            error: error instanceof Error ? error.message : 'WebSocket proxy connection failed' 
           });
-          console.log('✅ Real-time updates active (secure API polling mode)');
-        }, 500);
+        }
       },
 
+      // Disconnect WebSocket
       disconnectWebSocket: () => {
-        // Don't access on server side
-        if (typeof window === 'undefined') {
-          return;
-        }
-
-        set({
-          webSocketStatus: 'disconnected',
-          isConnecting: false,
-        });
+        const { webSocketConnection } = get();
         
-        console.log('❌ Real-time updates disconnected');
+        if (webSocketConnection) {
+          (webSocketConnection as EventSource).close();
+          set({ 
+            webSocketConnection: null, 
+            webSocketStatus: 'disconnected' 
+          });
+        }
+        
+        console.log('❌ WebSocket proxy disconnected');
       },
 
       // Start periodic refresh with configurable interval
@@ -292,6 +441,12 @@ export const useStockStore = create<StockStoreState>()(
         }
 
         const state = get();
+
+        // Only start periodic refresh if live data is enabled
+        if (!state.isLiveDataEnabled) {
+          console.log(`⚠️ Periodic refresh only works when live data is enabled`);
+          return;
+        }
 
         // Clear any existing interval
         if (state.refreshInterval) {
@@ -303,14 +458,15 @@ export const useStockStore = create<StockStoreState>()(
         const intervalMs = intervalConfig?.milliseconds || 30000; // Default to 30 seconds
 
         // Start new interval with configurable timing
-        console.log(`⏰ Starting periodic refresh with ${intervalMs}ms interval (${intervalMs/1000}s)`);
+        console.log(`⏰ Starting periodic refresh with ${intervalMs}ms interval (${intervalMs/1000}s) - Live data enabled`);
+        console.log(`📊 Current refresh interval: ${state.refreshTimeInterval}`);
         const interval = setInterval(async () => {
           const currentState = get();
           if (currentState.watchedStocks.length > 0) {
             console.log(`🔄 Performing periodic refresh of ${currentState.watchedStocks.length} stocks...`, new Date().toLocaleTimeString());
+            console.log(`⏱️ Using interval: ${currentState.refreshTimeInterval} (${intervalMs}ms)`);
             
-            // Only refresh if WebSocket is not providing real-time updates
-            // Check WebSocket status to avoid duplicate updates
+            // Use API fallback when WebSocket is not connected
             if (currentState.webSocketStatus !== 'connected') {
               console.log('WebSocket not connected, using API fallback for periodic refresh...');
               
@@ -334,10 +490,28 @@ export const useStockStore = create<StockStoreState>()(
               
               await Promise.all(refreshPromises);
             } else {
-              console.log('WebSocket connected, skipping API refresh to avoid duplicates');
+              console.log('WebSocket connected, using API refresh as backup (less frequent)');
+              // When WebSocket is connected, use API refresh less frequently as backup
+              // Only refresh 10% of the time to avoid overwhelming the API
+              if (Math.random() < 0.1) {
+                const backupPromises = currentState.watchedStocks.map(async (stock) => {
+                  try {
+                    const response = await fetch(`/api/quote?symbol=${stock.symbol}`);
+                    if (response.ok) {
+                      const data = await response.json();
+                      if (data.current) {
+                        currentState.updateStockPrice(stock.symbol, data);
+                      }
+                    }
+                  } catch (error) {
+                    console.warn(`Backup refresh failed for ${stock.symbol}:`, error);
+                  }
+                });
+                await Promise.all(backupPromises);
+              }
             }
           }
-        }, intervalMs); // Use configurable interval
+        }, intervalMs);
 
         set({ refreshInterval: interval });
       },
@@ -345,6 +519,7 @@ export const useStockStore = create<StockStoreState>()(
       // Stop periodic refresh
       stopPeriodicRefresh: () => {
         const { refreshInterval } = get();
+        
         if (refreshInterval) {
           clearInterval(refreshInterval);
           set({ refreshInterval: null });
@@ -353,13 +528,50 @@ export const useStockStore = create<StockStoreState>()(
 
       // Set refresh time interval
       setRefreshTimeInterval: (interval: RefreshInterval) => {
+        console.log(`🔄 Changing refresh interval from ${get().refreshTimeInterval} to ${interval}`);
         set({ refreshTimeInterval: interval });
         
-        // Restart periodic refresh with new interval if it's currently running
+        // Only restart periodic refresh if live data is enabled
         const state = get();
-        if (state.refreshInterval && state.watchedStocks.length > 0) {
+        if (state.refreshInterval && state.watchedStocks.length > 0 && state.isLiveDataEnabled) {
+          console.log(`🔄 Restarting periodic refresh with new interval: ${interval} (Live data enabled)`);
           state.stopPeriodicRefresh();
           state.startPeriodicRefresh();
+        } else if (!state.isLiveDataEnabled) {
+          console.log(`⚠️ Refresh interval change ignored - live data is disabled`);
+        }
+      },
+
+      // Set live data enabled/disabled
+      setLiveDataEnabled: (enabled: boolean) => {
+        console.log(`📊 ${enabled ? 'Enabling' : 'Disabling'} live data`);
+        set({ isLiveDataEnabled: enabled });
+        
+        const state = get();
+        
+        // Handle refresh intervals and WebSocket connections based on live data toggle
+        if (enabled) {
+          // Start periodic refresh when enabling live data
+          if (state.watchedStocks.length > 0 && !state.refreshInterval) {
+            console.log(`🔄 Starting periodic refresh - live data enabled`);
+            state.startPeriodicRefresh();
+          }
+          // Connect to WebSocket when enabling live data
+          if (state.watchedStocks.length > 0) {
+            console.log(`🔌 Connecting to WebSocket - live data enabled`);
+            state.connectWebSocket();
+          }
+        } else {
+          // Stop periodic refresh when disabling live data
+          if (state.refreshInterval) {
+            console.log(`⏹️ Stopping periodic refresh - live data disabled`);
+            state.stopPeriodicRefresh();
+          }
+          // Disconnect WebSocket when disabling live data
+          if (state.webSocketConnection) {
+            console.log(`🔌 Disconnecting WebSocket - live data disabled`);
+            state.disconnectWebSocket();
+          }
         }
       },
 
@@ -384,79 +596,49 @@ export const useStockStore = create<StockStoreState>()(
           }));
         }
       },
+
+      // WebSocket status management
+      setWebSocketStatus: (status: WebSocketStatus) => {
+        set({ webSocketStatus: status });
+      },
+
+      setWebSocketConnection: (connection: any) => {
+        set({ webSocketConnection: connection });
+      },
+
+      // Loading state management
+      setLoading: (loading: boolean) => {
+        set({ isLoading: loading });
+      },
+
+      // Error management
+      setError: (error: string | null) => {
+        set({ error });
+      },
+
+      clearError: () => {
+        set({ error: null });
+      },
     }),
     {
-      name: STORAGE_KEYS.WATCHED_STOCKS,
-      storage: createJSONStorage(() => {
-        if (typeof window !== 'undefined') {
-          return localStorage;
-        }
-        // Return a no-op storage for SSR
-        return {
-          getItem: () => null,
-          setItem: () => {},
-          removeItem: () => {},
-        };
-      }),
+      name: STORAGE_KEYS.STOCK_STORE,
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        watchedStocks: state.watchedStocks.map(stock => ({
-          ...stock,
-          // Don't persist WebSocket connection or temporary state
-          webSocketConnection: null,
-          isLoading: false,
-        })),
+        watchedStocks: state.watchedStocks,
+        refreshTimeInterval: state.refreshTimeInterval,
+        isLiveDataEnabled: state.isLiveDataEnabled,
       }),
-      version: 1,
-      migrate: (persistedState: any, version: number) => {
-        // Handle migration if needed
-        if (version === 0) {
-          // Migrate from version 0 to 1
-          return {
-            ...persistedState,
-            watchedStocks: persistedState.watchedStocks?.map((stock: any) => ({
-              ...stock,
-              id: stock.id || generateStockId(),
-              priceHistory: stock.priceHistory || [],
-              isAlertTriggered: false,
-            })) || [],
-          };
-        }
-        return persistedState;
-      },
     }
   )
 );
 
-/**
- * Selectors for optimized re-renders
- */
-export const useWatchedStocks = () => useStockStore(state => state.watchedStocks);
-export const useWebSocketStatus = () => useStockStore(state => state.webSocketStatus);
-export const useStockLoading = () => useStockStore(state => state.isLoading);
-export const useStockError = () => useStockStore(state => state.error);
-
-/**
- * Action selectors
- */
-export const useStockActions = () => useStockStore(state => ({
-  addStock: state.addStock,
-  removeStock: state.removeStock,
-  updateStockPrice: state.updateStockPrice,
-  setError: state.setError,
-  clearError: state.clearError,
-  connectWebSocket: state.connectWebSocket,
-  disconnectWebSocket: state.disconnectWebSocket,
-}));
-
-/**
- * WebSocket action selectors
- */
-export const useWebSocketActions = () => useStockStore(state => ({
-  connectWebSocket: state.connectWebSocket,
-  disconnectWebSocket: state.disconnectWebSocket,
-  subscribeToStock: state.subscribeToStock,
-  unsubscribeFromStock: state.unsubscribeFromStock,
-  setWebSocketStatus: state.setWebSocketStatus,
-  startPeriodicRefresh: state.startPeriodicRefresh,
-  stopPeriodicRefresh: state.stopPeriodicRefresh,
-}));
+// Export store actions for external use
+export const {
+  addStock: addStockToWatchlist,
+  removeStock: removeStockFromWatchlist,
+  updateStockPrice: updateStockPriceInStore,
+  connectWebSocket: connectToWebSocket,
+  disconnectWebSocket: disconnectFromWebSocket,
+  startPeriodicRefresh: startStockRefresh,
+  stopPeriodicRefresh: stopStockRefresh,
+} = useStockStore.getState();
