@@ -1,30 +1,54 @@
 # StockPulse
 
-Enterprise-grade Next.js + TypeScript stock market tracking application with real-time data, portfolio management, and PWA capabilities.
+Enterprise-grade Next.js 15 + React 19 + TypeScript stock market tracking application with comprehensive TypeScript utilities, Vercel deployment, and PWA capabilities.
+
+## 📊 Project Status
+
+🏗️ **Infrastructure Complete** - Enterprise-grade scaffolding with all configurations and deployment setup
+📦 **TypeScript Utilities** - Comprehensive type system for enhanced developer experience  
+🚀 **Deployment Ready** - Full Vercel integration with automated CI/CD pipeline
+🧪 **Testing Framework** - Complete testing setup with Jest and Playwright
+📖 **Documentation** - Comprehensive guides and development templates
+
+**Next Phase**: Business logic implementation (stock APIs, UI components, state management)
 
 ## 🚀 Features
 
-- **Real-time Stock Tracking** - Live market data and price updates
-- **Portfolio Management** - Track investments and performance
-- **Watchlist** - Monitor stocks of interest
-- **Price Alerts** - Get notified when stocks hit target prices
-- **Progressive Web App** - Offline functionality and mobile-first design
-- **Market News** - Stay updated with latest financial news
-- **Dark/Light Theme** - Customizable user interface
-- **Responsive Design** - Works on desktop, tablet, and mobile
+- **Next.js 15 + React 19** - Latest framework features with React Compiler optimizations
+- **Enterprise TypeScript Utils** - Comprehensive utility types for type safety and consistency
+- **Vercel Deployment Ready** - Complete deployment configuration with cron jobs
+- **Progressive Web App** - Offline functionality with push notifications
+- **API-First Architecture** - Type-safe API routes with comprehensive error handling
+- **Real-time Stock Tracking** - Live market data and price updates (infrastructure ready)
+- **Security-First** - Environment variable security audit and proper secret management
+- **Developer Experience** - Cursor IDE and Claude Code rules for enhanced productivity
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Next.js 15 (with React Compiler & Turbopack)
-- **UI Library**: React 19 (with Concurrent Features)
-- **Language**: TypeScript 5.6
-- **Styling**: Tailwind CSS 3.4
+### Core Framework
+- **Framework**: Next.js 15 (App Router) with React Compiler & Turbopack
+- **UI Library**: React 19 with Concurrent Features
+- **Language**: TypeScript 5.6 (Strict Mode)
+- **Styling**: Tailwind CSS 3.4 + PostCSS
 - **State Management**: Zustand 5.0
+
+### Development & Testing
 - **Testing**: Jest + React Testing Library 16 + Playwright
-- **PWA**: next-pwa with Service Worker
-- **Linting**: ESLint 9 + Prettier 3.3
-- **CI/CD**: GitHub Actions with security scanning
+- **Linting**: ESLint 9 (Flat Config) + Prettier 3.3
+- **Git Hooks**: Husky + lint-staged
 - **Package Manager**: pnpm 8+
+
+### Deployment & Infrastructure
+- **Hosting**: Vercel with Edge Functions
+- **PWA**: next-pwa with Service Worker and Push Notifications
+- **CI/CD**: GitHub Actions with Trivy security scanning
+- **Monitoring**: Health checks and error tracking ready
+
+### TypeScript Architecture
+- **Utility Types**: Comprehensive type utilities in `/types/utils.ts`
+- **Type Safety**: Runtime type guards and validation
+- **API Types**: Consistent `ApiResponse<T>` and `ApiError` patterns
+- **Component Types**: Standardized props with utility types
 
 ## 📋 Prerequisites
 
@@ -46,8 +70,8 @@ Enterprise-grade Next.js + TypeScript stock market tracking application with rea
 
 3. **Set up environment variables**
    ```bash
-   cp .env.example .env
-   # Edit .env with your API keys
+   cp .env.example .env.local
+   # Edit .env.local with your API keys and configuration
    ```
 
 4. **Generate VAPID keys for push notifications**
@@ -78,31 +102,52 @@ Enterprise-grade Next.js + TypeScript stock market tracking application with rea
 - `pnpm run test:coverage` - Run tests with coverage
 - `pnpm run test:e2e` - Run end-to-end tests
 - `pnpm run test:e2e:ui` - Run E2E tests with UI
+- `pnpm run test:e2e:debug` - Debug E2E tests
 - `pnpm run build:analyze` - Build with bundle analyzer
+- `pnpm run deploy:vercel` - Deploy to Vercel production
+- `pnpm run deploy:preview` - Deploy to Vercel preview
+- `pnpm run vercel:env` - Pull environment variables from Vercel
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-Create a `.env` file in the root directory with the following variables:
+Create environment files for different stages. See `.env.example` for all available variables.
 
+#### Development (`.env.local`)
 ```env
-# Stock API Configuration
-VITE_FINNHUB_API_KEY=your_finnhub_api_key_here
-VITE_ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key_here
+# =============================================================================
+# StockPulse Environment Configuration
+# =============================================================================
 
-# Application Configuration
-VITE_APP_NAME=StockPulse
-VITE_API_BASE_URL=https://api.example.com
+# 🌐 PUBLIC VARIABLES (Client-side accessible)
+NEXT_PUBLIC_APP_NAME=StockPulse
+NEXT_PUBLIC_APP_VERSION=1.0.0
+NEXT_PUBLIC_FEATURE_PORTFOLIO=true
+NEXT_PUBLIC_FEATURE_ALERTS=true
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public_key
 
-# PWA Configuration
-VITE_PWA_ENABLED=true
-VITE_NOTIFICATIONS_ENABLED=true
+# 🔒 PRIVATE VARIABLES (Server-side only)
+# Stock API Keys
+FINNHUB_API_KEY=your_finnhub_api_key
+ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
 
-# Push Notification VAPID Keys (generated by script)
-VITE_VAPID_PUBLIC_KEY=your_public_key
-VAPID_PRIVATE_KEY=your_private_key
+# Security
+JWT_SECRET=your_jwt_secret_32chars_minimum
+ENCRYPTION_KEY=your_encryption_key_32chars_minimum
+CRON_SECRET=your_cron_secret_for_vercel_jobs
+
+# Push Notifications  
+VAPID_PRIVATE_KEY=your_vapid_private_key
+
+# CORS Configuration
+CORS_ORIGIN=http://localhost:3000
 ```
+
+#### Production
+Use Vercel environment variables or `.env.production` for production deployment.
+
+⚠️ **Security Note**: Never commit secrets to git. Use Vercel's environment variable management.
 
 ### API Keys
 
@@ -115,55 +160,154 @@ You'll need API keys from:
 
 ```
 stock-pulse/
-├── app/                    # Next.js app directory
-│   ├── layout.tsx         # Root layout
-│   ├── page.tsx           # Home page
-│   └── globals.css        # Global styles
-├── components/            # Reusable UI components
-│   └── ui/               # Base UI components
-├── hooks/                # Custom React hooks
-├── lib/                  # Utility libraries
-├── services/             # API services
-├── styles/               # Additional styles
-├── types/                # TypeScript type definitions
-├── utils/                # Utility functions
-├── public/               # Static assets
-│   ├── manifest.json     # PWA manifest
-│   ├── offline.html      # Offline fallback page
-│   └── sw.js            # Service worker
-├── tests/                # Test files
-├── scripts/              # Build and utility scripts
-├── docs/                 # Documentation
-└── claude.rules/         # Claude Code prompts
+├── app/                           # Next.js 15 App Router
+│   ├── api/                      # API routes
+│   │   ├── health/              # Health check endpoint
+│   │   └── cron/                # Vercel cron jobs
+│   ├── layout.tsx               # Root layout with React 19
+│   ├── page.tsx                 # Home page
+│   ├── loading.tsx              # Global loading UI
+│   ├── error.tsx                # Global error UI
+│   └── globals.css              # Global Tailwind styles
+├── components/                   # Reusable UI components
+│   ├── ui/                      # shadcn/ui base components
+│   └── shared/                  # Custom shared components
+├── hooks/                       # Custom React hooks
+├── lib/                         # Utility libraries
+├── services/                    # API services and external integrations
+├── stores/                      # Zustand state management
+├── types/                       # TypeScript utilities and definitions
+│   ├── index.ts                # Central type exports
+│   └── utils.ts                # Comprehensive utility types
+├── utils/                       # Utility functions
+├── public/                      # Static assets
+│   ├── manifest.json           # PWA manifest
+│   ├── sw.js                   # Service worker (next-pwa)
+│   └── icons/                  # App icons
+├── scripts/                     # Build and deployment scripts
+│   ├── generate-vapid.js       # VAPID key generator
+│   ├── setup-vercel-env.sh     # Environment setup script
+│   └── deploy-vercel.sh        # Deployment script
+├── docs/                        # Comprehensive documentation
+│   ├── ARCHITECTURE.md         # System architecture
+│   ├── VERCEL-DEPLOYMENT.md    # Deployment guide
+│   └── TEST-REVIEW.md          # Testing strategy
+├── claude.rules/               # Claude Code development prompts
+│   ├── create-component.prompt  # Component creation template
+│   ├── create-api-route.prompt  # API route template
+│   ├── create-page.prompt       # Page creation template
+│   └── bootstrap-dev-env.prompt # Environment setup
+├── .github/workflows/          # GitHub Actions CI/CD
+├── tests/                      # Test files and configurations
+├── vercel.json                 # Vercel deployment configuration
+├── .cursorrules               # Cursor IDE configuration
+└── tailwind.config.js         # Tailwind CSS configuration
 ```
+
+## 🔧 TypeScript Utilities
+
+This project includes comprehensive TypeScript utilities for enhanced type safety and developer experience:
+
+### Core Utility Types
+```typescript
+import { 
+  ApiResponse, 
+  AsyncState, 
+  ComponentProps, 
+  DeepPartial,
+  isDefined 
+} from '@/types';
+
+// API responses
+const response: ApiResponse<UserData> = await fetchUser();
+
+// Component props with utilities
+interface ButtonProps extends ComponentProps, Disableable, Sizeable {
+  variant: 'primary' | 'secondary';
+}
+
+// Async state management
+const [userState, setUserState] = useState<AsyncState<User>>({
+  loading: true,
+  data: undefined,
+  error: undefined
+});
+
+// Runtime type checking
+if (isDefined(data) && isString(data.name)) {
+  // Type-safe operations
+}
+```
+
+### Available Utility Categories
+- **Basic Types**: `DeepPartial`, `RequiredBy`, `PartialBy`, `OptionalExcept`
+- **API Types**: `ApiResponse`, `ApiError`, `PaginatedResponse`, `HttpMethod`
+- **Component Types**: `ComponentProps`, `WithClassName`, `Disableable`, `Loadable`
+- **State Types**: `AsyncState`, `FormState`, `ValidationResult`
+- **Type Guards**: `isDefined`, `isString`, `isNumber`, `isBoolean`, `isObject`
 
 ## 🧪 Testing
 
 ### Unit Tests
 ```bash
-pnpm run test
-pnpm run test:coverage
+pnpm run test                # Run all unit tests
+pnpm run test:watch         # Run tests in watch mode
+pnpm run test:coverage      # Run tests with coverage report
 ```
 
 ### End-to-End Tests
 ```bash
-pnpm run test:e2e
-pnpm run test:e2e:ui
+pnpm run test:e2e           # Run E2E tests
+pnpm run test:e2e:ui        # Run E2E tests with UI
+pnpm run test:e2e:debug     # Debug E2E tests
 ```
 
 ## 🚀 Deployment
 
-### Production Build
+### Vercel Deployment (Recommended)
+
+#### Automated Setup
 ```bash
-pnpm run build
-pnpm run start
+# Install Vercel CLI
+npm install -g vercel
+
+# Login and deploy
+vercel login
+vercel
+
+# Set up environment variables
+./scripts/setup-vercel-env.sh
+
+# Deploy to production
+pnpm run deploy:vercel
 ```
 
-### Environment Setup
-1. Set up environment variables in your hosting platform
-2. Configure API keys and endpoints
-3. Set up monitoring and analytics
-4. Configure CDN for static assets
+#### Manual Environment Setup
+```bash
+# Add production environment variables
+vercel env add FINNHUB_API_KEY production
+vercel env add ALPHA_VANTAGE_API_KEY production
+vercel env add JWT_SECRET production
+vercel env add CRON_SECRET production
+
+# Pull environment variables locally
+vercel env pull .env.local
+```
+
+### Production Build
+```bash
+pnpm run build             # Build for production
+pnpm run start             # Start production server locally
+```
+
+### Deployment Features
+- **Automatic Deployments** - Every push to main deploys to production
+- **Preview Deployments** - Every PR gets a unique preview URL
+- **Cron Jobs** - Automated stock price updates every 5 minutes
+- **Edge Functions** - Global performance optimization
+- **Health Monitoring** - `/api/health` endpoint for monitoring
+
+See [Vercel Deployment Guide](./docs/VERCEL-DEPLOYMENT.md) for detailed instructions.
 
 ## 📱 PWA Features
 
@@ -182,20 +326,45 @@ pnpm run start
 
 ### Development Guidelines
 
-- Follow TypeScript strict mode
-- Write tests for new features
-- Use conventional commit messages
-- Run linting and formatting before committing
-- Update documentation as needed
+- **Use TypeScript Utils** - Always import from `@/types` instead of creating custom types
+- **Follow Strict Typing** - Use utility types for consistent API responses and component props
+- **Write Comprehensive Tests** - Unit tests for components, integration tests for API routes
+- **Use Conventional Commits** - Follow conventional commit message format
+- **Pre-commit Checks** - Linting, formatting, and type checking run automatically
+- **Update Documentation** - Keep README and docs in sync with changes
+
+## 🧑‍💻 Developer Experience
+
+### IDE Configuration
+- **Cursor IDE Rules** - Pre-configured `.cursorrules` for optimal development
+- **Claude Code Prompts** - Standardized templates in `claude.rules/` directory
+- **TypeScript IntelliSense** - Enhanced auto-completion with utility types
+- **Import Organization** - Automatic import sorting with `@/types` prioritization
+
+### Code Generation Templates
+```bash
+# Available Claude Code prompts:
+claude.rules/create-component.prompt    # React component with TypeScript utils
+claude.rules/create-api-route.prompt    # Next.js API route with type safety  
+claude.rules/create-page.prompt         # Next.js page with proper metadata
+claude.rules/bootstrap-dev-env.prompt   # Full project setup template
+```
+
+### Development Workflow
+1. **Type-First Development** - Define types before implementation
+2. **Component-Driven** - Build reusable components with utility types
+3. **API-First** - Design API contracts with consistent response types
+4. **Test-Driven** - Write tests using TypeScript utilities for type safety
 
 ## 📝 Code Quality
 
-- **TypeScript** - Strict mode enabled
-- **ESLint** - Code linting with Next.js config
-- **Prettier** - Code formatting
-- **Husky** - Git hooks for pre-commit checks
-- **Jest** - Unit testing
-- **Playwright** - E2E testing
+- **TypeScript 5.6** - Strict mode with comprehensive utility types
+- **ESLint 9** - Flat config with Next.js and TypeScript rules
+- **Prettier 3.3** - Consistent code formatting
+- **Husky + lint-staged** - Pre-commit hooks for quality gates
+- **Jest + RTL** - Unit testing with TypeScript support
+- **Playwright** - E2E testing with type-safe page objects
+- **Trivy** - Security vulnerability scanning in CI/CD
 
 ## 🔒 Security
 
@@ -215,10 +384,20 @@ pnpm run start
 
 ## 📖 Documentation
 
-- [Architecture Guide](./docs/ARCHITECTURE.md)
-- [Testing Guide](./docs/TEST-REVIEW.md)
-- [API Documentation](./docs/API.md)
-- [Deployment Guide](./docs/DEPLOYMENT.md)
+### Core Documentation
+- [📐 Architecture Guide](./docs/ARCHITECTURE.md) - System design and technical decisions
+- [🧪 Testing Strategy](./docs/TEST-REVIEW.md) - Comprehensive testing approach
+- [🚀 Vercel Deployment](./docs/VERCEL-DEPLOYMENT.md) - Complete deployment guide with automation
+
+### Development Resources
+- [🔧 TypeScript Utilities](./types/utils.ts) - Comprehensive utility types documentation
+- [🎯 Component Templates](./claude.rules/) - Standardized development prompts
+- [⚙️ IDE Configuration](./.cursorrules) - Cursor IDE optimization rules
+
+### API Documentation
+- [🏥 Health Check](./app/api/health/route.ts) - Application health monitoring
+- [⏰ Cron Jobs](./app/api/cron/) - Automated background tasks
+- API documentation will be generated with business logic implementation
 
 ## 📄 License
 
