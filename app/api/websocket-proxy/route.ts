@@ -1,5 +1,9 @@
 import { NextRequest } from 'next/server';
 
+// Global connection pool to prevent duplicate connections
+const activeConnections = new Map<string, any>();
+const connectionCooldowns = new Map<string, number>();
+
 export async function GET(request: NextRequest) {
   console.log('🔌 WebSocket proxy endpoint called');
   
@@ -7,6 +11,23 @@ export async function GET(request: NextRequest) {
   const symbols = searchParams.get('symbols');
   
   console.log('📊 Requested symbols:', symbols);
+  
+  // Create a connection key based on symbols to prevent duplicates
+  const connectionKey = symbols || 'default';
+  
+  // Check if we already have an active connection for these symbols
+  if (activeConnections.has(connectionKey)) {
+    console.log('⚠️ Duplicate connection attempt blocked for symbols:', symbols);
+    return new Response('Connection already exists for these symbols', { status: 409 });
+  }
+  
+  // Check cooldown period to prevent rapid reconnections
+  const cooldownTime = connectionCooldowns.get(connectionKey);
+  if (cooldownTime && Date.now() < cooldownTime) {
+    const remainingTime = Math.ceil((cooldownTime - Date.now()) / 1000);
+    console.log(`⏰ Connection cooldown active for symbols: ${symbols}. ${remainingTime}s remaining.`);
+    return new Response(`Connection cooldown active. Try again in ${remainingTime} seconds.`, { status: 429 });
+  }
   
   const apiKey = process.env.FINNHUB_API_KEY;
   if (!apiKey) {
@@ -47,6 +68,8 @@ export async function GET(request: NextRequest) {
       let webSocket: WebSocket | null = null;
       let reconnectTimeout: NodeJS.Timeout | null = null;
       let isConnected = false;
+      let reconnectAttempts = 0;
+      const maxReconnectAttempts = 5;
 
       const connectToFinnhub = () => {
         try {
@@ -58,15 +81,22 @@ export async function GET(request: NextRequest) {
           webSocket.onopen = () => {
             console.log('✅ Connected to Finnhub WebSocket');
             isConnected = true;
+            reconnectAttempts = 0; // Reset attempts on successful connection
             
-            // Subscribe to all symbols
-            symbolList.forEach(symbol => {
+            // Subscribe to all symbols with rate limiting
+            symbolList.forEach((symbol, index) => {
               const subscribeMessage = {
                 type: 'subscribe',
                 symbol: symbol
               };
               console.log(`📡 Subscribing to ${symbol}`);
-              webSocket?.send(JSON.stringify(subscribeMessage));
+              
+              // Add delay between subscriptions to avoid rate limiting
+              setTimeout(() => {
+                if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+                  webSocket.send(JSON.stringify(subscribeMessage));
+                }
+              }, index * 100); // 100ms delay between each subscription
             });
           };
 
@@ -106,14 +136,32 @@ export async function GET(request: NextRequest) {
             console.log('❌ Finnhub WebSocket closed:', event.code, event.reason);
             isConnected = false;
             
-            // Attempt to reconnect after 5 seconds
+            // Don't reconnect if we've exceeded max attempts or if it's likely rate limited
+            if (reconnectAttempts >= maxReconnectAttempts || event.code === 1002 || event.code === 1006) {
+              console.log(`❌ Max reconnection attempts reached (${reconnectAttempts}/${maxReconnectAttempts}) or rate limited (code: ${event.code}). Stopping reconnection.`);
+              sendEvent({ 
+                type: 'error', 
+                message: 'Rate limited by Finnhub or max attempts reached. Using API fallback.' 
+              });
+              // Remove from active connections and set cooldown
+              activeConnections.delete(connectionKey);
+              // Set 10 minute cooldown for rate limited connections
+              connectionCooldowns.set(connectionKey, Date.now() + 600000);
+              return;
+            }
+            
+            reconnectAttempts++;
+            
+            // Longer exponential backoff for rate limiting: 5s, 15s, 45s, 90s, 180s
+            const backoffDelay = Math.min(Math.pow(3, reconnectAttempts) * 5000, 300000); // Cap at 5 minutes
+            
             if (reconnectTimeout) {
               clearTimeout(reconnectTimeout);
             }
             reconnectTimeout = setTimeout(() => {
-              console.log('🔄 Attempting to reconnect to Finnhub WebSocket...');
+              console.log(`🔄 Attempting to reconnect to Finnhub WebSocket... (attempt ${reconnectAttempts}/${maxReconnectAttempts})`);
               connectToFinnhub();
-            }, 5000);
+            }, backoffDelay);
           };
 
         } catch (error) {
@@ -125,14 +173,20 @@ export async function GET(request: NextRequest) {
       // Start connection
       connectToFinnhub();
 
+      // Register this connection
+      activeConnections.set(connectionKey, { webSocket, symbols: symbolList });
+      
       // Clean up on close
       const cleanup = () => {
+        console.log(`🧹 Cleaning up connection for symbols: ${symbols}`);
         if (webSocket) {
           webSocket.close();
         }
         if (reconnectTimeout) {
           clearTimeout(reconnectTimeout);
         }
+        // Remove from active connections
+        activeConnections.delete(connectionKey);
         controller.close();
       };
 

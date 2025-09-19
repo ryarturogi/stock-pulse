@@ -9,8 +9,6 @@ export const metadata: Metadata = {
   title: 'StockPulse - Real-time Stock Market Tracker',
   description: 'Track stocks, manage portfolios, and stay updated with real-time market data',
   manifest: '/manifest.json',
-  themeColor: '#000000',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -20,6 +18,13 @@ export const metadata: Metadata = {
     icon: '/icons/icon-192x192.svg',
     apple: '/icons/icon-192x192.svg',
   },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#000000',
 };
 
 export default function RootLayout({

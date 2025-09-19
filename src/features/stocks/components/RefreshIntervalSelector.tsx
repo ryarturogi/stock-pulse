@@ -49,7 +49,7 @@ export const RefreshIntervalSelector: React.FC<RefreshIntervalSelectorProps> = (
         id="refresh-interval"
         value={currentInterval}
         onChange={handleIntervalChange}
-        className="px-1 lg:px-2 py-1 text-xs lg:text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+        className="min-w-28 lg:min-w-32 pl-1 lg:pl-2 pr-6 lg:pr-8 py-1 text-xs lg:text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
       >
         {REFRESH_INTERVALS.map(config => (
           <option key={config.value} value={config.value}>
@@ -57,11 +57,6 @@ export const RefreshIntervalSelector: React.FC<RefreshIntervalSelectorProps> = (
           </option>
         ))}
       </select>
-      {currentConfig && (
-        <span className="hidden lg:inline text-xs text-gray-500 dark:text-gray-400">
-          ({currentConfig.label})
-        </span>
-      )}
     </div>
   );
 };

@@ -42,7 +42,7 @@ export const useStockStore = create<StockStoreState>()(
       isLoading: false,
       error: null,
       lastUpdateTimes: new Map<string, number>(),
-      refreshTimeInterval: '10s', // Default to 10 seconds for more frequent updates
+      refreshTimeInterval: '2m', // Default to 2 minutes to respect API rate limits
       isLiveDataEnabled: true, // Default to live data enabled
 
       // Stock management actions
@@ -140,6 +140,7 @@ export const useStockStore = create<StockStoreState>()(
                 previousClose: quote.previousClose || stock.previousClose || quote.current,
                 priceHistory: newPriceHistory,
                 isLoading: false,
+                lastUpdated: now,
                 isAlertTriggered: stock.alertPrice && quote.current >= stock.alertPrice ? true : stock.isAlertTriggered,
               };
             }
@@ -226,6 +227,13 @@ export const useStockStore = create<StockStoreState>()(
               error: null,
               webSocketConnection: eventSource 
             });
+            
+            // Stop periodic refresh when WebSocket connects (real-time data available)
+            const currentState = get();
+            if (currentState.refreshInterval) {
+              console.log('🔌 WebSocket connected, stopping periodic refresh - switching to real-time data');
+              currentState.stopPeriodicRefresh();
+            }
           };
 
           eventSource.onmessage = (event) => {
@@ -245,13 +253,18 @@ export const useStockStore = create<StockStoreState>()(
                   const currentState = get();
                   const stock = currentState.watchedStocks.find(s => s.symbol === symbol);
                   if (stock) {
+                    // Calculate change if we have previous data
+                    const previousPrice = stock.previousClose || stock.currentPrice || price;
+                    const change = price - previousPrice;
+                    const percentChange = previousPrice > 0 ? (change / previousPrice) * 100 : 0;
+                    
                     currentState.updateStockPrice(symbol, {
                       symbol,
                       current: price,
-                      change: 0, // Trade data doesn't include change
-                      percentChange: 0,
-                      high: stock.high || price,
-                      low: stock.low || price,
+                      change: change,
+                      percentChange: percentChange,
+                      high: Math.max(stock.high || price, price),
+                      low: Math.min(stock.low || price, price),
                       open: stock.open || price,
                       previousClose: stock.previousClose || price,
                       timestamp: trade.timestamp || Date.now()
@@ -261,7 +274,7 @@ export const useStockStore = create<StockStoreState>()(
               } else if (data.type === 'connected') {
                 console.log('✅ WebSocket proxy connected:', data.message);
               } else if (data.type === 'error') {
-                console.error('❌ WebSocket proxy error:', data.message);
+                console.warn('⚠️ WebSocket proxy message:', data.message);
                 set({ 
                   webSocketStatus: 'error', 
                   isConnecting: false, 
@@ -274,7 +287,13 @@ export const useStockStore = create<StockStoreState>()(
           };
 
           eventSource.onerror = (error) => {
-            console.error('❌ WebSocket proxy error:', error);
+            console.warn('⚠️ WebSocket proxy connection issue (likely rate limited or cooldown active)');
+            if (error instanceof ErrorEvent && error.message) {
+              console.info('Connection details:', {
+                message: error.message,
+                type: 'EventSource error'
+              });
+            }
             clearTimeout(connectionTimeout);
             
             // Check if this is just an initial connection error
@@ -284,12 +303,30 @@ export const useStockStore = create<StockStoreState>()(
               return;
             }
             
+            // Check EventSource readyState for more specific error info
+            const readyStateText = eventSource.readyState === 0 ? 'CONNECTING' : 
+                                  eventSource.readyState === 1 ? 'OPEN' : 'CLOSED';
+            console.log(`EventSource readyState: ${readyStateText} (${eventSource.readyState})`);
+            
+            // Determine error message based on likely causes
+            let errorMessage = `WebSocket proxy connection failed (${readyStateText})`;
+            if (readyStateText === 'CLOSED') {
+              errorMessage = 'WebSocket proxy disconnected - likely rate limited or cooldown active';
+            }
+            
             set({
               webSocketStatus: 'error',
               isConnecting: false,
-              error: 'WebSocket proxy connection failed',
+              error: errorMessage,
               webSocketConnection: null
             });
+
+            // Start periodic refresh as fallback when WebSocket fails
+            const errorState = get();
+            if (errorState.isLiveDataEnabled && errorState.watchedStocks.length > 0) {
+              console.log('🔄 Starting periodic refresh as WebSocket fallback');
+              errorState.startPeriodicRefresh();
+            }
 
             // Attempt to reconnect after a delay
             setTimeout(() => {
@@ -326,7 +363,7 @@ export const useStockStore = create<StockStoreState>()(
         console.log('❌ WebSocket proxy disconnected');
       },
 
-      // Start periodic refresh with configurable interval
+      // Start periodic refresh only as fallback when WebSocket is not connected
       startPeriodicRefresh: () => {
         if (typeof window === 'undefined') {
           return;
@@ -340,6 +377,12 @@ export const useStockStore = create<StockStoreState>()(
           return;
         }
 
+        // Don't start periodic refresh if WebSocket is connected
+        if (state.webSocketStatus === 'connected') {
+          console.log('🔌 WebSocket is connected, skipping periodic refresh - using real-time data');
+          return;
+        }
+
         // Clear any existing interval
         if (state.refreshInterval) {
           clearInterval(state.refreshInterval);
@@ -347,61 +390,51 @@ export const useStockStore = create<StockStoreState>()(
 
         // Get the current refresh interval configuration
         const intervalConfig = REFRESH_INTERVALS.find(config => config.value === state.refreshTimeInterval);
-        const intervalMs = intervalConfig?.milliseconds || 30000; // Default to 30 seconds
+        let intervalMs = intervalConfig?.milliseconds || 120000; // Default to 2 minutes to respect rate limits
+        
+        // Enforce minimum interval based on number of watched stocks to respect API limits
+        // Finnhub free tier: ~60 calls/minute, so with N stocks we need at least N seconds between calls
+        const minIntervalMs = Math.max(state.watchedStocks.length * 1000, 30000); // Minimum 30s, or 1s per stock
+        if (intervalMs < minIntervalMs) {
+          intervalMs = minIntervalMs;
+          console.log(`⚠️ Increasing refresh interval to ${intervalMs/1000}s to respect API limits with ${state.watchedStocks.length} stocks`);
+        }
 
-        // Start new interval with configurable timing
-        console.log(`⏰ Starting periodic refresh with ${intervalMs}ms interval (${intervalMs/1000}s) - Live data enabled`);
+        // Start new interval as WebSocket fallback
+        console.log(`⏰ Starting periodic refresh as WebSocket fallback with ${intervalMs}ms interval (${intervalMs/1000}s)`);
         console.log(`📊 Current refresh interval: ${state.refreshTimeInterval}`);
         const interval = setInterval(async () => {
           const currentState = get();
+          
+          // Stop periodic refresh if WebSocket reconnects
+          if (currentState.webSocketStatus === 'connected') {
+            console.log('🔌 WebSocket reconnected, stopping periodic refresh');
+            currentState.stopPeriodicRefresh();
+            return;
+          }
+          
           if (currentState.watchedStocks.length > 0) {
-            console.log(`🔄 Performing periodic refresh of ${currentState.watchedStocks.length} stocks...`, new Date().toLocaleTimeString());
-            console.log(`⏱️ Using interval: ${currentState.refreshTimeInterval} (${intervalMs}ms)`);
+            console.log(`🔄 Performing fallback API refresh of ${currentState.watchedStocks.length} stocks...`, new Date().toLocaleTimeString());
             
-            // Use API fallback when WebSocket is not connected
-            if (currentState.webSocketStatus !== 'connected') {
-              console.log('WebSocket not connected, using API fallback for periodic refresh...');
-              
-              // Use Promise.all for concurrent API calls instead of forEach
-              const refreshPromises = currentState.watchedStocks.map(async (stock) => {
-                try {
-                  const response = await fetch(`/api/quote?symbol=${stock.symbol}`);
-                  if (response.ok) {
-                    const data = await response.json();
-                    // Check if response has the expected structure
-                    if (data.current) {
-                      currentState.updateStockPrice(stock.symbol, data);
-                    } else if (data.data && data.data.current) {
-                      currentState.updateStockPrice(stock.symbol, data.data);
-                    }
+            // Use Promise.all for concurrent API calls
+            const refreshPromises = currentState.watchedStocks.map(async (stock) => {
+              try {
+                const response = await fetch(`/api/quote?symbol=${stock.symbol}`);
+                if (response.ok) {
+                  const data = await response.json();
+                  // Check if response has the expected structure
+                  if (data.current) {
+                    currentState.updateStockPrice(stock.symbol, data);
+                  } else if (data.data && data.data.current) {
+                    currentState.updateStockPrice(stock.symbol, data.data);
                   }
-                } catch (error) {
-                  console.warn(`Failed to refresh ${stock.symbol}:`, error);
                 }
-              });
-              
-              await Promise.all(refreshPromises);
-            } else {
-              console.log('WebSocket connected, using API refresh as backup (less frequent)');
-              // When WebSocket is connected, use API refresh less frequently as backup
-              // Only refresh 10% of the time to avoid overwhelming the API
-              if (Math.random() < 0.1) {
-                const backupPromises = currentState.watchedStocks.map(async (stock) => {
-                  try {
-                    const response = await fetch(`/api/quote?symbol=${stock.symbol}`);
-                    if (response.ok) {
-                      const data = await response.json();
-                      if (data.current) {
-                        currentState.updateStockPrice(stock.symbol, data);
-                      }
-                    }
-                  } catch (error) {
-                    console.warn(`Backup refresh failed for ${stock.symbol}:`, error);
-                  }
-                });
-                await Promise.all(backupPromises);
+              } catch (error) {
+                console.warn(`Failed to refresh ${stock.symbol}:`, error);
               }
-            }
+            });
+            
+            await Promise.all(refreshPromises);
           }
         }, intervalMs);
 
@@ -513,3 +546,26 @@ export const {
   startPeriodicRefresh: startStockRefresh,
   stopPeriodicRefresh: stopStockRefresh,
 } = useStockStore.getState();
+
+// Custom hooks for easier component usage
+export const useWatchedStocks = () => useStockStore(state => state.watchedStocks);
+export const useWebSocketStatus = () => useStockStore(state => state.webSocketStatus);
+export const useStockLoading = () => useStockStore(state => state.isLoading);
+export const useStockError = () => useStockStore(state => state.error);
+
+// Stock management actions hook
+export const useStockActions = () => useStockStore(state => ({
+  addStock: state.addStock,
+  removeStock: state.removeStock,
+  setRefreshTimeInterval: state.setRefreshTimeInterval,
+  setLiveDataEnabled: state.setLiveDataEnabled,
+  clearError: state.clearError,
+}));
+
+// WebSocket management actions hook
+export const useWebSocketActions = () => useStockStore(state => ({
+  connectWebSocket: state.connectWebSocket,
+  disconnectWebSocket: state.disconnectWebSocket,
+  startPeriodicRefresh: state.startPeriodicRefresh,
+  stopPeriodicRefresh: state.stopPeriodicRefresh,
+}));

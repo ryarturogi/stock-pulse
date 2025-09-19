@@ -76,29 +76,25 @@ export default function HomePage() {
   );
 
 
-  // Use refs to track connection state and prevent multiple calls
+  // Use ref to track connection state and prevent multiple calls
   const isConnectedRef = useRef(false);
-  const isRefreshingRef = useRef(false);
 
-  // Connect WebSocket and start refresh when stocks are added
+  // Connect WebSocket when stocks are added (periodic refresh as fallback)
   useEffect(() => {
     if (watchedStocks.length > 0) {
       // Only connect if not already connected
       if (!isConnectedRef.current) {
-        console.log('🔌 Initializing WebSocket and periodic refresh...');
+        console.log('🔌 Initializing WebSocket connection for real-time data...');
         connectWebSocket();
-        startPeriodicRefresh();
         isConnectedRef.current = true;
-        isRefreshingRef.current = true;
       }
     } else {
       // If no stocks, disconnect and stop refresh
-      if (isConnectedRef.current || isRefreshingRef.current) {
-        console.log('🔌 Cleaning up WebSocket and periodic refresh...');
+      if (isConnectedRef.current) {
+        console.log('🔌 Cleaning up WebSocket connection...');
         disconnectWebSocket();
         stopPeriodicRefresh();
         isConnectedRef.current = false;
-        isRefreshingRef.current = false;
       }
     }
     
@@ -107,7 +103,6 @@ export default function HomePage() {
       disconnectWebSocket();
       stopPeriodicRefresh();
       isConnectedRef.current = false;
-      isRefreshingRef.current = false;
     };
   }, [watchedStocks.length]); // Only depend on watchedStocks.length
 

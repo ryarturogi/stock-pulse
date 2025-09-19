@@ -30,11 +30,11 @@ export const StockCards: React.FC<StockCardsProps> = ({
   if (stocks.length === 0) {
     return (
       <div
-        className={`rounded-lg p-8 shadow-sm text-center bg-white dark:bg-gray-800 ${className}`}
+        className={`p-8 text-center bg-white rounded-lg shadow-sm dark:bg-gray-800 ${className}`}
       >
         <TrendingUp className='mx-auto mb-4 w-16 h-16 text-gray-400' />
         <h3
-          className="text-lg font-semibold mb-2 text-gray-900 dark:text-white"
+          className="mb-2 text-lg font-semibold text-gray-900 dark:text-white"
         >
           No stocks being watched
         </h3>
@@ -47,10 +47,14 @@ export const StockCards: React.FC<StockCardsProps> = ({
 
   return (
     <div
-      className={`grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 ${className}`}
+      className={`grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 ${className}`}
     >
       {stocks.map(stock => (
-        <StockCard key={stock.id} stock={stock} onRemove={onRemoveStock} />
+        <StockCard 
+          key={`${stock.id}-${stock.lastUpdated || 0}`} 
+          stock={stock} 
+          onRemove={onRemoveStock} 
+        />
       ))}
     </div>
   );

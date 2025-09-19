@@ -97,7 +97,7 @@ export type WebSocketStatus = 'disconnected' | 'connecting' | 'connected' | 'err
 /**
  * Refresh time intervals for live data
  */
-export type RefreshInterval = '10s' | '30s' | '1m' | '5m' | '10m' | '30m' | '1h';
+export type RefreshInterval = '30s' | '1m' | '2m' | '5m' | '10m' | '30m' | '1h';
 
 /**
  * Refresh interval configuration
@@ -109,12 +109,12 @@ export interface RefreshIntervalConfig {
 }
 
 /**
- * Available refresh intervals for live data
+ * Available refresh intervals for live data (Conservative for API rate limits)
  */
 export const REFRESH_INTERVALS: RefreshIntervalConfig[] = [
-  { value: '10s', label: '10 seconds', milliseconds: 10 * 1000 },
   { value: '30s', label: '30 seconds', milliseconds: 30 * 1000 },
   { value: '1m', label: '1 minute', milliseconds: 60 * 1000 },
+  { value: '2m', label: '2 minutes', milliseconds: 2 * 60 * 1000 },
   { value: '5m', label: '5 minutes', milliseconds: 5 * 60 * 1000 },
   { value: '10m', label: '10 minutes', milliseconds: 10 * 60 * 1000 },
   { value: '30m', label: '30 minutes', milliseconds: 30 * 60 * 1000 },
@@ -401,14 +401,14 @@ export const DEFAULT_STOCK_OPTIONS: StockOption[] = [
  * Stock color mapping for charts
  */
 export const STOCK_COLORS: StockColorMap = {
-  AAPL: '#1f2937',  // gray-800
-  GOOGL: '#2563eb', // blue-600
+  AAPL: '#2563eb',  // blue-600 (Apple brand blue)
+  GOOGL: '#ea4335', // Google brand red
   MSFT: '#16a34a',  // green-600
-  AMZN: '#ea580c',  // orange-600
+  AMZN: '#ff9900',  // Amazon orange
   TSLA: '#dc2626',  // red-600
-  META: '#9333ea',  // purple-600
-  NVDA: '#059669',  // emerald-600
-  NFLX: '#e11d48',  // rose-600
+  META: '#1877f2',  // Meta brand blue
+  NVDA: '#76b900',  // NVIDIA green
+  NFLX: '#e50914',  // Netflix red
 };
 
 /**

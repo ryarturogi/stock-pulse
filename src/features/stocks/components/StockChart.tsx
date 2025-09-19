@@ -76,29 +76,42 @@ export const StockChart: React.FC<StockChartProps> = ({
       }];
     }
 
-    // Convert to array, sort chronologically, and limit to last 100 data points
+    // Convert to array, sort chronologically, and show all data points for better UX
     const sortedTimestamps = Array.from(allTimestamps)
-      .sort((a, b) => a - b)
-      .slice(-100); // Show last 100 data points
+      .sort((a, b) => a - b); // Show all collected data points
 
-    // Create chart data points
-    return sortedTimestamps.map(timestamp => {
+    // Create chart data points with better time formatting
+    return sortedTimestamps.map((timestamp, index) => {
+      const date = new Date(timestamp);
+      // Use shorter time format for better readability with many data points
+      const timeLabel = sortedTimestamps.length > 20 
+        ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : date.toLocaleTimeString();
+      
       const dataPoint: ChartDataPoint = {
-        timestamp: new Date(timestamp).toLocaleTimeString(),
+        timestamp: timeLabel,
         price: 0, // This will be overridden by individual stock prices
       };
 
       // Add price data for each stock at this timestamp
       stocksWithData.forEach(stock => {
         const pricePoint = stock.priceHistory?.find(point => point.time === timestamp);
-        dataPoint[stock.symbol] = pricePoint?.price || stock.currentPrice || 0;
+        if (pricePoint) {
+          dataPoint[stock.symbol] = pricePoint.price;
+        } else {
+          // For missing data points, use the most recent available price
+          const sortedHistory = stock.priceHistory?.sort((a, b) => a.time - b.time) || [];
+          const mostRecentPoint = sortedHistory.find(point => point.time <= timestamp) || 
+                                 sortedHistory[sortedHistory.length - 1];
+          dataPoint[stock.symbol] = mostRecentPoint?.price || stock.currentPrice || 0;
+        }
       });
 
       return dataPoint;
     });
   }, [stocksWithData]);
 
-  // Custom tooltip formatter
+  // Custom tooltip formatter with color indicators
   const formatTooltipValue = useCallback((value: number, name: string) => {
     return [`$${value.toFixed(2)}`, name];
   }, []);
@@ -106,6 +119,29 @@ export const StockChart: React.FC<StockChartProps> = ({
   // Custom tooltip label formatter
   const formatTooltipLabel = useCallback((label: string) => {
     return `Time: ${label}`;
+  }, []);
+
+  // Custom tooltip component for better visibility
+  const CustomTooltip = useCallback(({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3 dark:bg-gray-800 dark:border-gray-600">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{`Time: ${label}`}</p>
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center space-x-2 mb-1 last:mb-0">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                {entry.dataKey}: ${entry.value.toFixed(2)}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
   }, []);
 
   if (stocksWithData.length === 0) {
@@ -127,12 +163,24 @@ export const StockChart: React.FC<StockChartProps> = ({
   return (
     <div className={`bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700 ${className}`}>
       <div className="p-3 border-b border-gray-200 lg:p-4 dark:border-gray-700">
-        <h3 className="text-base font-semibold text-gray-900 lg:text-lg dark:text-white">
-          Stock Price Chart
-        </h3>
-        <p className="mt-1 text-xs text-gray-500 lg:text-sm dark:text-gray-400">
-          Real-time price data for {stocksWithData.length} stock{stocksWithData.length !== 1 ? 's' : ''}
-        </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-base font-semibold text-gray-900 lg:text-lg dark:text-white">
+              Stock Price Chart
+            </h3>
+            <p className="mt-1 text-xs text-gray-500 lg:text-sm dark:text-gray-400">
+              Real-time price data for {stocksWithData.length} stock{stocksWithData.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              {chartData.length} data points
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {chartData.length > 0 && `Latest: ${chartData[chartData.length - 1]?.timestamp}`}
+            </p>
+          </div>
+        </div>
       </div>
       
       <div className="p-2 lg:p-4">
@@ -150,9 +198,13 @@ export const StockChart: React.FC<StockChartProps> = ({
             <XAxis 
               dataKey="timestamp" 
               stroke="#6b7280"
-              fontSize={12}
+              fontSize={11}
               tickLine={false}
               axisLine={false}
+              interval={chartData.length > 20 ? 'preserveStartEnd' : 0}
+              angle={chartData.length > 10 ? -45 : 0}
+              textAnchor={chartData.length > 10 ? 'end' : 'middle'}
+              height={chartData.length > 10 ? 60 : 30}
             />
             <YAxis 
               stroke="#6b7280"
@@ -161,16 +213,7 @@ export const StockChart: React.FC<StockChartProps> = ({
               axisLine={false}
               tickFormatter={(value) => `$${value.toFixed(2)}`}
             />
-            <Tooltip
-              formatter={formatTooltipValue}
-              labelFormatter={formatTooltipLabel}
-              contentStyle={{
-                backgroundColor: '#1f2937',
-                border: '1px solid #374151',
-                borderRadius: '8px',
-                color: '#f9fafb',
-              }}
-            />
+            <Tooltip content={<CustomTooltip />} />
             <Legend />
             {stockSymbols.map((symbol) => (
               <Line
@@ -179,8 +222,10 @@ export const StockChart: React.FC<StockChartProps> = ({
                 dataKey={symbol}
                 stroke={STOCK_COLORS[symbol] || '#6b7280'}
                 strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4, strokeWidth: 2 }}
+                dot={{ r: 2, strokeWidth: 1, fill: STOCK_COLORS[symbol] || '#6b7280' }}
+                activeDot={{ r: 6, strokeWidth: 2, fill: STOCK_COLORS[symbol] || '#6b7280' }}
+                connectNulls={false}
+                animationDuration={300}
               />
             ))}
           </LineChart>
@@ -190,15 +235,21 @@ export const StockChart: React.FC<StockChartProps> = ({
         {chartData.length <= 1 && (
           <div className='p-2 mt-2 bg-yellow-50 rounded-md border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800'>
             <p className='text-xs text-yellow-800 dark:text-yellow-300'>
-              ⚠️ Limited data available. Chart will populate as more price updates are received.
-              Try refreshing or wait for the next update cycle.
+              📊 Building chart data... Add more stocks or wait for updates to see trends.
             </p>
           </div>
         )}
-        {chartData.length > 1 && chartData.length < 30 && (
-          <div className='p-2 mt-2 bg-orange-50 rounded-md border border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'>
-            <p className='text-xs text-orange-800 dark:text-orange-300'>
-              ⚠️ Showing {chartData.length} data points (less than recommended minimum of 30)
+        {chartData.length > 1 && chartData.length < 10 && (
+          <div className='p-2 mt-2 bg-blue-50 rounded-md border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'>
+            <p className='text-xs text-blue-800 dark:text-blue-300'>
+              📈 Showing all {chartData.length} collected data points. Chart will improve as more data arrives.
+            </p>
+          </div>
+        )}
+        {chartData.length >= 10 && (
+          <div className='p-2 mt-2 bg-green-50 rounded-md border border-green-200 dark:bg-green-900/20 dark:border-green-800'>
+            <p className='text-xs text-green-800 dark:text-green-300'>
+              ✅ Displaying all {chartData.length} data points with full price history and real-time updates.
             </p>
           </div>
         )}
