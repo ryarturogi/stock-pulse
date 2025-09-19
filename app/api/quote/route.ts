@@ -37,15 +37,18 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     
     return NextResponse.json({
-      symbol,
-      current: data.c,
-      change: data.d,
-      percentChange: data.dp,
-      high: data.h,
-      low: data.l,
-      open: data.o,
-      previousClose: data.pc,
-      timestamp: Date.now()
+      success: true,
+      data: {
+        symbol,
+        current: data.c,
+        change: data.d,
+        percentChange: data.dp,
+        high: data.h,
+        low: data.l,
+        open: data.o,
+        previousClose: data.pc,
+        timestamp: Date.now()
+      }
     });
     
   } catch (error) {

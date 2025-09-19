@@ -24,7 +24,6 @@ interface CronResponse {
 
 /**
  * Cron job to update stock prices every 5 minutes
- * Triggered by Vercel Cron: */5 * * * *
  * 
  * @param request - The incoming request from Vercel Cron
  * @returns JSON response with update status
@@ -50,7 +49,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<CronRespon
     // TODO: Implement actual stock price update logic
     // This would typically:
     // 1. Fetch list of tracked stocks from database
-    // 2. Call external APIs (Finnhub, Alpha Vantage) to get latest prices
+    // 2. Call external APIs (Finnhub) to get latest prices
     // 3. Update database with new prices
     // 4. Trigger any price alerts
     // 5. Update cache

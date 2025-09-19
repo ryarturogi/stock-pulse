@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Cron job to send price alerts every minute
- * Triggered by Vercel Cron: */1 * * * *
  * 
  * @param request - The incoming request from Vercel Cron
  * @returns JSON response with alert status

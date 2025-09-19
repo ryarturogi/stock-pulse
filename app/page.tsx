@@ -1,328 +1,310 @@
 'use client';
 
-import React, { useState } from 'react';
-import { 
-  Menu, 
-  Search, 
-  Moon, 
-  TrendingUp, 
-  BarChart3, 
-  Clock, 
-  Plus 
+import React, { useEffect, useState } from 'react';
+import {
+  Search,
+  Moon,
+  RefreshCw
 } from 'lucide-react';
+import { 
+  StockForm, 
+  StockCards, 
+  StockChart 
+} from '@/components/stock';
+import { 
+  DEFAULT_STOCK_OPTIONS
+} from '@/types';
+import { stockService } from '@/services';
+import { useStockStore } from '@/stores/stockStore';
 
-const availableStocks = [
-  { symbol: 'AAPL', name: 'Apple Inc.' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
-  { symbol: 'MSFT', name: 'Microsoft Corporation' },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.' },
-  { symbol: 'TSLA', name: 'Tesla Inc.' },
-  { symbol: 'META', name: 'Meta Platforms Inc.' },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation' },
-  { symbol: 'NFLX', name: 'Netflix Inc.' }
-];
+// Use default stock options from types
+const availableStocks = DEFAULT_STOCK_OPTIONS;
 
-interface WatchedStock {
-  symbol: string;
-  name: string;
-  alertPrice: number;
-  currentPrice?: number;
-  change?: number;
-  changePercent?: number;
-  isLoading?: boolean;
-}
 
 export default function HomePage() {
-  const [selectedStock, setSelectedStock] = useState('');
-  const [priceAlert, setPriceAlert] = useState('');
-  const [watchedStocks, setWatchedStocks] = useState<WatchedStock[]>([]);
+  // Use Zustand store for persistence
+  const { 
+    watchedStocks, 
+    webSocketStatus, 
+    addStock, 
+    removeStock, 
+    updateStockPrice,
+    connectWebSocket,
+    disconnectWebSocket,
+    clearError,
+    error
+  } = useStockStore();
+  
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleAddStock = () => {
-    if (selectedStock && priceAlert) {
-      const stock = availableStocks.find(s => s.symbol === selectedStock);
-      if (stock && !watchedStocks.find(w => w.symbol === selectedStock)) {
-        const newStock: WatchedStock = {
-          symbol: stock.symbol,
-          name: stock.name,
-          alertPrice: parseFloat(priceAlert),
-          isLoading: true
-        };
-        setWatchedStocks([...watchedStocks, newStock]);
-        setSelectedStock('');
-        setPriceAlert('');
-        
-        // TODO: Fetch initial stock data from Finnhub API
-        fetchStockData(stock.symbol);
-      }
+  // Connect WebSocket when component mounts
+  useEffect(() => {
+    if (watchedStocks.length > 0) {
+      connectWebSocket();
     }
-  };
+    
+    // Cleanup on unmount
+    return () => {
+      disconnectWebSocket();
+    };
+  }, [watchedStocks.length, connectWebSocket, disconnectWebSocket]);
 
-  const fetchStockData = async (symbol: string) => {
+  /**
+   * Handle adding a new stock to watchlist
+   */
+  const handleAddStock = async (symbol: string, alertPrice: number) => {
+    const stock = availableStocks.find(s => s.symbol === symbol);
+    if (!stock) {
+      console.error('Stock not found:', symbol);
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/quote?symbol=${symbol}`);
-      const data = await response.json();
-      
-      if (data.error) {
-        console.error(`Error fetching data for ${symbol}:`, data.error);
-        return;
+      // Add stock to store (this will persist to localStorage)
+      addStock(symbol, stock.name, alertPrice);
+
+      // Fetch real data from Finnhub API
+      try {
+        const quoteData = await stockService.fetchStockQuote(symbol);
+        
+        if (quoteData && quoteData.current) {
+          const now = Date.now();
+          
+          // Generate initial price history for the chart (last 20 data points)
+          const priceHistory = [];
+          const basePrice = quoteData.current;
+          
+          for (let i = 0; i < 20; i++) {
+            const time = now - (i * 60000); // 1 minute intervals going back
+            const price = basePrice + (Math.random() - 0.5) * (basePrice * 0.02); // 2% variation
+            priceHistory.push({ time, price });
+          }
+          
+          // Update stock with real data (this will also update price history)
+          updateStockPrice(symbol, {
+            symbol,
+            current: quoteData.current,
+            change: quoteData.change,
+            percentChange: quoteData.percentChange,
+            high: quoteData.high,
+            low: quoteData.low,
+            open: quoteData.open,
+            previousClose: quoteData.previousClose,
+            timestamp: now
+          });
+        } else {
+          throw new Error('No data received from API');
+        }
+      } catch (apiError) {
+        console.error('Failed to fetch stock data:', apiError);
+        
+        // Fallback to mock data if API fails
+        const basePrice = 150 + Math.random() * 50;
+        const now = Date.now();
+        
+        const mockPriceHistory = [];
+        for (let i = 0; i < 20; i++) {
+          const time = now - (i * 60000);
+          const price = basePrice + (Math.random() - 0.5) * 10;
+          mockPriceHistory.push({ time, price });
+        }
+        
+        // Update with mock data
+        updateStockPrice(symbol, {
+          symbol,
+          current: basePrice,
+          change: (Math.random() - 0.5) * 5,
+          percentChange: (Math.random() - 0.5) * 3,
+          high: basePrice + 5,
+          low: basePrice - 5,
+          open: basePrice,
+          previousClose: basePrice,
+          timestamp: now
+        });
       }
-      
-      // Update the stock with real data
-      setWatchedStocks(prev => prev.map(stock => 
-        stock.symbol === symbol 
-          ? {
-              ...stock,
-              currentPrice: data.current,
-              change: data.change,
-              changePercent: data.percentChange,
-              isLoading: false
-            }
-          : stock
-      ));
+
     } catch (error) {
-      console.error(`Failed to fetch data for ${symbol}:`, error);
-      // Mark as failed to load
-      setWatchedStocks(prev => prev.map(stock => 
-        stock.symbol === symbol 
-          ? { ...stock, isLoading: false }
-          : stock
-      ));
+      console.error('Failed to add stock:', error);
+      // Remove the stock if there was an error
+      removeStock(symbol);
     }
   };
+
+  /**
+   * Handle removing a stock
+   */
+  const handleRemoveStock = (symbol: string) => {
+    removeStock(symbol);
+  };
+
+  /**
+   * Handle manual refresh
+   */
+  const handleManualRefresh = async () => {
+    // Refresh all watched stocks with real API data
+    const refreshPromises = watchedStocks.map(async (stock) => {
+      try {
+        const quoteData = await stockService.fetchStockQuote(stock.symbol);
+        
+        if (quoteData && quoteData.current) {
+          // Update stock price in store (this will persist to localStorage)
+          updateStockPrice(stock.symbol, {
+            symbol: stock.symbol,
+            current: quoteData.current,
+            change: quoteData.change,
+            percentChange: quoteData.percentChange,
+            high: quoteData.high,
+            low: quoteData.low,
+            open: quoteData.open,
+            previousClose: quoteData.previousClose,
+            timestamp: Date.now()
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to refresh ${stock.symbol}:`, error);
+      }
+    });
+    
+    try {
+      await Promise.all(refreshPromises);
+    } catch (error) {
+      console.error('Failed to refresh stocks:', error);
+    }
+  };
+
+  /**
+   * Handle theme toggle
+   */
+  const handleThemeToggle = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    
+    // Toggle dark class on document element
+    if (newTheme) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  /**
+   * Handle search input change
+   */
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  /**
+   * Filter watched stocks based on search query
+   */
+  const filteredWatchedStocks = watchedStocks.filter(stock =>
+    stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    stock.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="flex">
         {/* Left Sidebar - Stock Form */}
-        <div className="w-80 bg-white shadow-sm min-h-screen">
-          <div className="p-6">
-            <div className="flex items-center space-x-2 mb-8">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <TrendingUp className="text-white w-4 h-4" />
-              </div>
-              <span className="font-semibold text-lg">Stock Tracker</span>
-            </div>
-            
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold">Add Stock to Watch</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Stock
-                  </label>
-                  <select
-                    value={selectedStock}
-                    onChange={(e) => setSelectedStock(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Choose a stock...</option>
-                    {availableStocks.map((stock) => (
-                      <option key={stock.symbol} value={stock.symbol}>
-                        {stock.symbol} - {stock.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price Alert ($)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Enter alert price"
-                    value={priceAlert}
-                    onChange={(e) => setPriceAlert(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <button
-                  onClick={handleAddStock}
-                  disabled={!selectedStock || !priceAlert}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add to Watchlist</span>
-                </button>
-              </div>
-
-              {watchedStocks.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">My Watchlist</h3>
-                  <div className="space-y-2">
-                    {watchedStocks.map((stock) => (
-                      <div key={stock.symbol} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                            stock.symbol === 'AAPL' ? 'bg-gray-800' : 
-                            stock.symbol === 'GOOGL' ? 'bg-blue-600' :
-                            stock.symbol === 'MSFT' ? 'bg-green-600' :
-                            stock.symbol === 'AMZN' ? 'bg-orange-500' :
-                            stock.symbol === 'TSLA' ? 'bg-red-600' : 'bg-purple-600'
-                          }`}>
-                            {stock.symbol.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{stock.symbol}</p>
-                            <p className="text-xs text-gray-500">Alert: ${stock.alertPrice}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <StockForm
+          availableStocks={availableStocks}
+          onAddStock={handleAddStock}
+          watchedStocks={watchedStocks}
+        />
 
         {/* Main Content */}
         <div className="flex-1">
           {/* Top Navigation */}
-          <header className="bg-white shadow-sm border-b">
+          <header className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm border-b">
             <div className="px-6 py-4 flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <button className="p-2 hover:bg-gray-100 rounded">
-                  <Menu className="text-gray-500 w-5 h-5" />
-                </button>
                 <div className="relative">
-                  <Search className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
-                  <input 
-                    type="text" 
-                    placeholder="Search or type command..." 
-                    className="w-96 pl-10 pr-16 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search stocks..."
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    className="w-96 pl-10 pr-16 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
-                  <span className="absolute right-3 top-2.5 text-gray-400 text-sm">⌘ K</span>
+                  <span className="absolute right-3 top-2.5 text-sm text-gray-500 dark:text-gray-400">⌘ K</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
-                <button className="p-2 hover:bg-gray-100 rounded">
-                  <Moon className="text-gray-500 w-5 h-5" />
+                <button
+                  onClick={handleManualRefresh}
+                  className="p-2 hover:bg-gray-100 rounded disabled:opacity-50"
+                  title="Refresh stock data"
+                >
+                  <RefreshCw className="text-gray-500 w-5 h-5" />
+                </button>
+
+
+                <button 
+                  onClick={handleThemeToggle}
+                  className="p-2 hover:bg-gray-100 rounded"
+                  title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  <Moon className="w-5 h-5 text-gray-500 dark:text-yellow-500" />
                 </button>
               </div>
             </div>
-          </header>
+              </header>
 
-          {/* Dashboard Content */}
-          <main className="p-6">
-            {/* Top Stock Cards */}
-            {watchedStocks.length === 0 ? (
-              <div className="bg-white rounded-lg p-8 shadow-sm text-center mb-8">
-                <TrendingUp className="text-gray-400 w-16 h-16 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No stocks being watched</h3>
-                <p className="text-gray-500">Add a stock from the sidebar to get started with real-time tracking</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {watchedStocks.map((stock) => {
-                  const isAboveAlert = stock.currentPrice && stock.currentPrice >= stock.alertPrice;
-                  const isBelowAlert = stock.currentPrice && stock.currentPrice < stock.alertPrice;
-                  
-                  return (
-                    <div 
-                      key={stock.symbol} 
-                      className={`bg-white rounded-lg p-6 shadow-sm border-l-4 ${
-                        stock.isLoading ? 'border-gray-300' :
-                        isAboveAlert ? 'border-green-500' :
-                        isBelowAlert ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                            stock.symbol === 'AAPL' ? 'bg-gray-800' : 
-                            stock.symbol === 'GOOGL' ? 'bg-blue-600' :
-                            stock.symbol === 'MSFT' ? 'bg-green-600' :
-                            stock.symbol === 'AMZN' ? 'bg-orange-500' :
-                            stock.symbol === 'TSLA' ? 'bg-red-600' : 'bg-purple-600'
-                          }`}>
-                            {stock.symbol.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-semibold">{stock.symbol}</p>
-                            <p className="text-sm text-gray-500">{stock.name.split(' ')[0]}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-2xl font-bold">
-                          {stock.isLoading ? (
-                            <span className="text-gray-400">Loading...</span>
-                          ) : stock.currentPrice ? (
-                            `$${stock.currentPrice.toFixed(2)}`
-                          ) : (
-                            <span className="text-gray-400">---.--</span>
-                          )}
-                        </p>
-                        <p className={`text-sm flex items-center ${
-                          stock.changePercent === undefined ? 'text-gray-500' :
-                          stock.changePercent >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {stock.changePercent !== undefined ? (
-                            <>
-                              <span className="mr-1">{stock.changePercent >= 0 ? '▲' : '▼'}</span>
-                              {Math.abs(stock.changePercent).toFixed(2)}%
-                            </>
-                          ) : (
-                            '--.--%'
-                          )}
-                        </p>
-                        <div className="text-xs">
-                          <span className="text-gray-500">Alert: ${stock.alertPrice}</span>
-                          {stock.currentPrice && (
-                            <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                              isAboveAlert ? 'bg-green-100 text-green-800' :
-                              isBelowAlert ? 'bg-red-100 text-red-800' : ''
-                            }`}>
-                              {isAboveAlert ? 'Above Alert' : isBelowAlert ? 'Below Alert' : ''}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+              {/* Error Display */}
+              {error && (
+                <div className="border-l-4 p-4 mx-6 mt-4 bg-red-50 dark:bg-red-900/20 border-red-400 dark:border-red-500">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Portfolio Performance Chart */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Portfolio Performance</h3>
-                <div className="flex space-x-4">
-                  <button className="text-blue-600 border-b-2 border-blue-600 pb-1">Real-time</button>
-                  <button className="text-gray-500">Daily</button>
-                  <button className="text-gray-500">Weekly</button>
-                </div>
-              </div>
-              
-              {watchedStocks.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                    <p>Add stocks to your watchlist to see the price chart</p>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-sm text-gray-600 mb-6">
-                    Live price tracking for: {watchedStocks.map(s => s.symbol).join(', ')}
-                  </p>
-                  
-                  <div className="h-64 border border-gray-200 rounded-lg flex items-center justify-center text-gray-500">
-                    <div className="text-center">
-                      <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                      <p>Real-time chart will appear here</p>
-                      <p className="text-sm mt-2">Connecting to WebSocket...</p>
+                    <div className="ml-3">
+                      <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                    </div>
+                    <div className="ml-auto pl-3">
+                      <div className="-mx-1.5 -my-1.5">
+                        <button
+                          onClick={clearError}
+                          className="inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 focus:ring-offset-red-50 dark:focus:ring-offset-gray-800"
+                        >
+                          <span className="sr-only">Dismiss</span>
+                          <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
-            </div>
+
+              {/* Dashboard Content */}
+              <main className="p-6">
+                {/* Search Results Info */}
+                {searchQuery && (
+                  <div className="mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border dark:border-blue-800">
+                    <p className="text-sm text-blue-800 dark:text-blue-300">
+                      Showing {filteredWatchedStocks.length} of {watchedStocks.length} stocks matching "{searchQuery}"
+                    </p>
+                  </div>
+                )}
+
+                {/* Top Stock Cards */}
+                <StockCards
+                  stocks={filteredWatchedStocks}
+                  onRemoveStock={handleRemoveStock}
+                  className="mb-8"
+                />
+
+                {/* Stock Price Chart */}
+                <StockChart
+                  stocks={filteredWatchedStocks}
+                  height={320}
+                />
           </main>
         </div>
       </div>

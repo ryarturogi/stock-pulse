@@ -107,10 +107,6 @@
     {
       "source": "/api/proxy/finnhub/(.*)",
       "destination": "/api/stock/finnhub/$1"
-    },
-    {
-      "source": "/api/proxy/alphavantage/(.*)",
-      "destination": "/api/stock/alphavantage/$1"
     }
   ],
   "env": {

@@ -12,6 +12,9 @@
 // Export all utility types
 export * from './utils';
 
+// Export stock-specific types
+export * from './stock';
+
 // Re-export commonly used React types for convenience
 export type {
   ComponentType,
@@ -185,14 +188,6 @@ export interface AppState {
   };
 }
 
-/**
- * Chart data point structure
- */
-export interface ChartDataPoint {
-  timestamp: string;
-  price: number;
-  volume?: number;
-}
 
 /**
  * Time range options for charts

@@ -23,10 +23,6 @@ export const EXTERNAL_APIS = {
     BASE_URL: 'https://finnhub.io/api/v1',
     API_KEY: process.env.FINNHUB_API_KEY,
   },
-  ALPHA_VANTAGE: {
-    BASE_URL: 'https://www.alphavantage.co/query',
-    API_KEY: process.env.ALPHA_VANTAGE_API_KEY,
-  },
 } as const;
 
 /**

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Cron job to cleanup expired cache entries every 6 hours
- * Triggered by Vercel Cron: 0 */6 * * *
  * 
  * @param request - The incoming request from Vercel Cron
  * @returns JSON response with cleanup status

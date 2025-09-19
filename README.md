@@ -130,7 +130,6 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public_key
 # 🔒 PRIVATE VARIABLES (Server-side only)
 # Stock API Keys
 FINNHUB_API_KEY=your_finnhub_api_key
-ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
 
 # Security
 JWT_SECRET=your_jwt_secret_32chars_minimum
@@ -154,7 +153,6 @@ Use Vercel environment variables or `.env.production` for production deployment.
 You'll need API keys from:
 
 1. **Finnhub** - [Get API Key](https://finnhub.io/)
-2. **Alpha Vantage** - [Get API Key](https://www.alphavantage.co/)
 
 ## 🏗️ Project Structure
 
@@ -285,7 +283,6 @@ pnpm run deploy:vercel
 ```bash
 # Add production environment variables
 vercel env add FINNHUB_API_KEY production
-vercel env add ALPHA_VANTAGE_API_KEY production
 vercel env add JWT_SECRET production
 vercel env add CRON_SECRET production
 
@@ -413,5 +410,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Next.js team for the amazing framework
 - Tailwind CSS for the utility-first CSS framework
-- Finnhub and Alpha Vantage for market data APIs
+- Finnhub for market data APIs
 - The open-source community for the excellent libraries

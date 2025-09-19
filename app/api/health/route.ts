@@ -57,7 +57,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<HealthChec
     // External API health checks
     const externalApis = {
       finnhub: await checkApiHealth('https://finnhub.io/api/v1/'),
-      alphavantage: await checkApiHealth('https://www.alphavantage.co/'),
     };
 
     const responseTime = Date.now() - startTime;

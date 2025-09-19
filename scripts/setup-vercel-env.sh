@@ -72,7 +72,6 @@ setup_environment() {
     
     # Stock API Keys (Private)
     set_env_var "FINNHUB_API_KEY" "$env" "Your Finnhub API key from https://finnhub.io/" true
-    set_env_var "ALPHA_VANTAGE_API_KEY" "$env" "Your Alpha Vantage API key from https://www.alphavantage.co/" true
     
     # Application Configuration (Private)
     set_env_var "API_BASE_URL" "$env" "Your API base URL (e.g., https://api.stockpulse.com)" false
