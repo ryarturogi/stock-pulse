@@ -9,7 +9,7 @@
 'use client';
 
 import { Clock } from 'lucide-react';
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -22,7 +22,6 @@ import {
 } from 'recharts';
 
 import { StockChartProps, ChartDataPoint, STOCK_COLORS } from '@/core/types';
-import { useStockStore } from '@/features/stocks/stores';
 
 /**
  * Stock Chart Component
@@ -35,8 +34,9 @@ export const StockChart: React.FC<StockChartProps> = ({
   height = 320,
   className = '',
 }) => {
-  // Get stock store methods
-  const { fetchHistoricalDataForRange } = useStockStore();
+  // Use CSS classes for responsive behavior instead of JavaScript
+  
+  // Get stock store methods (no methods needed for chart)
   
   // Memoize stocks with data to prevent unnecessary recalculations
   const stocksWithData = useMemo(() => {
@@ -45,17 +45,6 @@ export const StockChart: React.FC<StockChartProps> = ({
     );
   }, [stocks]);
   
-  // Fetch initial historical data for new stocks
-  useEffect(() => {
-    stocksWithData.forEach(stock => {
-      // Check if we already have data for this stock
-      const hasData = stock.priceHistory && stock.priceHistory.length > 0;
-      if (!hasData) {
-        console.log(`📊 Fetching initial historical data for ${stock.symbol}`);
-        fetchHistoricalDataForRange(stock.symbol, '1W'); // Fetch 1 week of data
-      }
-    });
-  }, [stocksWithData, fetchHistoricalDataForRange]);
 
   // Memoize stock symbols to prevent unnecessary chart line recalculations
   const stockSymbols = useMemo(() => {
@@ -67,22 +56,17 @@ export const StockChart: React.FC<StockChartProps> = ({
     if (stocksWithData.length === 0) return [];
 
     const now = Date.now();
-    console.log(`📊 Generating chart data for ${stocksWithData.length} stocks`);
 
     // Get all unique timestamps from all stocks
     const allTimestamps = new Set<number>();
     stocksWithData.forEach(stock => {
-      console.log(`  - ${stock.symbol}: ${stock.priceHistory?.length || 0} data points`);
       stock.priceHistory?.forEach(point => {
         allTimestamps.add(point.time);
       });
     });
-    
-    console.log(`  - Found ${allTimestamps.size} total timestamps`);
 
     // If no historical data, show current prices as single point
     if (allTimestamps.size === 0) {
-      console.log(`⚠️ No historical data found, showing current prices only`);
       return [{
         timestamp: new Date(now).toLocaleTimeString(),
         price: 0,
@@ -96,8 +80,6 @@ export const StockChart: React.FC<StockChartProps> = ({
     const sortedTimestamps = Array.from(allTimestamps)
       .sort((a, b) => a - b)
       .slice(-100); // Show last 100 data points
-
-    console.log(`📈 Showing ${sortedTimestamps.length} data points`);
 
     // Create chart data points
     return sortedTimestamps.map(timestamp => {
@@ -128,13 +110,13 @@ export const StockChart: React.FC<StockChartProps> = ({
 
   if (stocksWithData.length === 0) {
     return (
-      <div className={`flex items-center justify-center h-${height} bg-gray-50 dark:bg-gray-800 rounded-lg ${className}`}>
+      <div className={`flex justify-center items-center bg-gray-50 rounded-lg h-${height} dark:bg-gray-800 ${className}`}>
         <div className="text-center">
-          <Clock className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+          <Clock className="mx-auto mb-4 w-12 h-12 text-gray-400 dark:text-gray-500" />
+          <p className="text-lg font-medium text-gray-500 dark:text-gray-400">
             No stocks to display
           </p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+          <p className="mt-2 text-sm text-gray-400 dark:text-gray-500">
             Add stocks to your watchlist to see the chart
           </p>
         </div>
@@ -143,19 +125,27 @@ export const StockChart: React.FC<StockChartProps> = ({
   }
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${className}`}>
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+    <div className={`bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700 ${className}`}>
+      <div className="p-3 border-b border-gray-200 lg:p-4 dark:border-gray-700">
+        <h3 className="text-base font-semibold text-gray-900 lg:text-lg dark:text-white">
           Stock Price Chart
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="mt-1 text-xs text-gray-500 lg:text-sm dark:text-gray-400">
           Real-time price data for {stocksWithData.length} stock{stocksWithData.length !== 1 ? 's' : ''}
         </p>
       </div>
       
-      <div className="p-4">
-        <ResponsiveContainer width="100%" height={height}>
-          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+      <div className="p-2 lg:p-4">
+        <ResponsiveContainer width="100%" height={height} className="h-64 lg:h-80">
+          <LineChart 
+            data={chartData} 
+            margin={{ 
+              top: 5, 
+              right: 30, 
+              left: 20, 
+              bottom: 5 
+            }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis 
               dataKey="timestamp" 
@@ -198,7 +188,7 @@ export const StockChart: React.FC<StockChartProps> = ({
         
         {/* Data availability indicators */}
         {chartData.length <= 1 && (
-          <div className='mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md'>
+          <div className='p-2 mt-2 bg-yellow-50 rounded-md border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800'>
             <p className='text-xs text-yellow-800 dark:text-yellow-300'>
               ⚠️ Limited data available. Chart will populate as more price updates are received.
               Try refreshing or wait for the next update cycle.
@@ -206,7 +196,7 @@ export const StockChart: React.FC<StockChartProps> = ({
           </div>
         )}
         {chartData.length > 1 && chartData.length < 30 && (
-          <div className='mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md'>
+          <div className='p-2 mt-2 bg-orange-50 rounded-md border border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'>
             <p className='text-xs text-orange-800 dark:text-orange-300'>
               ⚠️ Showing {chartData.length} data points (less than recommended minimum of 30)
             </p>

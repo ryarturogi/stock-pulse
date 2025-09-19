@@ -39,16 +39,17 @@ export const RefreshIntervalSelector: React.FC<RefreshIntervalSelectorProps> = (
   const currentConfig = REFRESH_INTERVALS.find(config => config.value === currentInterval);
 
   return (
-    <div className={`flex items-center space-x-2 ${className}`}>
-      <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-      <label htmlFor="refresh-interval" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-        Refresh:
+    <div className={`flex items-center space-x-1 lg:space-x-2 ${className}`}>
+      <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-gray-500 dark:text-gray-400" />
+      <label htmlFor="refresh-interval" className="text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span className="hidden sm:inline">Refresh:</span>
+        <span className="sm:hidden">R:</span>
       </label>
       <select
         id="refresh-interval"
         value={currentInterval}
         onChange={handleIntervalChange}
-        className="px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+        className="px-1 lg:px-2 py-1 text-xs lg:text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
       >
         {REFRESH_INTERVALS.map(config => (
           <option key={config.value} value={config.value}>
@@ -57,7 +58,7 @@ export const RefreshIntervalSelector: React.FC<RefreshIntervalSelectorProps> = (
         ))}
       </select>
       {currentConfig && (
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="hidden lg:inline text-xs text-gray-500 dark:text-gray-400">
           ({currentConfig.label})
         </span>
       )}

@@ -9,11 +9,11 @@
 'use client';
 
 import { Plus, TrendingUp, AlertCircle } from 'lucide-react';
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useEffect, FormEvent } from 'react';
 
 import { Button } from '@/shared/components/ui/Button';
 import { StockFormProps, DEFAULT_STOCK_OPTIONS } from '@/core/types';
-import { stockService } from '@/features/stocks/services/stockService';
+import { useStockForm } from '@/features/stocks/hooks';
 
 /**
  * Stock Form Component
@@ -28,14 +28,18 @@ export const StockForm: React.FC<StockFormProps> = ({
   isLoading = false,
   className = '',
 }) => {
-  const [selectedStock, setSelectedStock] = useState('');
-  const [alertPrice, setAlertPrice] = useState('');
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
-  const [errors, setErrors] = useState<{
-    stock?: string;
-    price?: string;
-  }>({});
+  const {
+    selectedStock,
+    alertPrice,
+    currentPrice,
+    isLoadingPrice,
+    errors,
+    setSelectedStock,
+    setAlertPrice,
+    validateForm,
+    resetForm,
+    fetchCurrentPrice,
+  } = useStockForm();
 
   // Filter out stocks that are already being watched
   const availableStocksToShow = availableStocks.filter(
@@ -47,73 +51,10 @@ export const StockForm: React.FC<StockFormProps> = ({
     if (selectedStock) {
       fetchCurrentPrice(selectedStock);
     } else {
-      setCurrentPrice(null);
       setAlertPrice('');
     }
-  }, [selectedStock]);
+  }, [selectedStock, fetchCurrentPrice]);
 
-  // Clear errors when inputs change
-  useEffect(() => {
-    if (errors.stock && selectedStock) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.stock;
-        return newErrors;
-      });
-    }
-  }, [selectedStock, errors.stock]);
-
-  useEffect(() => {
-    if (errors.price && alertPrice) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.price;
-        return newErrors;
-      });
-    }
-  }, [alertPrice, errors.price]);
-
-  /**
-   * Fetch current price for selected stock
-   */
-  const fetchCurrentPrice = async (symbol: string) => {
-    setIsLoadingPrice(true);
-    try {
-      const quote = await stockService.fetchStockQuote(symbol);
-      setCurrentPrice(quote.current);
-      console.log(`💰 Current price for ${symbol}: $${quote.current}`);
-    } catch (error) {
-      console.error(`Failed to fetch current price for ${symbol}:`, error);
-      setCurrentPrice(null);
-    } finally {
-      setIsLoadingPrice(false);
-    }
-  };
-
-  /**
-   * Validate form inputs
-   */
-  const validateForm = (): boolean => {
-    const newErrors: typeof errors = {};
-
-    // Validate stock selection
-    if (!selectedStock.trim()) {
-      newErrors.stock = 'Please select a stock';
-    }
-
-    // Validate alert price
-    if (!alertPrice.trim()) {
-      newErrors.price = 'Please enter an alert price';
-    } else {
-      const price = parseFloat(alertPrice);
-      if (isNaN(price) || price <= 0 || price > 999999.99) {
-        newErrors.price = 'Please enter a valid price (0.01 - 999,999.99)';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   /**
    * Handle form submission
@@ -129,7 +70,7 @@ export const StockForm: React.FC<StockFormProps> = ({
       stock => stock.symbol === selectedStock
     );
     if (!selectedStockData) {
-      setErrors({ stock: 'Selected stock not found' });
+      // This should be handled by the hook's validation
       return;
     }
 
@@ -137,10 +78,7 @@ export const StockForm: React.FC<StockFormProps> = ({
     onAddStock(selectedStock, price);
 
     // Reset form
-    setSelectedStock('');
-    setAlertPrice('');
-    setCurrentPrice(null);
-    setErrors({});
+    resetForm();
   };
 
   /**
@@ -164,11 +102,11 @@ export const StockForm: React.FC<StockFormProps> = ({
 
   return (
     <div
-      className={`w-80 min-h-screen bg-white shadow-sm dark:bg-gray-800 ${className}`}
+      className={`w-full h-full bg-white shadow-sm dark:bg-gray-800 ${className}`}
     >
-      <div className='p-6'>
-        {/* Header */}
-        <div className='flex items-center mb-8 space-x-2'>
+      <div className='p-4 lg:p-6'>
+        {/* Header - Hidden on mobile since it's in the main header */}
+        <div className='hidden lg:flex items-center mb-8 space-x-2'>
           <div className='flex justify-center items-center w-8 h-8 bg-blue-600 rounded-lg'>
             <TrendingUp className='w-4 h-4 text-white' />
           </div>
@@ -180,9 +118,9 @@ export const StockForm: React.FC<StockFormProps> = ({
         </div>
 
         {/* Form */}
-        <div className='space-y-6'>
+        <div className='space-y-4 lg:space-y-6'>
           <h2
-            className="text-lg font-semibold text-gray-900 dark:text-white"
+            className="text-base lg:text-lg font-semibold text-gray-900 dark:text-white"
           >
             Add Stock to Watch
           </h2>
@@ -292,8 +230,8 @@ export const StockForm: React.FC<StockFormProps> = ({
             </Button>
           </form>
 
-          {/* Help Text */}
-          <div className='p-4 mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
+          {/* Help Text - Hidden on mobile to save space */}
+          <div className='hidden lg:block p-4 mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
             <h3 className='mb-2 text-sm font-medium text-blue-900 dark:text-blue-300'>
               How it works:
             </h3>

@@ -86,23 +86,23 @@ export const StockCard: React.FC<StockCardProps> = ({
 
   return (
     <div 
-      className={`p-6 bg-white rounded-lg border-l-4 shadow-sm ${getBorderColor()} dark:bg-gray-800 ${className}`}
+      className={`p-4 lg:p-6 bg-white rounded-lg border-l-4 shadow-sm ${getBorderColor()} dark:bg-gray-800 ${className}`}
     >
       {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-3">
+      <div className="flex justify-between items-center mb-3 lg:mb-4">
+        <div className="flex items-center space-x-2 lg:space-x-3">
           {/* Stock Icon */}
           <div 
-            className="flex justify-center items-center w-10 h-10 text-sm font-bold text-white rounded-full"
+            className="flex justify-center items-center w-8 h-8 lg:w-10 lg:h-10 text-xs lg:text-sm font-bold text-white rounded-full"
             style={{ backgroundColor: stockColor }}
           >
             {symbol.charAt(0)}
           </div>
           
           {/* Stock Info */}
-          <div>
-            <p className="font-semibold text-gray-900 dark:text-white">{symbol}</p>
-            <p className="text-sm text-gray-500 truncate max-w-32 dark:text-gray-400">
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-gray-900 dark:text-white text-sm lg:text-base">{symbol}</p>
+            <p className="text-xs lg:text-sm text-gray-500 truncate dark:text-gray-400">
               {name.split(' ')[0]}
             </p>
           </div>
@@ -121,24 +121,24 @@ export const StockCard: React.FC<StockCardProps> = ({
       </div>
 
       {/* Price Information */}
-      <div className="space-y-2">
+      <div className="space-y-1 lg:space-y-2">
         {/* Current Price */}
-        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+        <p className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
           {isLoading ? (
             <span className="text-gray-500 dark:text-gray-400">Loading...</span>
           ) : (
-            `$${formattedPrice}`
+            formattedPrice
           )}
         </p>
 
         {/* Change Percentage */}
-        <p className={`flex items-center text-sm ${changeColor}`}>
+        <p className={`flex items-center text-xs lg:text-sm ${changeColor}`}>
           {changePercent !== undefined ? (
             <>
               {changePercent >= 0 ? (
-                <TrendingUp className="mr-1 w-4 h-4" />
+                <TrendingUp className="mr-1 w-3 h-3 lg:w-4 lg:h-4" />
               ) : (
-                <TrendingDown className="mr-1 w-4 h-4" />
+                <TrendingDown className="mr-1 w-3 h-3 lg:w-4 lg:h-4" />
               )}
               {formattedChange}
             </>
@@ -165,7 +165,8 @@ export const StockCard: React.FC<StockCardProps> = ({
           {lastUpdated && (
             <div className="flex items-center text-gray-400 dark:text-gray-500">
               <Clock className="mr-1 w-3 h-3" />
-              {new Date(lastUpdated).toLocaleTimeString()}
+              <span className="hidden sm:inline">{new Date(lastUpdated).toLocaleTimeString()}</span>
+              <span className="sm:hidden">{new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           )}
         </div>
