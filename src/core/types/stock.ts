@@ -225,15 +225,10 @@ export interface StockStoreState {
   setError: (_error: string | null) => void;
   clearError: () => void;
   
-  // Historical data actions
-  fetchHistoricalData: (_symbol: string) => Promise<void>;
-  fetchHistoricalDataForRange: (_symbol: string, _timeRange: '1H' | '1D' | '1W') => Promise<void>;
   
   // WebSocket actions
   connectWebSocket: () => void;
   disconnectWebSocket: () => void;
-  subscribeToStock: (_symbol: string) => void;
-  unsubscribeFromStock: (_symbol: string) => void;
   
   // Periodic refresh actions
   startPeriodicRefresh: () => void;

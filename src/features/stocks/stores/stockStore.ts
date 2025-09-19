@@ -19,7 +19,6 @@ import {
   REFRESH_INTERVALS
 } from '@/core/types';
 import { getNotificationService } from '@/features/notifications';
-import { stockService } from '@/features/stocks/services';
 
 /**
  * Generate unique ID for watched stocks
@@ -70,9 +69,6 @@ export const useStockStore = create<StockStoreState>()(
           watchedStocks: [...state.watchedStocks, newStock],
           error: null,
         }));
-
-        // Fetch historical data for the new stock
-        get().fetchHistoricalData(symbol);
 
         // Reconnect WebSocket to include new stock
         const { webSocketStatus } = get();
@@ -161,110 +157,6 @@ export const useStockStore = create<StockStoreState>()(
         }
       },
 
-      // Fetch historical data for a stock (one-time fetch)
-      fetchHistoricalData: async (symbol: string) => {
-        try {
-          console.log(`📊 Fetching historical data for ${symbol}`);
-          
-          const historicalData = await stockService.fetchHistoricalData(
-            symbol,
-            '1', // 1-minute resolution
-            Math.floor(Date.now() / 1000) - (7 * 24 * 60 * 60), // 1 week ago
-            Math.floor(Date.now() / 1000) // now
-          );
-          
-          if (historicalData.length > 0) {
-            console.log(`📈 Retrieved ${historicalData.length} historical data points for ${symbol}`);
-            
-            // Update the stock with historical data
-            set(state => ({
-              watchedStocks: state.watchedStocks.map(stock => {
-                if (stock.symbol === symbol) {
-                  const history = historicalData.map(point => ({
-                    time: point.time,
-                    price: point.price
-                  }));
-                  
-                  return {
-                    ...stock,
-                    priceHistory: history
-                  };
-                }
-                return stock;
-              })
-            }));
-          } else {
-            console.log(`⚠️ No historical data available for ${symbol} - will show current price only`);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch historical data for ${symbol}:`, error);
-        }
-      },
-
-      // Fetch historical data for a specific time range (called once per range)
-      fetchHistoricalDataForRange: async (symbol: string, timeRange: '1H' | '1D' | '1W') => {
-        try {
-          console.log(`📊 Fetching ${timeRange} historical data for ${symbol} (one-time fetch)`);
-          
-          const now = Math.floor(Date.now() / 1000);
-          let from: number;
-          let resolution: string;
-          
-          switch (timeRange) {
-            case '1H':
-              from = now - (60 * 60); // 1 hour ago
-              resolution = '1'; // 1-minute resolution
-              break;
-            case '1D':
-              from = now - (24 * 60 * 60); // 1 day ago
-              resolution = '5'; // 5-minute resolution
-              break;
-            case '1W':
-              from = now - (7 * 24 * 60 * 60); // 1 week ago
-              resolution = '15'; // 15-minute resolution
-              break;
-            default:
-              from = now - (7 * 24 * 60 * 60);
-              resolution = '1';
-          }
-          
-          const historicalData = await stockService.fetchHistoricalData(
-            symbol,
-            resolution,
-            from,
-            now
-          );
-          
-          if (historicalData.length > 0) {
-            console.log(`📈 Retrieved ${historicalData.length} ${timeRange} data points for ${symbol} (static historical data)`);
-            
-            // Update the stock with the historical data for this time range
-            set(state => ({
-              watchedStocks: state.watchedStocks.map(stock => {
-                if (stock.symbol === symbol) {
-                  // For defined ranges, replace the price history with the specific range data
-                  const rangeHistory = historicalData.map(point => ({
-                    time: point.time,
-                    price: point.price
-                  }));
-                  
-                  return {
-                    ...stock,
-                    priceHistory: rangeHistory
-                  };
-                }
-                return stock;
-              })
-            }));
-          } else {
-            console.log(`⚠️ No ${timeRange} historical data available for ${symbol} - will show current price only`);
-            // Don't update priceHistory if no data is available
-            // The chart will show current price only for this range
-          }
-        } catch (error) {
-          console.error(`Failed to fetch ${timeRange} historical data for ${symbol}:`, error);
-        }
-      },
 
       // Connect to real-time updates using secure WebSocket proxy
       connectWebSocket: async () => {
@@ -575,27 +467,6 @@ export const useStockStore = create<StockStoreState>()(
         }
       },
 
-      subscribeToStock: (symbol: string) => {
-        const { webSocketConnection } = get();
-        
-        if (webSocketConnection && webSocketConnection.readyState === WebSocket.OPEN) {
-          webSocketConnection.send(JSON.stringify({
-            type: 'subscribe',
-            symbol: symbol,
-          }));
-        }
-      },
-
-      unsubscribeFromStock: (symbol: string) => {
-        const { webSocketConnection } = get();
-        
-        if (webSocketConnection && webSocketConnection.readyState === WebSocket.OPEN) {
-          webSocketConnection.send(JSON.stringify({
-            type: 'unsubscribe',
-            symbol: symbol,
-          }));
-        }
-      },
 
       // WebSocket status management
       setWebSocketStatus: (status: WebSocketStatus) => {
