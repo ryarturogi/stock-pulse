@@ -11,6 +11,7 @@ export { StockCard } from './StockCard';
 export { StockCards } from './StockCards';
 export { StockChart } from './StockChart';
 export { RefreshIntervalSelector } from './RefreshIntervalSelector';
+export { SlideOutSidebar } from './SlideOutSidebar';
 
 // Re-export types for convenience
 export type {
