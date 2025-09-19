@@ -4,49 +4,48 @@ This document outlines the architectural decisions, patterns, and structure of t
 
 ## 🏗️ Overall Architecture
 
-StockPulse follows a modern, scalable architecture built on Next.js 14 with the following principles:
+StockPulse follows a modern, enterprise-grade architecture built on Next.js 15 + React 19 with the following principles:
 
-- **Component-Based Architecture** - Modular, reusable UI components
-- **Type Safety** - TypeScript throughout the application
-- **Performance First** - Optimized for Core Web Vitals
-- **Mobile First** - Progressive Web App with offline capabilities
-- **Scalable State Management** - Zustand for predictable state updates
-- **Clean Code** - ESLint, Prettier, and strict TypeScript
+- **Next.js 15 App Router** - Latest framework with React Compiler optimizations
+- **Enterprise TypeScript** - Comprehensive utility types for consistency and safety
+- **Vercel-Native** - Built specifically for Vercel's edge infrastructure
+- **Type-First Development** - Utility types and runtime validation throughout
+- **Performance Optimized** - React Compiler, edge functions, and Core Web Vitals focus
+- **Developer Experience** - Claude Code prompts and Cursor IDE integration
+- **Security-First** - Environment variable auditing and proper secret management
 
 ## 📁 Directory Structure
 
 ```
 stock-pulse/
-├── app/                    # Next.js 14 App Router
-│   ├── layout.tsx         # Root layout with metadata
-│   ├── page.tsx           # Home page component
-│   ├── globals.css        # Global styles and Tailwind
-│   └── (auth)/            # Route groups for organization
-├── components/            # Reusable UI components
-│   ├── ui/               # Base design system components
-│   ├── layout/           # Layout-specific components
-│   ├── charts/           # Chart and visualization components
-│   └── forms/            # Form components
-├── hooks/                # Custom React hooks
-│   ├── useStock.ts       # Stock data fetching
-│   ├── usePortfolio.ts   # Portfolio management
-│   └── useLocalStorage.ts # Browser storage utilities
-├── lib/                  # Core utilities and configurations
-│   ├── api.ts           # API client configuration
-│   ├── constants.ts     # Application constants
-│   ├── utils.ts         # Utility functions
-│   └── validations.ts   # Form validation schemas
-├── services/             # External API services
-│   ├── finnhub.ts       # Finnhub API integration
-│   ├── alphavantage.ts  # Alpha Vantage API integration
-│   └── notifications.ts # Push notification service
-├── stores/               # Zustand state stores
-│   ├── useAppStore.ts   # Global application state
-│   ├── usePortfolioStore.ts # Portfolio state management
-│   └── useUserStore.ts  # User preferences and auth
-├── types/                # TypeScript type definitions
-├── utils/                # Pure utility functions
-└── tests/                # Test files (co-located with components)
+├── app/                           # Next.js 15 App Router
+│   ├── api/                      # API routes with TypeScript utilities
+│   │   ├── health/              # Health monitoring endpoint
+│   │   └── cron/                # Vercel cron jobs
+│   ├── layout.tsx               # Root layout with React 19
+│   ├── page.tsx                 # Home page component  
+│   ├── loading.tsx              # Global loading states
+│   ├── error.tsx                # Global error boundaries
+│   └── globals.css              # Global Tailwind styles
+├── components/                   # Reusable UI components
+│   ├── ui/                      # shadcn/ui base components
+│   └── shared/                  # Custom shared components
+├── hooks/                       # Custom React hooks
+├── lib/                         # Core utilities and configurations
+├── services/                    # External API services and integrations
+├── stores/                      # Zustand state management
+├── types/                       # TypeScript utilities and definitions
+│   ├── index.ts                # Central type exports
+│   └── utils.ts                # Comprehensive utility types
+├── utils/                       # Pure utility functions
+├── scripts/                     # Build and deployment automation
+│   ├── generate-vapid.js       # VAPID key generation
+│   ├── setup-vercel-env.sh     # Environment setup
+│   └── deploy-vercel.sh        # Deployment automation
+├── docs/                        # Comprehensive documentation
+├── claude.rules/               # Claude Code development prompts
+├── vercel.json                 # Vercel deployment configuration
+└── tests/                      # Test files and configurations
 ```
 
 ## 🔄 Data Flow

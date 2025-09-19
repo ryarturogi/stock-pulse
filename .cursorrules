@@ -136,6 +136,8 @@ prompts:
   - "Use Vercel cron jobs for scheduled tasks."
   - "Implement health check endpoints."
   - "Monitor performance and errors in production."
+  - "Leverage Vercel's built-in CI/CD for automatic deployments."
+  - "Use Vercel preview deployments for testing features."
 
 # Code Quality
 quality:

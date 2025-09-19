@@ -15,7 +15,7 @@ Claude must generate all files needed so the project runs with:
     •    ESLint 9 (flat config) + Prettier + Husky + lint-staged
     •    Jest + React Testing Library (unit tests)
     •    Playwright (E2E tests)
-    •    GitHub Actions CI/CD (lint → test → build → deploy)
+    •    Vercel Git Integration (automatic deployments on push)
     •    PWA readiness (next-pwa, service worker, push notifications)
     •    Vercel deployment configuration
     •    Secure .env setup (.env.example, .env.production, .env.staging)

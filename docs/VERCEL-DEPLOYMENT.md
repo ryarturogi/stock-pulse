@@ -132,33 +132,22 @@ Our project includes a comprehensive `vercel.json` with:
 
 ## 🚦 Deployment Workflow
 
-### Automated Deployment (GitHub Actions)
+### Automated Deployment (Vercel Git Integration)
 
-Our CI/CD pipeline automatically:
+Vercel's built-in CI/CD automatically handles:
 
-1. **Pull Requests**: Deploy to preview URL
-2. **Main Branch**: Deploy to production
-3. **Quality Gates**: Lint, test, type-check before deploy
+1. **Pull Requests**: Deploy to unique preview URL with full functionality
+2. **Main Branch**: Deploy to production with zero-downtime
+3. **Quality Gates**: Automatic build optimization and error detection
+4. **Performance**: Built-in Core Web Vitals monitoring and optimization
 
-#### Setup GitHub Actions
+#### Setup Git Integration
 
-Add these secrets to your GitHub repository:
+1. **Connect Repository**: Link your Git repository in Vercel dashboard
+2. **Configure Build Settings**: Next.js detected automatically
+3. **Set Branch Protection**: Configure which branches trigger deployments
 
-```bash
-# GitHub Settings > Secrets and Variables > Actions
-
-VERCEL_TOKEN=your_vercel_token_here
-VERCEL_ORG_ID=your_org_id_here  
-VERCEL_PROJECT_ID=your_project_id_here
-```
-
-Get these values:
-```bash
-# Get Vercel token from: https://vercel.com/account/tokens
-# Get org and project IDs:
-vercel link
-cat .vercel/project.json
-```
+No additional CI/CD setup required - Vercel handles everything!
 
 ### Manual Deployment
 
@@ -261,26 +250,40 @@ vercel env add SENTRY_AUTH_TOKEN production
 pnpm run dev
 
 # Pull environment variables from Vercel
-vercel env pull .env.local
+pnpm run vercel:env
 
 # Test production build locally
 pnpm run build
 pnpm run start
+
+# Run quality checks (automatically runs on Vercel)
+pnpm run lint
+pnpm run type-check
+pnpm run test
 ```
+
+### Vercel Git Integration Workflow
+
+1. **Feature Development**: Work on feature branch locally
+2. **Push to Branch**: Creates automatic preview deployment
+3. **Pull Request**: Review with live preview URL
+4. **Merge to Main**: Automatic production deployment
+5. **Monitor**: Use Vercel dashboard for performance tracking
 
 ### Preview Deployments
 
-Every git push creates a preview deployment:
-- Unique URL for each commit
-- Perfect for testing features
-- Share with stakeholders
+Every git push automatically creates preview deployment:
+- Unique URL for each commit/branch
+- Full production environment
+- Perfect for testing and stakeholder review
+- No manual deployment needed
 
 ```bash
 # View all deployments
 vercel ls
 
-# Get deployment URL
-vercel --confirm
+# Manual preview deployment (optional)
+pnpm run deploy:preview
 ```
 
 ### Rollback Strategy

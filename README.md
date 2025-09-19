@@ -39,9 +39,9 @@ Enterprise-grade Next.js 15 + React 19 + TypeScript stock market tracking applic
 - **Package Manager**: pnpm 8+
 
 ### Deployment & Infrastructure
-- **Hosting**: Vercel with Edge Functions
+- **Hosting**: Vercel with Edge Functions and built-in CI/CD
 - **PWA**: next-pwa with Service Worker and Push Notifications
-- **CI/CD**: GitHub Actions with Trivy security scanning
+- **Automation**: Vercel Git integration with automatic deployments
 - **Monitoring**: Health checks and error tracking ready
 
 ### TypeScript Architecture
@@ -197,7 +197,6 @@ stock-pulse/
 │   ├── create-api-route.prompt  # API route template
 │   ├── create-page.prompt       # Page creation template
 │   └── bootstrap-dev-env.prompt # Environment setup
-├── .github/workflows/          # GitHub Actions CI/CD
 ├── tests/                      # Test files and configurations
 ├── vercel.json                 # Vercel deployment configuration
 ├── .cursorrules               # Cursor IDE configuration
@@ -300,12 +299,13 @@ pnpm run build             # Build for production
 pnpm run start             # Start production server locally
 ```
 
-### Deployment Features
-- **Automatic Deployments** - Every push to main deploys to production
-- **Preview Deployments** - Every PR gets a unique preview URL
-- **Cron Jobs** - Automated stock price updates every 5 minutes
-- **Edge Functions** - Global performance optimization
-- **Health Monitoring** - `/api/health` endpoint for monitoring
+### Vercel Deployment Features
+- **Git Integration** - Automatic deployments on every push to main
+- **Preview Deployments** - Every PR gets a unique preview URL with full functionality
+- **Cron Jobs** - Automated stock price updates every 5 minutes via Vercel Cron
+- **Edge Functions** - Global performance optimization and fast response times
+- **Built-in Analytics** - Performance monitoring and Core Web Vitals tracking
+- **Health Monitoring** - `/api/health` endpoint for uptime monitoring
 
 See [Vercel Deployment Guide](./docs/VERCEL-DEPLOYMENT.md) for detailed instructions.
 
@@ -364,7 +364,7 @@ claude.rules/bootstrap-dev-env.prompt   # Full project setup template
 - **Husky + lint-staged** - Pre-commit hooks for quality gates
 - **Jest + RTL** - Unit testing with TypeScript support
 - **Playwright** - E2E testing with type-safe page objects
-- **Trivy** - Security vulnerability scanning in CI/CD
+- **Vercel Security** - Built-in security scanning and dependency updates
 
 ## 🔒 Security
 
