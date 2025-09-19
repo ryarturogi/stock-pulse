@@ -6,20 +6,30 @@ import {
   Moon, 
   RefreshCw,
   Bell,
-  BellOff
+  BellOff,
+  Menu,
+  X,
+  TrendingUp,
+  Plus
 } from 'lucide-react';
 import { 
   StockForm, 
   StockCards, 
   StockChart,
   RefreshIntervalSelector,
+  SlideOutSidebar,
   stockService,
   useStockStore
 } from '@/features/stocks';
 import { 
   DEFAULT_STOCK_OPTIONS
 } from '@/core/types';
-import { getNotificationService } from '@/features/notifications';
+import { 
+  useSidebar, 
+  useTheme, 
+  useNotifications, 
+  useSearch 
+} from '@/shared/hooks';
 
 // Use default stock options from types
 const availableStocks = DEFAULT_STOCK_OPTIONS;
@@ -45,103 +55,26 @@ export default function HomePage() {
     setLiveDataEnabled
   } = useStockStore();
   
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Custom hooks
+  const { isOpen: isSidebarOpen, open: openSidebar, close: closeSidebar } = useSidebar();
+  const { isDarkMode, toggle: toggleTheme } = useTheme();
+  const { 
+    permission: notificationPermission, 
+    isEnabled: notificationsEnabled, 
+    requestPermission: requestNotificationPermission,
+    toggleNotifications: handleToggleNotifications 
+  } = useNotifications();
+  
+  // Search functionality
+  const { query: searchQuery, setQuery: setSearchQuery, filteredItems: filteredWatchedStocks } = useSearch(
+    watchedStocks,
+    (stock, query) => 
+      stock.symbol.toLowerCase().includes(query) ||
+      stock.name.toLowerCase().includes(query)
+  );
 
-  // Initialize PWA service and check notification permission
-  useEffect(() => {
-    const initializePWA = async () => {
-      try {
-        const notificationService = getNotificationService();
-        
-        // Load notification preference from localStorage
-        const savedNotificationPref = localStorage.getItem('stockpulse_notifications_enabled');
-        if (savedNotificationPref !== null) {
-          setNotificationsEnabled(JSON.parse(savedNotificationPref));
-        }
-        
-        // Check current notification permission status
-        setNotificationPermission(notificationService.getPermissionStatus());
-        
-        console.log('PWA service initialized successfully');
-        console.log('Webpush notification permission:', notificationService.getPermissionStatus());
-        console.log('Notifications enabled preference:', savedNotificationPref !== null ? JSON.parse(savedNotificationPref) : true);
-      } catch (error) {
-        console.error('Failed to initialize PWA service:', error);
-      }
-    };
-
-    initializePWA();
-  }, []);
-
-  /**
-   * Handle manual notification permission request
-   */
-  const handleRequestNotificationPermission = async () => {
-    try {
-      const notificationService = getNotificationService();
-      
-      // Request webpush notification permission
-      const permission = await notificationService.requestPermission();
-      setNotificationPermission(permission);
-      
-      if (permission === 'granted') {
-        console.log('✅ Webpush notification permission granted! You will receive price alerts.');
-        setNotificationsEnabled(true);
-        localStorage.setItem('stockpulse_notifications_enabled', 'true');
-      } else if (permission === 'denied') {
-        console.log('❌ Notification permission denied. You can enable it later in browser settings.');
-        setNotificationsEnabled(false);
-        localStorage.setItem('stockpulse_notifications_enabled', 'false');
-      } else {
-        console.log('⏳ Notification permission dismissed. You can enable it later.');
-      }
-    } catch (error) {
-      console.error('Failed to request notification permission:', error);
-    }
-  };
-
-  /**
-   * Handle toggling webpush notifications on/off
-   */
-  const handleToggleNotifications = async () => {
-    try {
-      const notificationService = getNotificationService();
-      
-      if (notificationsEnabled) {
-        // Disable notifications
-        console.log('🔕 Disabling webpush notifications...');
-        setNotificationsEnabled(false);
-        localStorage.setItem('stockpulse_notifications_enabled', 'false');
-        console.log('✅ Webpush notifications disabled.');
-      } else {
-        // Enable notifications (request permission if needed)
-        console.log('🔔 Enabling webpush notifications...');
-        
-        if (notificationPermission !== 'granted') {
-          const permission = await notificationService.requestPermission();
-          setNotificationPermission(permission);
-          
-          if (permission === 'granted') {
-            setNotificationsEnabled(true);
-            localStorage.setItem('stockpulse_notifications_enabled', 'true');
-            console.log('✅ Webpush notifications enabled!');
-          } else {
-            console.log('❌ Permission denied, cannot enable notifications');
-            return;
-          }
-        } else {
-          setNotificationsEnabled(true);
-          localStorage.setItem('stockpulse_notifications_enabled', 'true');
-          console.log('✅ Webpush notifications enabled!');
-        }
-      }
-    } catch (error) {
-      console.error('Failed to toggle notifications:', error);
-    }
-  };
 
   // Use refs to track connection state and prevent multiple calls
   const isConnectedRef = useRef(false);
@@ -192,18 +125,12 @@ export default function HomePage() {
       // Request notification permission when user adds their first stock
       if (watchedStocks.length === 0) {
         try {
-          const notificationService = getNotificationService();
-          const permission = await notificationService.requestPermission();
-          setNotificationPermission(permission);
+          const permission = await requestNotificationPermission();
           
           if (permission === 'granted') {
             console.log('✅ Webpush notification permission granted! You will receive price alerts.');
-            setNotificationsEnabled(true);
-            localStorage.setItem('stockpulse_notifications_enabled', 'true');
           } else if (permission === 'denied') {
             console.log('❌ Notification permission denied. You can enable it later in browser settings.');
-            setNotificationsEnabled(false);
-            localStorage.setItem('stockpulse_notifications_enabled', 'false');
           } else {
             console.log('⏳ Notification permission dismissed. You can enable it later.');
           }
@@ -214,6 +141,9 @@ export default function HomePage() {
 
       // Add stock to store (this will persist to localStorage)
       addStock(symbol, stock.name, alertPrice);
+      
+      // Close sidebar on mobile/tablet after adding stock
+      closeSidebar();
 
       // Immediately fetch real data for the new stock
       console.log(`✅ Added ${symbol} to watchlist. Fetching initial data...`);
@@ -306,67 +236,48 @@ export default function HomePage() {
     }
   }, [watchedStocks, updateStockPrice]);
 
-  /**
-   * Handle theme toggle
-   */
-  const handleThemeToggle = () => {
-    const newTheme = !isDarkMode;
-    setIsDarkMode(newTheme);
-    
-    // Toggle dark class on document element
-    if (newTheme) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
-
-  /**
-   * Handle search input change
-   */
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  /**
-   * Filter watched stocks based on search query
-   */
-  const filteredWatchedStocks = watchedStocks.filter(stock =>
-    stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    stock.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="flex">
-        {/* Left Sidebar - Stock Form */}
-        <StockForm
-          availableStocks={availableStocks}
-          onAddStock={handleAddStock}
-          watchedStocks={watchedStocks}
-        />
+      <div className="flex flex-col lg:flex-row">
+        {/* Slide Out Sidebar - Stock Form */}
+        <SlideOutSidebar
+          isOpen={isSidebarOpen}
+          onClose={closeSidebar}
+          className="lg:w-80"
+        >
+          <StockForm
+            availableStocks={availableStocks}
+            onAddStock={handleAddStock}
+            watchedStocks={watchedStocks}
+          />
+        </SlideOutSidebar>
 
         {/* Main Content */}
-        <div className="flex-1">
-          {/* Top Navigation */}
+        <div className="flex-1 min-w-0">
+          {/* Responsive Header */}
           <header className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm border-b">
-            <div className="px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500 dark:text-gray-400" />
-                  <input 
-                    type="text" 
-                    placeholder="Search stocks..."
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    className="w-96 pl-10 pr-16 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                  />
-                  <span className="absolute right-3 top-2.5 text-sm text-gray-500 dark:text-gray-400">⌘ K</span>
-                </div>
-              </div>
-              
-                  <div className="flex items-center space-x-4">
-                    {/* WebSocket Status Indicator */}
+            {/* Desktop Header */}
+            <div className="hidden lg:block">
+              <div className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  {/* Left Section - Search */}
+                  <div className="flex-1 max-w-md">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <input 
+                        type="text" 
+                        placeholder="Search stocks..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Center Section - Status & Controls */}
+                  <div className="flex items-center space-x-6">
+                    {/* WebSocket Status */}
                     {watchedStocks.length > 0 && (
                       <div className="flex items-center space-x-2">
                         <div className={`w-2 h-2 rounded-full ${
@@ -375,7 +286,7 @@ export default function HomePage() {
                           webSocketStatus === 'error' ? 'bg-red-500' :
                           'bg-gray-400'
                         }`} />
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
                           {webSocketStatus === 'connected' ? 'Live' :
                            webSocketStatus === 'connecting' ? 'Connecting...' :
                            webSocketStatus === 'error' ? 'Error' :
@@ -386,7 +297,7 @@ export default function HomePage() {
 
                     {/* Live Data Toggle */}
                     {watchedStocks.length > 0 && (
-                      <div className="flex items-center space-x-2 mr-2">
+                      <div className="flex items-center space-x-2">
                         <label className="flex items-center space-x-2 cursor-pointer">
                           <input
                             type="checkbox"
@@ -401,27 +312,30 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    {/* Refresh Interval Selector - Only show when live data is enabled */}
+                    {/* Refresh Interval */}
                     {watchedStocks.length > 0 && isLiveDataEnabled && (
                       <RefreshIntervalSelector
                         currentInterval={refreshTimeInterval}
                         onIntervalChange={setRefreshTimeInterval}
-                        className="mr-2"
                       />
                     )}
+                  </div>
 
+                  {/* Right Section - Actions */}
+                  <div className="flex items-center space-x-3">
+                    {/* Manual Refresh */}
                     <button
                       onClick={handleManualRefresh}
-                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded disabled:opacity-50"
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                       title="Refresh stock data"
                     >
                       <RefreshCw className="text-gray-500 dark:text-gray-400 w-5 h-5" />
                     </button>
-                
-                    {/* Webpush Notification Controls */}
+
+                    {/* Notifications */}
                     {notificationPermission === 'default' && (
                       <button
-                        onClick={handleRequestNotificationPermission}
+                        onClick={requestNotificationPermission}
                         className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
                         title="Enable webpush notifications for price alerts"
                       >
@@ -431,27 +345,18 @@ export default function HomePage() {
                     )}
                     
                     {notificationPermission === 'granted' && (
-                      <div className="flex items-center space-x-2">
-                        {notificationsEnabled ? (
-                          <button
-                            onClick={handleToggleNotifications}
-                            className="flex items-center space-x-2 px-3 py-2 text-sm bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors"
-                            title="Disable webpush notifications"
-                          >
-                            <Bell className="w-4 h-4" />
-                            <span>Alerts ON</span>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={handleToggleNotifications}
-                            className="flex items-center space-x-2 px-3 py-2 text-sm bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-900/30 transition-colors"
-                            title="Enable webpush notifications"
-                          >
-                            <BellOff className="w-4 h-4" />
-                            <span>Alerts OFF</span>
-                          </button>
-                        )}
-                      </div>
+                      <button
+                        onClick={handleToggleNotifications}
+                        className={`flex items-center space-x-2 px-3 py-2 text-sm rounded-lg transition-colors ${
+                          notificationsEnabled 
+                            ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/30'
+                            : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30'
+                        }`}
+                        title={notificationsEnabled ? 'Disable webpush notifications' : 'Enable webpush notifications'}
+                      >
+                        {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                        <span>{notificationsEnabled ? 'Alerts ON' : 'Alerts OFF'}</span>
+                      </button>
                     )}
                     
                     {notificationPermission === 'denied' && (
@@ -461,20 +366,176 @@ export default function HomePage() {
                       </div>
                     )}
 
+                    {/* Theme Toggle */}
                     <button
-                      onClick={handleThemeToggle}
-                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                      onClick={toggleTheme}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                       title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
                     >
                       <Moon className="w-5 h-5 text-gray-500 dark:text-yellow-500" />
-                </button>
+                    </button>
+                  </div>
+                </div>
               </div>
+            </div>
+
+            {/* Mobile Header */}
+            <div className="lg:hidden">
+              {/* Top Row - Logo, Status, Menu */}
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  {/* Sidebar Toggle Button */}
+                  <button
+                    onClick={openSidebar}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    title="Open sidebar"
+                  >
+                    <Plus className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  </button>
+                  
+                  <div className="flex justify-center items-center w-8 h-8 bg-blue-600 rounded-lg">
+                    <TrendingUp className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-lg font-semibold text-gray-900 dark:text-white">StockPulse</span>
+                  
+                  {/* Mobile Status Indicator */}
+                  {watchedStocks.length > 0 && (
+                    <div className="flex items-center space-x-1">
+                      <div className={`w-2 h-2 rounded-full ${
+                        webSocketStatus === 'connected' ? 'bg-green-500' :
+                        webSocketStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+                        webSocketStatus === 'error' ? 'bg-red-500' :
+                        'bg-gray-400'
+                      }`} />
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {webSocketStatus === 'connected' ? 'Live' :
+                         webSocketStatus === 'connecting' ? 'Connecting' :
+                         webSocketStatus === 'error' ? 'Error' :
+                         'Offline'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  {/* Theme Toggle */}
+                  <button
+                    onClick={toggleTheme}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                  >
+                    <Moon className="w-5 h-5 text-gray-500 dark:text-yellow-500" />
+                  </button>
+
+                  {/* Mobile Menu Toggle */}
+                  <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    title="Toggle menu"
+                  >
+                    {isMobileMenuOpen ? (
+                      <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                    ) : (
+                      <Menu className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <div className="px-4 pb-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search stocks..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  />
+                </div>
+              </div>
+
+              {/* Mobile Menu Dropdown */}
+              {isMobileMenuOpen && (
+                <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                  <div className="px-4 py-3 space-y-3">
+                    {/* Live Data Toggle */}
+                    {watchedStocks.length > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Live Data</span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isLiveDataEnabled}
+                            onChange={(e) => setLiveDataEnabled(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
+                    )}
+
+                    {/* Refresh Interval */}
+                    {watchedStocks.length > 0 && isLiveDataEnabled && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">Refresh Interval</span>
+                        <RefreshIntervalSelector
+                          currentInterval={refreshTimeInterval}
+                          onIntervalChange={setRefreshTimeInterval}
+                        />
+                      </div>
+                    )}
+
+                    {/* Manual Refresh */}
+                    <button
+                      onClick={handleManualRefresh}
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Refresh Data</span>
+                    </button>
+
+                    {/* Notifications */}
+                    {notificationPermission === 'default' && (
+                      <button
+                        onClick={requestNotificationPermission}
+                        className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+                      >
+                        <Bell className="w-4 h-4" />
+                        <span>Enable Alerts</span>
+                      </button>
+                    )}
+                    
+                    {notificationPermission === 'granted' && (
+                      <button
+                        onClick={handleToggleNotifications}
+                        className={`w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                          notificationsEnabled 
+                            ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/30'
+                            : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30'
+                        }`}
+                      >
+                        {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                        <span>{notificationsEnabled ? 'Alerts ON' : 'Alerts OFF'}</span>
+                      </button>
+                    )}
+                    
+                    {notificationPermission === 'denied' && (
+                      <div className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg">
+                        <BellOff className="w-4 h-4" />
+                        <span>Alerts Disabled</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </header>
 
               {/* Error Display */}
               {error && (
-                <div className="border-l-4 p-4 mx-6 mt-4 bg-red-50 dark:bg-red-900/20 border-red-400 dark:border-red-500">
+                <div className="border-l-4 p-4 mx-4 lg:mx-6 mt-4 bg-red-50 dark:bg-red-900/20 border-red-400 dark:border-red-500">
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -503,7 +564,7 @@ export default function HomePage() {
 
 
               {/* Dashboard Content */}
-              <main className="p-6">
+              <main className="p-4 lg:p-6">
                 {/* Search Results Info */}
                 {searchQuery && (
                   <div className="mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border dark:border-blue-800">
