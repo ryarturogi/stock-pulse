@@ -1,6 +1,37 @@
 /**
- * Common types and interfaces for the StockPulse application
+ * TypeScript Types Index
+ * ======================
+ * 
+ * Central export point for all TypeScript utilities and domain-specific types.
+ * Use this file to import all type utilities throughout the application.
+ * 
+ * @example
+ * import { ApiResponse, AsyncState, ComponentProps, StockQuote } from '@/types';
  */
+
+// Export all utility types
+export * from './utils';
+
+// Re-export commonly used React types for convenience
+export type {
+  ComponentType,
+  ReactNode,
+  ReactElement,
+  PropsWithChildren,
+  HTMLAttributes,
+  CSSProperties,
+} from 'react';
+
+// Re-export Next.js types
+export type {
+  Metadata,
+  NextRequest,
+  NextResponse,
+} from 'next';
+
+// ============================================================================
+// DOMAIN-SPECIFIC TYPES (StockPulse Business Logic)
+// ============================================================================
 
 /**
  * Stock quote data structure
@@ -90,9 +121,10 @@ export interface NewsArticle {
 }
 
 /**
- * API response wrapper
+ * API response wrapper (uses utility type from utils.ts)
+ * @deprecated Use ApiResponse from utils.ts instead
  */
-export interface ApiResponse<T> {
+export interface LegacyApiResponse<T> {
   data: T;
   success: boolean;
   message?: string;

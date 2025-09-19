@@ -1,0 +1,197 @@
+Goal: Create a Next.js 15 page component named <PageName> following App Router conventions.
+
+Constraints:
+- Use Next.js 15 App Router structure (app/*)
+- Implement as Server Component by default (use 'use client' only when needed)
+- Add TypeScript strict typing for props and params
+- Include proper SEO metadata
+- Add loading and error boundary support
+- Follow accessibility best practices
+- Use Tailwind CSS for styling
+- Implement responsive design
+- Add proper TypeScript interfaces
+
+Deliverables:
+- app/<page-path>/page.tsx
+- app/<page-path>/loading.tsx
+- app/<page-path>/error.tsx
+- Optional: app/<page-path>/types.ts (for complex types)
+
+Template Structure:
+
+```typescript
+import { Metadata } from 'next';
+import { AsyncState, ApiResponse, isDefined } from '@/types';
+
+// Types for page props using utility types
+interface <PageName>Props {
+  params: {
+    // Define dynamic route parameters with proper typing
+  };
+  searchParams: {
+    // Define search parameters with proper typing
+    [key: string]: string | string[] | undefined;
+  };
+}
+
+// Define data types for the page
+interface PageData {
+  // Define the structure of data this page needs
+}
+
+// Define the async state for data fetching
+type PageState = AsyncState<PageData>;
+
+/**
+ * Generate metadata for the page
+ */
+export async function generateMetadata(
+  { params, searchParams }: <PageName>Props
+): Promise<Metadata> {
+  return {
+    title: '<PageName> | StockPulse',
+    description: 'Description of the page',
+    openGraph: {
+      title: '<PageName> | StockPulse',
+      description: 'Description of the page',
+      type: 'website',
+    },
+  };
+}
+
+/**
+ * <PageName> page component
+ * @description Brief description of what this page does
+ */
+export default async function <PageName>Page({ 
+  params, 
+  searchParams 
+}: <PageName>Props) {
+  // Server-side data fetching
+  // TODO: Add data fetching logic if needed
+  
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+          <PageName>
+        </h1>
+        
+        {/* Page content */}
+        <div className="space-y-6">
+          {/* TODO: Add page content */}
+        </div>
+      </main>
+    </div>
+  );
+}
+```
+
+Loading Component (app/<page-path>/loading.tsx):
+
+```typescript
+/**
+ * Loading UI for <PageName> page
+ */
+export default function Loading() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            <div className="h-4 bg-gray-200 rounded w-4/6"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+Error Component (app/<page-path>/error.tsx):
+
+```typescript
+'use client';
+
+import { useEffect } from 'react';
+
+interface ErrorProps {
+  error: Error & { digest?: string };
+  reset: () => void;
+}
+
+/**
+ * Error UI for <PageName> page
+ */
+export default function Error({ error, reset }: ErrorProps) {
+  useEffect(() => {
+    // Log the error to an error reporting service
+    console.error('Page error:', error);
+  }, [error]);
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-md mx-auto text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          Something went wrong!
+        </h2>
+        <p className="text-gray-600 mb-6">
+          We apologize for the inconvenience. Please try again.
+        </p>
+        <button
+          onClick={reset}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+Next.js 15 Features:
+- Use Server Components for better performance by default
+- Implement proper metadata generation for SEO
+- Use streaming with Suspense boundaries for loading states
+- Leverage React 19 concurrent features when appropriate
+- Use Next.js Image component for optimized images
+- Implement proper caching strategies
+
+SEO and Performance:
+- Generate proper metadata for each page
+- Use semantic HTML structure
+- Implement proper heading hierarchy (h1, h2, h3)
+- Add alt text for images
+- Use Next.js Image component for optimization
+- Consider Core Web Vitals optimization
+
+Accessibility Requirements:
+- Use semantic HTML elements
+- Include proper ARIA labels and roles
+- Ensure keyboard navigation works
+- Test with screen readers
+- Use sufficient color contrast
+- Implement focus management
+
+TypeScript Utils Requirements:
+- Use AsyncState<T> for data fetching state management
+- Use ApiResponse<T> for API call return types
+- Use type guards (isDefined, isString, etc.) for parameter validation
+- Use Metadata type from Next.js for SEO metadata
+- Use ComponentProps and utility types for component properties
+- Use DeepPartial<T> for partial state updates
+- Use proper typing for params and searchParams
+- Validate all dynamic route parameters with type guards
+
+Testing Requirements:
+- Test server-side rendering with proper TypeScript types
+- Test client-side interactions with typed event handlers
+- Test loading and error states using AsyncState<T>
+- Test responsive design with proper component props
+- Test accessibility compliance with typed ARIA attributes
+- Test SEO metadata generation with Metadata type
+- Validate TypeScript utility type usage in page components

@@ -7,12 +7,20 @@ node_modules/
 /dist
 /build
 
-# Local env files
+# Environment files with secrets (NEVER commit these!)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# IMPORTANT: Template files should be committed but actual env files should not
+# .env.example          <- COMMIT (template with example values)
+# .env.production       <- COMMIT (template with placeholder values)
+# .env.staging          <- COMMIT (template with placeholder values)
+# .env                  <- DO NOT COMMIT (actual secrets)
+# .env.production.local <- DO NOT COMMIT (actual production secrets)
+# .env.staging.local    <- DO NOT COMMIT (actual staging secrets)
 
 # Runtime data
 pids

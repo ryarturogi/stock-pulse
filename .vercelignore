@@ -1,0 +1,76 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+.nyc_output
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/test-results/
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging.local
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Misc
+*.tgz
+*.tar.gz
+
+# Documentation (not needed for deployment)
+docs/
+README.md
+CONTRIBUTING.md
+CHANGELOG.md
+
+# Scripts not needed for deployment
+scripts/generate-vapid.js
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+tests/
+jest.config.ts
+playwright.config.ts
+
+# Development configs
+.cursorrules
+claude.rules/
+.husky/
+.eslintrc*
+prettier.config.js
+
+# Build artifacts not needed
+dist/
+build/
+out/

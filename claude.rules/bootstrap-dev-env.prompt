@@ -1,58 +1,83 @@
 Goal
-Prepare an enterprise-grade development environment for a React + TypeScript stock-watcher project.
+Prepare an enterprise-grade development environment for a React + TypeScript stock-watcher project using Next.js 15.
 Do not implement business logic or UI yet.
-Scaffold the repo with all required configs, docs, CI/CD workflows, Cursor + Claude Code rules.
+Scaffold the repo with all required configs, docs, CI/CD workflows, Cursor + Claude Code rules, and Vercel deployment setup.
 
 ⸻
 
 Deliverables
 
 Claude must generate all files needed so the project runs with:
-    •    React 18 + TypeScript (strict mode)
-    •    Vite as bundler
-    •    ESLint + Prettier + Husky + lint-staged
+    •    Next.js 15 + React 19 + TypeScript (strict mode)
+    •    React Compiler enabled for automatic optimizations
+    •    Tailwind CSS + shadcn/ui for styling
+    •    Zustand for state management
+    •    ESLint 9 (flat config) + Prettier + Husky + lint-staged
     •    Jest + React Testing Library (unit tests)
     •    Playwright (E2E tests)
-    •    GitHub Actions CI/CD (lint → test → build → coverage)
-    •    PWA readiness (service worker scaffold, manifest.json, offline.html)
-    •    Secure .env setup (.env.example, .gitignore)
-    •    Docs: README.md, docs/ARCHITECTURE.md, docs/TEST-REVIEW.md
+    •    GitHub Actions CI/CD (lint → test → build → deploy)
+    •    PWA readiness (next-pwa, service worker, push notifications)
+    •    Vercel deployment configuration
+    •    Secure .env setup (.env.example, .env.production, .env.staging)
+    •    Environment variable security audit (NEXT_PUBLIC_ vs private)
+    •    Docs: README.md, ARCHITECTURE.md, VERCEL-DEPLOYMENT.md
     •    Rules: .cursorrules, claude.rules/
 
 ⸻
 
-Repo Structure
+Repo Structure (Next.js 15 App Router)
 
 / (root)
 ├─ .github/workflows/ci.yml
 ├─ .cursorrules
 ├─ claude.rules/
 │  ├─ bootstrap-dev-env.prompt
-│  └─ create-component.prompt
+│  ├─ create-component.prompt
+│  ├─ create-api-route.prompt
+│  └─ create-page.prompt
+├─ app/
+│  ├─ api/
+│  │  ├─ health/route.ts
+│  │  └─ cron/
+│  ├─ globals.css
+│  ├─ layout.tsx
+│  ├─ page.tsx
+│  ├─ loading.tsx
+│  └─ error.tsx
+├─ components/
+│  ├─ ui/ (shadcn/ui components)
+│  └─ shared/
+├─ hooks/
+├─ lib/
+├─ services/
+├─ stores/
+├─ types/
+├─ utils/
 ├─ public/
 │  ├─ manifest.json
-│  └─ offline.html
-├─ src/
-│  ├─ components/
-│  ├─ hooks/
-│  ├─ services/
-│  ├─ sw/
-│  ├─ styles/
-│  └─ main.tsx
+│  ├─ sw.js
+│  └─ icons/
 ├─ scripts/
-│  └─ generate-vapid.js
+│  ├─ generate-vapid.js
+│  ├─ setup-vercel-env.sh
+│  └─ deploy-vercel.sh
 ├─ docs/
 │  ├─ ARCHITECTURE.md
+│  ├─ VERCEL-DEPLOYMENT.md
 │  └─ TEST-REVIEW.md
 ├─ tests/
 ├─ package.json
+├─ next.config.js
+├─ tailwind.config.ts
 ├─ tsconfig.json
 ├─ eslint.config.js
 ├─ prettier.config.js
 ├─ jest.config.ts
 ├─ playwright.config.ts
+├─ vercel.json
 ├─ .gitignore
 ├─ .env.example
+├─ .env.production
 └─ README.md
 
 ⸻

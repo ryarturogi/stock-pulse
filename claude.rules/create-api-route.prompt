@@ -1,0 +1,180 @@
+Goal: Create a Next.js 15 API route named <RouteName> following App Router conventions.
+
+Constraints:
+- Use Next.js 15 App Router API route structure (app/api/*)
+- Implement proper HTTP methods (GET, POST, PUT, DELETE)
+- Add TypeScript strict typing for request/response
+- Include proper error handling and status codes
+- Add input validation and sanitization
+- Do not hardcode secrets or API keys
+- Use proper authentication middleware when needed
+- Follow RESTful API design principles
+- Add comprehensive JSDoc documentation
+
+Deliverables:
+- app/api/<route-path>/route.ts
+- Optional: app/api/<route-path>/types.ts (for complex types)
+- Unit tests for the API route
+
+Template Structure:
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { ApiResponse, ApiError, isString, isNumber, isDefined } from '@/types';
+
+// Define request/response types using utility types
+interface GetRequestParams {
+  // Define query parameters with proper typing
+}
+
+interface PostRequestBody {
+  // Define request body structure with proper typing
+}
+
+interface RouteResponseData {
+  // Define response data structure
+}
+
+/**
+ * API route for <RouteName>
+ * @description Brief description of what this API does
+ */
+
+/**
+ * Handle GET requests
+ * @param request - The incoming request
+ * @returns Response with data or error
+ */
+export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<RouteResponseData> | ApiError>> {
+  try {
+    // Extract query parameters with type validation
+    const { searchParams } = new URL(request.url);
+    
+    // Validate input using type guards
+    const param = searchParams.get('param');
+    if (!isDefined(param) || !isString(param)) {
+      return NextResponse.json<ApiError>(
+        {
+          success: false,
+          error: 'Invalid or missing parameter',
+          timestamp: new Date().toISOString(),
+        },
+        { status: 400 }
+      );
+    }
+    
+    // Process request
+    // TODO: Add business logic
+    
+    const responseData: RouteResponseData = {
+      // TODO: Add response data
+    };
+    
+    return NextResponse.json<ApiResponse<RouteResponseData>>(
+      {
+        success: true,
+        data: responseData,
+        timestamp: new Date().toISOString(),
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('GET /<route>:', error);
+    return NextResponse.json<ApiError>(
+      {
+        success: false,
+        error: 'Internal server error',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Handle POST requests
+ * @param request - The incoming request
+ * @returns Response with created data or error
+ */
+export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<RouteResponseData> | ApiError>> {
+  try {
+    // Parse request body with type validation
+    const body = await request.json() as unknown;
+    
+    // Validate input using type guards and utility types
+    if (!isDefined(body) || typeof body !== 'object') {
+      return NextResponse.json<ApiError>(
+        {
+          success: false,
+          error: 'Invalid request body',
+          timestamp: new Date().toISOString(),
+        },
+        { status: 400 }
+      );
+    }
+    
+    // TODO: Add more specific validation for PostRequestBody
+    
+    // Process request
+    // TODO: Add business logic
+    
+    const responseData: RouteResponseData = {
+      // TODO: Add response data
+    };
+    
+    return NextResponse.json<ApiResponse<RouteResponseData>>(
+      {
+        success: true,
+        data: responseData,
+        message: 'Created successfully',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('POST /<route>:', error);
+    return NextResponse.json<ApiError>(
+      {
+        success: false,
+        error: 'Internal server error',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
+  }
+}
+```
+
+Security Considerations:
+- Validate all input parameters and request bodies
+- Use environment variables for secrets (never NEXT_PUBLIC_)
+- Implement proper authentication/authorization
+- Add rate limiting for public endpoints
+- Sanitize user input to prevent injection attacks
+- Use CORS headers appropriately
+- Log security events for monitoring
+
+Error Handling:
+- Return appropriate HTTP status codes
+- Provide meaningful error messages (without exposing sensitive info)
+- Log errors for debugging
+- Handle edge cases and validation failures
+
+TypeScript Utils Requirements:
+- ALWAYS use ApiResponse<T> and ApiError from '@/types' for consistent API responses
+- Use type guards (isDefined, isString, isNumber, etc.) for input validation
+- Use HttpMethod type for method definitions
+- Use RequestConfig type for external API calls
+- Define proper interfaces for request/response bodies
+- Use AsyncReturnType<T> when working with async functions
+- Use Timestamp type for ISO date strings
+- Validate all inputs using utility type guards before processing
+
+Testing Requirements:
+- Test all HTTP methods implemented
+- Test input validation using utility type guards
+- Test error scenarios and ApiError response format
+- Test ApiResponse<T> structure consistency
+- Test authentication/authorization if applicable
+- Mock external dependencies with proper typing
+- Validate TypeScript utility type usage in API responses

@@ -6,8 +6,8 @@
  * API configuration
  */
 export const API_CONFIG = {
-  BASE_URL: process.env.VITE_API_BASE_URL || 'https://api.stockpulse.com',
-  TIMEOUT: parseInt(process.env.VITE_REQUEST_TIMEOUT || '5000', 10),
+  BASE_URL: process.env.API_BASE_URL || 'https://api.stockpulse.com',
+  TIMEOUT: parseInt(process.env.NEXT_PUBLIC_REQUEST_TIMEOUT || '5000', 10),
   RETRY_ATTEMPTS: 3,
   RATE_LIMIT: {
     REQUESTS_PER_MINUTE: 60,
@@ -16,16 +16,16 @@ export const API_CONFIG = {
 } as const;
 
 /**
- * External API keys and endpoints
+ * External API keys and endpoints (Server-side only - never exposed to client)
  */
 export const EXTERNAL_APIS = {
   FINNHUB: {
     BASE_URL: 'https://finnhub.io/api/v1',
-    API_KEY: process.env.VITE_FINNHUB_API_KEY,
+    API_KEY: process.env.FINNHUB_API_KEY,
   },
   ALPHA_VANTAGE: {
     BASE_URL: 'https://www.alphavantage.co/query',
-    API_KEY: process.env.VITE_ALPHA_VANTAGE_API_KEY,
+    API_KEY: process.env.ALPHA_VANTAGE_API_KEY,
   },
 } as const;
 

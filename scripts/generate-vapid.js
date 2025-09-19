@@ -34,8 +34,8 @@ function generateVapidKeys() {
     }
 
     // Add VAPID keys to .env.example if not already present
-    if (!envContent.includes('VITE_VAPID_PUBLIC_KEY')) {
-      envContent += `\n# Push Notification VAPID Keys\nVITE_VAPID_PUBLIC_KEY=${vapidKeys.publicKey}\nVAPID_PRIVATE_KEY=${vapidKeys.privateKey}\n`;
+    if (!envContent.includes('NEXT_PUBLIC_VAPID_PUBLIC_KEY')) {
+      envContent += `\n# Push Notification VAPID Keys\n# Public key (safe to expose to client)\nNEXT_PUBLIC_VAPID_PUBLIC_KEY=${vapidKeys.publicKey}\n# Private key (server-only - never expose!)\nVAPID_PRIVATE_KEY=${vapidKeys.privateKey}\n`;
 
       fs.writeFileSync(envExamplePath, envContent);
       console.log('📝 Updated .env.example with VAPID keys');
@@ -46,8 +46,8 @@ function generateVapidKeys() {
     if (fs.existsSync(envPath)) {
       let localEnvContent = fs.readFileSync(envPath, 'utf8');
       
-      if (!localEnvContent.includes('VITE_VAPID_PUBLIC_KEY')) {
-        localEnvContent += `\n# Push Notification VAPID Keys\nVITE_VAPID_PUBLIC_KEY=${vapidKeys.publicKey}\nVAPID_PRIVATE_KEY=${vapidKeys.privateKey}\n`;
+      if (!localEnvContent.includes('NEXT_PUBLIC_VAPID_PUBLIC_KEY')) {
+        localEnvContent += `\n# Push Notification VAPID Keys\n# Public key (safe to expose to client)\nNEXT_PUBLIC_VAPID_PUBLIC_KEY=${vapidKeys.publicKey}\n# Private key (server-only - never expose!)\nVAPID_PRIVATE_KEY=${vapidKeys.privateKey}\n`;
         
         fs.writeFileSync(envPath, localEnvContent);
         console.log('📝 Updated .env with VAPID keys');

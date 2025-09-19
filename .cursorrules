@@ -1,5 +1,16 @@
+# =============================================================================
+# Cursor IDE Rules for StockPulse (Next.js 15 + React 19)
+# =============================================================================
+
+# Project Configuration
 language: "TypeScript"
-framework: "React"
+framework: "Next.js 15"
+ui-library: "React 19"
+styling: "Tailwind CSS"
+state-management: "Zustand"
+hosting: "Vercel"
+
+# Code Formatting
 preferred-formatters:
   - "prettier"
   - "eslint"
@@ -7,20 +18,142 @@ style:
   quotes: "single"
   semi: true
   trailingComma: "es5"
+  printWidth: 80
+  tabWidth: 2
+  useTabs: false
+
+# Testing Configuration
 tests:
   require-unit-tests: true
-  test-framework: "jest"
+  unit-framework: "Jest + React Testing Library"
+  e2e-framework: "Playwright"
+  coverage-threshold: 80
+  test-patterns:
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "**/*.spec.ts"
+    - "**/*.spec.tsx"
+
+# Security Guidelines
 security:
   disallow-secrets-in-code: true
   verify-environment-vars: true
+  use-next-public-prefix: true
+  server-only-secrets: true
+  cors-origins: "verify-production"
+
+# File Structure (Next.js 15 App Router)
+file-structure:
+  app-directory: "app/"
+  components: "components/"
+  hooks: "hooks/"
+  lib: "lib/"
+  types: "types/"
+  utils: "utils/"
+  services: "services/"
+  stores: "stores/"
+  styles: "styles/"
+
+# Development Prompts
 prompts:
+  # Next.js 15 Specific
+  - "Use Next.js 15 App Router with app/ directory structure."
+  - "Leverage React Server Components when possible."
+  - "Use Next.js built-in optimizations (Image, Font, etc.)."
+  - "Implement proper error.tsx and loading.tsx files."
+  - "Use route handlers in app/api/ for API endpoints."
+  
+  # React 19 Features
+  - "Take advantage of React 19 concurrent features."
+  - "Use React Compiler optimizations where beneficial."
+  - "Implement proper Suspense boundaries."
+  - "Use new React 19 hooks when appropriate."
+  
+  # TypeScript Best Practices
   - "Always include JSDoc for public functions and props."
-  - "Prefer small focused components."
-  - "If state is complex, suggest Zustand store."
   - "Use TypeScript strict mode and proper typing."
-  - "Follow accessibility best practices."
-  - "Implement error boundaries for components."
+  - "Define interfaces for all component props."
+  - "Use type-safe environment variable access."
+  - "Implement proper error types and handling."
+  
+  # TypeScript Utils Requirements (MANDATORY)
+  - "ALWAYS import utility types from '@/types' instead of creating duplicates."
+  - "Use ApiResponse<T> and ApiError for all API responses."
+  - "Use AsyncState<T> for data fetching state management."
+  - "Use ComponentProps, WithClassName, WithChildren for component props."
+  - "Use Disableable, Loadable, Sizeable, Colorable for common behaviors."
+  - "Use type guards (isDefined, isString, isNumber) for runtime validation."
+  - "Use DeepPartial<T>, RequiredBy<T,K>, PartialBy<T,K> for state management."
+  - "Use EventHandler<T> and AsyncEventHandler<T> for event handling."
+  - "Use HttpMethod, RequestConfig for API configurations."
+  - "Validate all inputs with utility type guards before processing."
+  
+  # Component Guidelines
+  - "Prefer small, focused, single-responsibility components."
   - "Use React.memo for performance optimization when appropriate."
+  - "Implement proper loading and error states."
+  - "Follow accessibility best practices (ARIA, semantic HTML)."
+  - "Use Tailwind CSS for styling with consistent design tokens."
+  
+  # State Management
+  - "Use Zustand for complex state management."
+  - "Prefer local state (useState) for simple component state."
+  - "Use React Context sparingly and only for global state."
+  - "Implement proper state normalization for complex data."
+  
+  # Performance
+  - "Use Next.js Image component for all images."
+  - "Implement proper code splitting with dynamic imports."
+  - "Use React.lazy for component-level code splitting."
+  - "Optimize bundle size and monitor Core Web Vitals."
+  
+  # Architecture
   - "Prefer composition over inheritance."
   - "Use custom hooks for reusable logic."
-  - "Always handle loading and error states."
+  - "Implement proper separation of concerns."
+  - "Use services/ for API communication logic."
+  
+  # Testing
+  - "Write tests for all components and utilities."
+  - "Test user interactions, not implementation details."
+  - "Include accessibility tests in component tests."
+  - "Mock external dependencies properly."
+  
+  # Security
+  - "Never expose API keys or secrets to client-side code."
+  - "Use NEXT_PUBLIC_ prefix only for truly public variables."
+  - "Implement proper input validation and sanitization."
+  - "Use Content Security Policy headers."
+  
+  # API Routes
+  - "Use proper HTTP status codes in API responses."
+  - "Implement proper error handling in API routes."
+  - "Use middleware for authentication and validation."
+  - "Follow RESTful API design principles."
+  
+  # Deployment (Vercel)
+  - "Configure proper caching strategies."
+  - "Use Vercel cron jobs for scheduled tasks."
+  - "Implement health check endpoints."
+  - "Monitor performance and errors in production."
+
+# Code Quality
+quality:
+  max-function-length: 30
+  max-component-props: 10
+  prefer-early-return: true
+  no-nested-ternaries: true
+  consistent-naming: true
+
+# Import Organization
+imports:
+  order:
+    - "react"
+    - "next/*"
+    - "external-libraries"
+    - "@/types" (ALWAYS FIRST in @/* imports)
+    - "@/*"
+    - "./relative-imports"
+  newlines-between: "always"
+  sort-alphabetically: true
+  typescript-utils: "Import from '@/types' before other @/* imports"
