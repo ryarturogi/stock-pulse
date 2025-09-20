@@ -11,7 +11,16 @@
       "Bash(pkill:*)",
       "Bash(true)",
       "Bash(pnpm dev:*)",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(mv:*)",
+      "Bash(ls:*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm build:*)",
+      "Bash(find:*)",
+      "Bash(curl:*)",
+      "Bash(pnpm list:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

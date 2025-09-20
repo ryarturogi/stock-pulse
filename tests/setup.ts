@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom';
 
 // Polyfill for React 19 features
-if (!global.IS_REACT_ACT_ENVIRONMENT) {
-  global.IS_REACT_ACT_ENVIRONMENT = true;
+if (!(global as any).IS_REACT_ACT_ENVIRONMENT) {
+  (global as any).IS_REACT_ACT_ENVIRONMENT = true;
 }
 
 // Mock ResizeObserver

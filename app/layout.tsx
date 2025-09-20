@@ -9,17 +9,22 @@ export const metadata: Metadata = {
   title: 'StockPulse - Real-time Stock Market Tracker',
   description: 'Track stocks, manage portfolios, and stay updated with real-time market data',
   manifest: '/manifest.json',
-  themeColor: '#000000',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'StockPulse',
   },
   icons: {
-    icon: '/icons/icon-192x192.png',
-    apple: '/icons/icon-192x192.png',
+    icon: '/icons/icon-192x192.svg',
+    apple: '/icons/icon-192x192.svg',
   },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#000000',
 };
 
 export default function RootLayout({
@@ -40,7 +45,7 @@ export default function RootLayout({
         <meta name='msapplication-TileColor' content='#000000' />
         <meta name='msapplication-tap-highlight' content='no' />
         
-        <link rel='apple-touch-icon' href='/icons/icon-192x192.png' />
+        <link rel='apple-touch-icon' href='/icons/icon-192x192.svg' />
         <link rel='manifest' href='/manifest.json' />
         <link rel='shortcut icon' href='/favicon.ico' />
       </head>
