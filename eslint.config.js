@@ -10,6 +10,7 @@ import typescriptParser from '@typescript-eslint/parser';
 export default [
   js.configs.recommended,
   {
+    name: 'next-js-config',
     files: ['**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
       parser: typescriptParser,
@@ -23,6 +24,18 @@ export default [
       globals: {
         React: 'readonly',
         JSX: 'readonly',
+        console: 'readonly',
+        process: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        fetch: 'readonly',
+        URL: 'readonly',
+        Response: 'readonly',
+        ReadableStream: 'readonly',
+        TextEncoder: 'readonly',
+        WebSocket: 'readonly',
+        AbortController: 'readonly',
+        NodeJS: 'readonly',
       },
     },
     plugins: {
@@ -55,7 +68,7 @@ export default [
       ],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       
       // React rules
       ...reactPlugin.configs.recommended.rules,

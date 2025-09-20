@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
+
 import { ApiError, PriceAlertNotification } from '@/core/types';
 
 // In-memory storage for subscriptions (in production, use a database)
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<{
         // Remove invalid subscriptions
         if (errorMessage.includes('410') || errorMessage.includes('Gone')) {
           const subscriptionId = Array.from(subscriptions.entries())
-            .find(([_, data]) => data.subscription.endpoint === subscriptionData.subscription.endpoint)?.[0];
+            .find(([, data]) => data.subscription.endpoint === subscriptionData.subscription.endpoint)?.[0];
           
           if (subscriptionId) {
             subscriptions.delete(subscriptionId);

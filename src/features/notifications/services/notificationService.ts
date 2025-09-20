@@ -83,6 +83,12 @@ export class NotificationService {
         return;
       }
 
+      // Skip service worker registration in development to avoid precache errors
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Service worker registration skipped in development mode');
+        return;
+      }
+
       this.serviceWorkerRegistration = await navigator.serviceWorker.register('/sw.js');
       console.log('Service worker registered for notifications');
       
