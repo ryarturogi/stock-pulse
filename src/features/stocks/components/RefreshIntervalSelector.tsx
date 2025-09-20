@@ -36,7 +36,6 @@ export const RefreshIntervalSelector: React.FC<RefreshIntervalSelectorProps> = (
     onIntervalChange(newInterval);
   };
 
-  const currentConfig = REFRESH_INTERVALS.find(config => config.value === currentInterval);
 
   return (
     <div className={`flex items-center space-x-1 lg:space-x-2 ${className}`}>

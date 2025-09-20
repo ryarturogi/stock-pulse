@@ -67,7 +67,6 @@ export async function GET(request: NextRequest) {
       // Connect to Finnhub WebSocket
       let webSocket: WebSocket | null = null;
       let reconnectTimeout: NodeJS.Timeout | null = null;
-      let isConnected = false;
       let reconnectAttempts = 0;
       const maxReconnectAttempts = 5;
 
@@ -80,7 +79,6 @@ export async function GET(request: NextRequest) {
 
           webSocket.onopen = () => {
             console.log('✅ Connected to Finnhub WebSocket');
-            isConnected = true;
             reconnectAttempts = 0; // Reset attempts on successful connection
             
             // Subscribe to all symbols with rate limiting
@@ -129,20 +127,14 @@ export async function GET(request: NextRequest) {
 
           webSocket.onerror = (error) => {
             console.error('❌ Finnhub WebSocket error:', error);
-            isConnected = false;
           };
 
           webSocket.onclose = (event) => {
             console.log('❌ Finnhub WebSocket closed:', event.code, event.reason);
-            isConnected = false;
             
             // Don't reconnect if we've exceeded max attempts or if it's likely rate limited
             if (reconnectAttempts >= maxReconnectAttempts || event.code === 1002 || event.code === 1006) {
               console.log(`❌ Max reconnection attempts reached (${reconnectAttempts}/${maxReconnectAttempts}) or rate limited (code: ${event.code}). Stopping reconnection.`);
-              sendEvent({ 
-                type: 'error', 
-                message: 'Rate limited by Finnhub or max attempts reached. Using API fallback.' 
-              });
               // Remove from active connections and set cooldown
               activeConnections.delete(connectionKey);
               // Set 10 minute cooldown for rate limited connections

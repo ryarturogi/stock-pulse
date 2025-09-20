@@ -68,7 +68,7 @@ export interface WatchedStock {
   isLoading?: boolean;
   lastUpdated?: number;
   priceHistory?: PriceDataPoint[];
-  isAlertTriggered?: boolean;
+  isAlertTriggered?: boolean | undefined;
   alertTriggeredAt?: number;
 }
 
@@ -219,6 +219,7 @@ export interface StockStoreState {
   addStock: (_symbol: string, _name: string, _alertPrice: number) => void;
   removeStock: (_symbol: string) => void;
   updateStockPrice: (_symbol: string, _quote: FinnhubStockQuote) => void;
+  updateAlertPrice: (_symbol: string, _newAlertPrice: number) => void;
   setWebSocketStatus: (_status: WebSocketStatus) => void;
   setWebSocketConnection: (_connection: any) => void;
   setLoading: (_loading: boolean) => void;

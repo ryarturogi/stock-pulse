@@ -14,7 +14,6 @@ import {
   FinnhubStockQuote,
   WebSocketStatus,
   STORAGE_KEYS,
-  isFinnhubStockQuote,
   RefreshInterval,
   REFRESH_INTERVALS
 } from '@/core/types';
@@ -83,8 +82,6 @@ export const useStockStore = create<StockStoreState>()(
       },
 
       removeStock: (symbol: string) => {
-        const state = get();
-        
         set(state => ({
           watchedStocks: state.watchedStocks.filter(stock => stock.symbol !== symbol),
           error: null,
@@ -104,8 +101,6 @@ export const useStockStore = create<StockStoreState>()(
 
       // Update alert price for a watched stock
       updateAlertPrice: (symbol: string, newAlertPrice: number) => {
-        const state = get();
-        
         set(state => ({
           watchedStocks: state.watchedStocks.map(stock => {
             if (stock.symbol === symbol) {
@@ -172,10 +167,18 @@ export const useStockStore = create<StockStoreState>()(
         // Check for price alerts
         const stock = get().watchedStocks.find(s => s.symbol === symbol);
         if (stock && stock.alertPrice && quote.current >= stock.alertPrice && !stock.isAlertTriggered) {
-          getNotificationService().showNotification(
-            `Price Alert: ${symbol}`,
-            `${symbol} has reached your target price of $${stock.alertPrice}. Current price: $${quote.current}`
-          );
+          getNotificationService().showNotification({
+            title: `Price Alert: ${symbol}`,
+            body: `${symbol} has reached your target price of $${stock.alertPrice}. Current price: $${quote.current}`,
+            icon: '/icons/icon-192x192.svg',
+            badge: '/icons/icon-72x72.svg',
+            data: {
+              symbol: symbol,
+              currentPrice: quote.current,
+              alertPrice: stock.alertPrice,
+              type: 'above'
+            }
+          });
         }
       },
 
@@ -549,13 +552,60 @@ export const useStockStore = create<StockStoreState>()(
       },
     }),
     {
-      name: STORAGE_KEYS.STOCK_STORE,
-      storage: createJSONStorage(() => localStorage),
+      name: STORAGE_KEYS.WATCHED_STOCKS,
+      storage: createJSONStorage(() => {
+        try {
+          return localStorage;
+        } catch (error) {
+          // Fallback to in-memory storage if localStorage is not available
+          console.warn('localStorage not available, using in-memory storage:', error);
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+          };
+        }
+      }),
+      version: 1, // Current version of the persisted state
+      migrate: (persistedState: any, version: number) => {
+        try {
+          // Handle migration from older versions
+          if (version === 0) {
+            // If no version exists, this is a fresh install or old format
+            // Return default state structure
+            return {
+              watchedStocks: persistedState?.watchedStocks || [],
+              refreshTimeInterval: persistedState?.refreshTimeInterval || '2m',
+              isLiveDataEnabled: persistedState?.isLiveDataEnabled ?? true,
+            };
+          }
+          
+          // For current version, return as-is
+          return persistedState;
+        } catch (error) {
+          console.warn('Failed to migrate persisted state, using defaults:', error);
+          // Return safe defaults if migration fails
+          return {
+            watchedStocks: [],
+            refreshTimeInterval: '2m',
+            isLiveDataEnabled: true,
+          };
+        }
+      },
       partialize: (state) => ({
         watchedStocks: state.watchedStocks,
         refreshTimeInterval: state.refreshTimeInterval,
         isLiveDataEnabled: state.isLiveDataEnabled,
       }),
+      onRehydrateStorage: () => {
+        return (_state, error) => {
+          if (error) {
+            console.warn('Failed to rehydrate store state:', error);
+          } else {
+            console.log('Store state rehydrated successfully');
+          }
+        };
+      },
     }
   )
 );

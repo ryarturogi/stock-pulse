@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { Timestamp } from '@/core/types';
 
 // Define types for health check response
@@ -123,7 +124,7 @@ async function checkApiHealth(baseUrl: string): Promise<ApiHealthCheck> {
       status: response.ok ? 'healthy' : 'degraded',
       responseTime: `${responseTime}ms`,
     };
-  } catch (error) {
+  } catch {
     const responseTime = Date.now() - startTime;
     
     return {

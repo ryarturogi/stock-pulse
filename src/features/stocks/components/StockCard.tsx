@@ -90,8 +90,8 @@ export const StockCard: React.FC<StockCardProps> = ({
     }
   };
 
-  // Use changePercent if available, otherwise fall back to percentChange
-  const displayChangePercent = changePercent ?? stock.percentChange;
+  // Use changePercent if available, otherwise fall back to stock.changePercent
+  const displayChangePercent = changePercent ?? stock.changePercent;
 
   // Determine alert status and colors
   const isAboveAlert = currentPrice && currentPrice >= alertPrice;
