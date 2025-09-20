@@ -36,6 +36,11 @@ export default [
         WebSocket: 'readonly',
         AbortController: 'readonly',
         NodeJS: 'readonly',
+        window: 'readonly',
+        document: 'readonly',
+        localStorage: 'readonly',
+        Notification: 'readonly',
+        NotificationPermission: 'readonly',
       },
     },
     plugins: {
@@ -64,7 +69,12 @@ export default [
       // TypeScript rules
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_' },
+        { 
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          args: 'after-used',
+          ignoreRestSiblings: true,
+        },
       ],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',

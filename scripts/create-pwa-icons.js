@@ -84,3 +84,4 @@ const createActionIcon = (name, size) => `
 console.log('\n✅ PWA icons created successfully!');
 console.log('📝 Note: These are SVG placeholders. In production, convert to PNG format.');
 console.log('🔧 You can use tools like sharp or imagemagick to convert SVG to PNG.');
+
