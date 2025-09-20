@@ -102,6 +102,27 @@ export const useStockStore = create<StockStoreState>()(
         }
       },
 
+      // Update alert price for a watched stock
+      updateAlertPrice: (symbol: string, newAlertPrice: number) => {
+        const state = get();
+        
+        set(state => ({
+          watchedStocks: state.watchedStocks.map(stock => {
+            if (stock.symbol === symbol) {
+              return {
+                ...stock,
+                alertPrice: newAlertPrice,
+                isAlertTriggered: false, // Reset alert status when price is changed
+              };
+            }
+            return stock;
+          }),
+          error: null,
+        }));
+
+        console.log(`📝 Updated alert price for ${symbol}: $${newAlertPrice.toFixed(2)}`);
+      },
+
       // Update stock price with throttling to prevent excessive updates
       updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => {
         const state = get();
@@ -207,16 +228,22 @@ export const useStockStore = create<StockStoreState>()(
           // Set connection timeout
           const connectionTimeout = setTimeout(() => {
             if (get().webSocketStatus === 'connecting') {
-              console.log('⏰ WebSocket proxy connection timeout, retrying...');
+              console.log('⏰ WebSocket proxy connection timeout, switching to API mode...');
               eventSource.close();
-              setTimeout(() => {
-                const currentState = get();
-                if (currentState.watchedStocks.length > 0) {
-                  currentState.connectWebSocket();
-                }
-              }, 1000);
+              set({
+                webSocketStatus: 'error',
+                isConnecting: false,
+                error: 'Connection timeout - using API fallback',
+                webSocketConnection: null
+              });
+              
+              // Start periodic refresh as fallback
+              const errorState = get();
+              if (errorState.isLiveDataEnabled && errorState.watchedStocks.length > 0) {
+                errorState.startPeriodicRefresh();
+              }
             }
-          }, 10000); // 10 second timeout
+          }, 15000); // 15 second timeout (increased for better reliability)
 
           eventSource.onopen = () => {
             console.log('✅ Connected to secure WebSocket proxy');
@@ -324,7 +351,6 @@ export const useStockStore = create<StockStoreState>()(
             // Start periodic refresh as fallback when WebSocket fails
             const errorState = get();
             if (errorState.isLiveDataEnabled && errorState.watchedStocks.length > 0) {
-              console.log('🔄 Starting periodic refresh as WebSocket fallback');
               errorState.startPeriodicRefresh();
             }
 
@@ -401,7 +427,6 @@ export const useStockStore = create<StockStoreState>()(
         }
 
         // Start new interval as WebSocket fallback
-        console.log(`⏰ Starting periodic refresh as WebSocket fallback with ${intervalMs}ms interval (${intervalMs/1000}s)`);
         console.log(`📊 Current refresh interval: ${state.refreshTimeInterval}`);
         const interval = setInterval(async () => {
           const currentState = get();
@@ -414,7 +439,6 @@ export const useStockStore = create<StockStoreState>()(
           }
           
           if (currentState.watchedStocks.length > 0) {
-            console.log(`🔄 Performing fallback API refresh of ${currentState.watchedStocks.length} stocks...`, new Date().toLocaleTimeString());
             
             // Use Promise.all for concurrent API calls
             const refreshPromises = currentState.watchedStocks.map(async (stock) => {
@@ -554,18 +578,19 @@ export const useStockLoading = () => useStockStore(state => state.isLoading);
 export const useStockError = () => useStockStore(state => state.error);
 
 // Stock management actions hook
-export const useStockActions = () => useStockStore(state => ({
-  addStock: state.addStock,
-  removeStock: state.removeStock,
-  setRefreshTimeInterval: state.setRefreshTimeInterval,
-  setLiveDataEnabled: state.setLiveDataEnabled,
-  clearError: state.clearError,
-}));
+export const useStockActions = () => ({
+  addStock: useStockStore(state => state.addStock),
+  removeStock: useStockStore(state => state.removeStock),
+  updateAlertPrice: useStockStore(state => state.updateAlertPrice),
+  setRefreshTimeInterval: useStockStore(state => state.setRefreshTimeInterval),
+  setLiveDataEnabled: useStockStore(state => state.setLiveDataEnabled),
+  clearError: useStockStore(state => state.clearError),
+});
 
 // WebSocket management actions hook
-export const useWebSocketActions = () => useStockStore(state => ({
-  connectWebSocket: state.connectWebSocket,
-  disconnectWebSocket: state.disconnectWebSocket,
-  startPeriodicRefresh: state.startPeriodicRefresh,
-  stopPeriodicRefresh: state.stopPeriodicRefresh,
-}));
+export const useWebSocketActions = () => ({
+  connectWebSocket: useStockStore(state => state.connectWebSocket),
+  disconnectWebSocket: useStockStore(state => state.disconnectWebSocket),
+  startPeriodicRefresh: useStockStore(state => state.startPeriodicRefresh),
+  stopPeriodicRefresh: useStockStore(state => state.stopPeriodicRefresh),
+});

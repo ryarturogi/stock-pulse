@@ -278,13 +278,13 @@ export default function HomePage() {
                         <div className={`w-2 h-2 rounded-full ${
                           webSocketStatus === 'connected' ? 'bg-green-500' :
                           webSocketStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                          webSocketStatus === 'error' ? 'bg-red-500' :
+                          webSocketStatus === 'error' ? 'bg-blue-500' :
                           'bg-gray-400'
                         }`} />
                         <span className="text-sm text-gray-600 dark:text-gray-300">
                           {webSocketStatus === 'connected' ? 'Live' :
                            webSocketStatus === 'connecting' ? 'Connecting...' :
-                           webSocketStatus === 'error' ? 'Error' :
+                           webSocketStatus === 'error' ? 'API Mode' :
                            'Offline'}
                         </span>
                       </div>
@@ -399,13 +399,13 @@ export default function HomePage() {
                       <div className={`w-2 h-2 rounded-full ${
                         webSocketStatus === 'connected' ? 'bg-green-500' :
                         webSocketStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                        webSocketStatus === 'error' ? 'bg-red-500' :
+                        webSocketStatus === 'error' ? 'bg-blue-500' :
                         'bg-gray-400'
                       }`} />
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         {webSocketStatus === 'connected' ? 'Live' :
                          webSocketStatus === 'connecting' ? 'Connecting' :
-                         webSocketStatus === 'error' ? 'Error' :
+                         webSocketStatus === 'error' ? 'API Mode' :
                          'Offline'}
                       </span>
                     </div>

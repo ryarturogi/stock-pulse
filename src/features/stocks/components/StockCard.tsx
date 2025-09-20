@@ -8,12 +8,13 @@
 
 'use client';
 
-import React from 'react';
-import { TrendingUp, TrendingDown, Clock, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { TrendingUp, TrendingDown, Clock, X, Edit2, Check, X as XIcon } from 'lucide-react';
 import { 
   StockCardProps, 
   STOCK_COLORS
 } from '@/core/types';
+import { useStockStore } from '@/features/stocks/stores/stockStore';
 // import { stockService } from '@/services/stockService';
 
 /**
@@ -38,6 +39,56 @@ export const StockCard: React.FC<StockCardProps> = ({
     high,
     low,
   } = stock;
+
+  // Edit state for alert price
+  const [isEditingAlert, setIsEditingAlert] = useState(false);
+  const [editAlertValue, setEditAlertValue] = useState(alertPrice.toString());
+  
+  // Get stock actions
+  const updateAlertPrice = useStockStore(state => state.updateAlertPrice);
+
+  // Sync edit value with prop changes
+  useEffect(() => {
+    if (!isEditingAlert) {
+      setEditAlertValue(alertPrice.toString());
+    }
+  }, [alertPrice, isEditingAlert]);
+
+  // Handle alert price editing
+  const handleEditAlert = () => {
+    console.log('🔧 Edit alert clicked for', symbol, 'current price:', alertPrice);
+    setIsEditingAlert(true);
+    setEditAlertValue(alertPrice.toString());
+  };
+
+  const handleSaveAlert = () => {
+    const newPrice = parseFloat(editAlertValue);
+    if (!isNaN(newPrice) && newPrice > 0) {
+      console.log(`💾 Saving new alert price for ${symbol}: $${newPrice} (previous: $${alertPrice})`);
+      updateAlertPrice(symbol, newPrice);
+      setIsEditingAlert(false);
+      
+      // Reset edit value to ensure it syncs with the new price
+      setEditAlertValue(newPrice.toString());
+    } else {
+      console.warn(`❌ Invalid alert price for ${symbol}: "${editAlertValue}"`);
+      // Optional: Show user feedback for invalid input
+      setEditAlertValue(alertPrice.toString()); // Reset to current valid value
+    }
+  };
+
+  const handleCancelAlert = () => {
+    setIsEditingAlert(false);
+    setEditAlertValue(alertPrice.toString());
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveAlert();
+    } else if (e.key === 'Escape') {
+      handleCancelAlert();
+    }
+  };
 
   // Use changePercent if available, otherwise fall back to percentChange
   const displayChangePercent = changePercent ?? stock.percentChange;
@@ -203,7 +254,47 @@ export const StockCard: React.FC<StockCardProps> = ({
 
           {/* Alert Information */}
           <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-gray-700">
-            <span className="text-gray-500 dark:text-gray-400">Alert: ${alertPrice.toFixed(2)}</span>
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-500 dark:text-gray-400">Alert:</span>
+              {isEditingAlert ? (
+                <div className="flex items-center space-x-1">
+                  <input
+                    type="number"
+                    value={editAlertValue}
+                    onChange={(e) => setEditAlertValue(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    className="w-24 px-2 py-1.5 text-sm text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleSaveAlert}
+                    className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                    title="Save"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleCancelAlert}
+                    className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                    title="Cancel"
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleEditAlert}
+                  className="flex items-center space-x-2 text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-all group px-2 py-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-200 dark:hover:border-blue-700"
+                  title="Click to edit alert price"
+                >
+                  <span className="font-medium">${alertPrice.toFixed(2)}</span>
+                  <Edit2 className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
+                </button>
+              )}
+            </div>
             {getAlertBadge()}
           </div>
 
