@@ -1,6 +1,12 @@
 # =============================================================================
-# Cursor IDE Rules for StockPulse (Next.js 15 + React 19)
+# Cursor IDE Rules for StockPulse (Next.js 15 + React 19 + TypeScript)
+# Real-time Stock Tracking PWA - UPDATED POST-REFACTOR
 # =============================================================================
+
+# Project Overview
+# StockPulse: Enterprise-grade Progressive Web Application for real-time stock tracking
+# Features: WebSocket live data, stock watchlists, price alerts, push notifications, PWA
+# Tech Stack: Next.js 15, React 19, TypeScript 5.6, Zustand, Tailwind CSS, Finnhub API
 
 # Project Configuration
 language: "TypeScript"
@@ -9,6 +15,9 @@ ui-library: "React 19"
 styling: "Tailwind CSS"
 state-management: "Zustand"
 hosting: "Vercel"
+api-provider: "Finnhub"
+pwa: "next-pwa"
+package-manager: "pnpm"
 
 # Code Formatting
 preferred-formatters:
@@ -42,17 +51,26 @@ security:
   server-only-secrets: true
   cors-origins: "verify-production"
 
-# File Structure (Next.js 15 App Router)
+# File Structure (Feature-based Architecture)
 file-structure:
   app-directory: "app/"
-  components: "components/"
-  hooks: "hooks/"
-  lib: "lib/"
-  types: "types/"
-  utils: "utils/"
-  services: "services/"
-  stores: "stores/"
-  styles: "styles/"
+  core-types: "src/core/types/"
+  core-constants: "src/core/constants/"
+  features: "src/features/"
+  shared-components: "src/shared/components/"
+  shared-hooks: "src/shared/hooks/"
+  tests: "tests/"
+  public: "public/"
+  claude-rules: "claude.rules/"
+
+# Current Architecture (Post-Refactor)
+architecture:
+  pattern: "feature-based"
+  state: "zustand-with-persistence"
+  api: "finnhub-integration"
+  websocket: "eventsource-proxy"
+  pwa: "next-pwa-workbox"
+  testing: "jest-rtl-playwright"
 
 # Development Prompts
 prompts:
@@ -76,17 +94,17 @@ prompts:
   - "Use type-safe environment variable access."
   - "Implement proper error types and handling."
   
-  # TypeScript Utils Requirements (MANDATORY)
-  - "ALWAYS import utility types from '@/types' instead of creating duplicates."
-  - "Use ApiResponse<T> and ApiError for all API responses."
-  - "Use AsyncState<T> for data fetching state management."
-  - "Use ComponentProps, WithClassName, WithChildren for component props."
-  - "Use Disableable, Loadable, Sizeable, Colorable for common behaviors."
-  - "Use type guards (isDefined, isString, isNumber) for runtime validation."
-  - "Use DeepPartial<T>, RequiredBy<T,K>, PartialBy<T,K> for state management."
-  - "Use EventHandler<T> and AsyncEventHandler<T> for event handling."
-  - "Use HttpMethod, RequestConfig for API configurations."
-  - "Validate all inputs with utility type guards before processing."
+  # StockPulse TypeScript Requirements (MANDATORY - UPDATED)
+  - "ALWAYS import types from '@/core/types' for stock-related functionality."
+  - "Use ComponentProps for basic component props with className support."
+  - "Use StockStoreState for Zustand store state management."
+  - "Use FinnhubStockQuote, WatchedStock, StockOption for stock data."
+  - "Use WebSocketStatus, RefreshInterval for connection management."
+  - "Use type guards (isString, isNumber, isFinnhubStockQuote) for runtime validation."
+  - "Use EventSource | null for WebSocket connections (NEVER any)."
+  - "Use NodeJS.Timeout | number | null for timer references."
+  - "Use ApiResponse<T> from @/core/types for consistent API responses."
+  - "Follow TypeScript strict mode with noImplicitOverride: true."
   
   # Component Guidelines
   - "Prefer small, focused, single-responsibility components."
@@ -95,11 +113,13 @@ prompts:
   - "Follow accessibility best practices (ARIA, semantic HTML)."
   - "Use Tailwind CSS for styling with consistent design tokens."
   
-  # State Management
-  - "Use Zustand for complex state management."
+  # StockPulse State Management (Zustand)
+  - "Use useStockStore() for all stock-related state."
+  - "Use stockService for API calls with built-in request deduplication."
+  - "Use ErrorBoundary for error handling throughout the app."
+  - "Use localStorage persistence with fallback for SSR compatibility."
+  - "Use WebSocket connections with exponential backoff reconnection."
   - "Prefer local state (useState) for simple component state."
-  - "Use React Context sparingly and only for global state."
-  - "Implement proper state normalization for complex data."
   
   # Performance
   - "Use Next.js Image component for all images."
@@ -113,11 +133,15 @@ prompts:
   - "Implement proper separation of concerns."
   - "Use services/ for API communication logic."
   
-  # Testing
-  - "Write tests for all components and utilities."
-  - "Test user interactions, not implementation details."
-  - "Include accessibility tests in component tests."
-  - "Mock external dependencies properly."
+  # StockPulse Testing (Jest + RTL + Playwright)
+  - "Use jest.config.cjs configuration (not .ts due to ES modules)."
+  - "No React imports needed in tests (React 19 JSX transform)."
+  - "Test loading states with skeleton components."
+  - "Test error states with ErrorBoundary integration."
+  - "Test real-time updates and WebSocket connections."
+  - "Test responsive design with Tailwind breakpoints."
+  - "Mock Finnhub API and WebSocket connections properly."
+  - "Use pnpm test for unit tests, pnpm test:e2e for Playwright."
   
   # Security
   - "Never expose API keys or secrets to client-side code."
@@ -125,11 +149,14 @@ prompts:
   - "Implement proper input validation and sanitization."
   - "Use Content Security Policy headers."
   
-  # API Routes
-  - "Use proper HTTP status codes in API responses."
-  - "Implement proper error handling in API routes."
-  - "Use middleware for authentication and validation."
-  - "Follow RESTful API design principles."
+  # StockPulse API Routes (Finnhub Integration)
+  - "Follow existing patterns from /api/quote and /api/health routes."
+  - "Use AbortSignal.timeout(10000) for external API calls."
+  - "Handle Finnhub API rate limiting gracefully."
+  - "Use proper CORS headers for WebSocket proxy routes."
+  - "Validate stock symbols with regex patterns."
+  - "Use ApiResponse<T> from @/core/types for consistent responses."
+  - "Support stock symbol validation and sanitization."
   
   # Deployment (Vercel)
   - "Configure proper caching strategies."
@@ -147,15 +174,50 @@ quality:
   no-nested-ternaries: true
   consistent-naming: true
 
-# Import Organization
+# Import Organization (Updated for StockPulse)
 imports:
   order:
-    - "react"
     - "next/*"
     - "external-libraries"
-    - "@/types" (ALWAYS FIRST in @/* imports)
-    - "@/*"
+    - "@/core/types" (ALWAYS FIRST - contains all type definitions)
+    - "@/features/*"
+    - "@/shared/*"
     - "./relative-imports"
   newlines-between: "always"
   sort-alphabetically: true
-  typescript-utils: "Import from '@/types' before other @/* imports"
+  react-19-note: "No React imports needed with React 19 JSX transform"
+
+# StockPulse Specific Patterns
+stockpulse-patterns:
+  store-usage: "const { watchedStocks, addStock, connectWebSocket } = useStockStore();"
+  api-calls: "await stockService.fetchStockQuote(symbol) // Built-in deduplication"
+  websocket: "EventSource proxy with exponential backoff reconnection"
+  error-handling: "ErrorBoundary wrapper with graceful fallbacks"
+  loading-states: "Skeleton components for better UX"
+  real-time: "WebSocket for live data, periodic refresh as fallback"
+
+# Environment Variables (StockPulse)
+env-vars:
+  server-side:
+    - "FINNHUB_API_KEY"
+
+# Current Status (Post-Refactor)
+status:
+  typescript-errors: "ZERO (strict mode with noImplicitOverride)"
+  test-status: "15/15 tests passing (Jest + RTL)"
+  build-status: "Production build successful (122 kB main bundle)"
+  performance: "Optimized with request deduplication and memoization"
+  websocket: "Memory leaks fixed, proper reconnection logic"
+  error-handling: "Comprehensive ErrorBoundary implementation"
+  type-safety: "All 'any' types eliminated"
+  
+# Recent Improvements (Latest Review)
+recent-fixes:
+  - "Fixed WebSocket memory leaks with proper cleanup"
+  - "Eliminated all any types for better type safety"
+  - "Added request deduplication to prevent duplicate API calls"
+  - "Implemented exponential backoff for WebSocket reconnections"
+  - "Enhanced error handling with comprehensive ErrorBoundary"
+  - "Improved loading states with skeleton components"
+  - "Fixed Jest configuration for ES modules compatibility"
+  - "Added proper TypeScript override modifiers"

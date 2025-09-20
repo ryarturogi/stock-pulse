@@ -1,39 +1,47 @@
-Goal: Create a React + TypeScript component named <ComponentName> for the Next.js 15 + React 19 project.
+Goal: Create a React + TypeScript component named <ComponentName> for the Next.js 15 + React 19 StockPulse project.
+
+Project Context:
+- StockPulse: Real-time stock tracking PWA with Finnhub API integration
+- Features: Stock watchlists, price alerts, WebSocket real-time data, PWA with push notifications
+- Architecture: Feature-based structure with shared components and hooks
 
 Constraints:
 - Use functional component with proper TypeScript typing
 - Props must be typed and documented with JSDoc
-- Add unit test with React Testing Library
+- Add unit test with React Testing Library (use jest.config.cjs)
 - Do not hardcode secrets or API keys
 - Follow accessibility best practices
-- Include proper error handling and loading states
-- Use TypeScript strict mode
-- Follow Next.js 15 and React 19 best practices
-- Use Tailwind CSS for styling
+- Include proper error handling and loading states with ErrorBoundary support
+- Use TypeScript strict mode with noImplicitOverride: true
+- Follow Next.js 15 and React 19 best practices (no React import needed)
+- Use Tailwind CSS for styling with dark mode support
 - Consider Server Component vs Client Component usage
+- Use pnpm for package management
+- Follow feature-based architecture pattern
 
 Deliverables:
-- components/<ComponentName>/index.tsx
-- components/<ComponentName>/index.test.tsx
-- Optional: components/<ComponentName>/types.ts (if complex props)
+- src/shared/components/<ComponentName>/<ComponentName>.tsx
+- src/shared/components/<ComponentName>/<ComponentName>.test.tsx
+- Update src/shared/components/index.ts export
+- Optional: Add to feature-specific components if domain-specific
 
 Template Structure:
 
 ```typescript
-import React from 'react';
-import { ComponentProps, WithClassName } from '@/types';
+// No React import needed with React 19 JSX transform
+import { ComponentProps } from '@/core/types';
 
 /**
  * Props for the <ComponentName> component
- * Uses utility types for consistency and type safety
+ * Uses project utility types for consistency and type safety
  */
-export interface <ComponentName>Props extends WithClassName {
+export interface <ComponentName>Props extends ComponentProps {
   // Define component-specific props here with JSDoc comments
-  // Use utility types where applicable:
-  // - Disableable for components that can be disabled
-  // - Loadable for components with loading states
-  // - Sizeable for components with size variants
-  // - Colorable for components with color variants
+  // Available from @/core/types:
+  // - StockOption, WatchedStock, FinnhubStockQuote for stock data
+  // - WebSocketStatus, RefreshInterval for connection states
+  // - ChartDataPoint for chart components
+  // - Use type guards: isString, isNumber, isFinnhubStockQuote, etc.
 }
 
 /**
@@ -63,22 +71,31 @@ Next.js 15 Considerations:
 - Implement proper loading.tsx and error.tsx for pages
 - Use React 19 concurrent features when appropriate
 
-TypeScript Utils Requirements:
-- ALWAYS import utility types from '@/types' instead of creating custom ones
-- Use ComponentProps, WithClassName, WithChildren for component props
-- Use Disableable, Loadable, Sizeable, Colorable for common component behaviors
-- Use ApiResponse<T> for API call return types
-- Use AsyncState<T> for data fetching state management
-- Use EventHandler<T> and AsyncEventHandler<T> for event handlers
-- Use type guards (isDefined, isString, isNumber, etc.) for runtime type checking
-- Use DeepPartial<T> for partial state updates
-- Use RequiredBy<T, K> or PartialBy<T, K> for selective required/optional properties
+TypeScript Requirements:
+- ALWAYS import types from '@/core/types' for stock-related functionality
+- Use ComponentProps for basic component props with className support
+- Use StockStoreState for Zustand store state management
+- Use FinnhubStockQuote, WatchedStock, StockOption for stock data
+- Use WebSocketStatus, RefreshInterval for connection management
+- Use type guards (isString, isNumber, isFinnhubStockQuote, etc.) for runtime checking
+- Use EventSource | null for WebSocket connections (not any)
+- Use NodeJS.Timeout | number | null for timer references
+
+StockPulse Specific Patterns:
+- Use useStockStore() for stock state management
+- Use stockService for API calls with request deduplication
+- Use ErrorBoundary for error handling
+- Use STOCK_COLORS for consistent chart coloring
+- Use REFRESH_INTERVALS for connection timing
+- Use getNotificationService() for push notifications
+- Follow feature-based structure: features/stocks/, features/notifications/, features/pwa/
 
 Testing Requirements:
-- Test rendering in both server and client environments
-- Test props handling and prop validation with utility types
-- Test user interactions and event handlers
-- Test accessibility with jest-axe
-- Test error states and loading states with AsyncState
-- Test responsive design with different viewport sizes
-- Validate TypeScript utility type usage in tests
+- Use jest.config.cjs configuration
+- Test with React Testing Library (no React import needed)
+- Test loading states with skeleton components
+- Test error states with ErrorBoundary integration
+- Test real-time updates and WebSocket connections
+- Test responsive design with Tailwind breakpoints
+- Test dark mode compatibility
+- Validate TypeScript strict mode compliance

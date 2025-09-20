@@ -1,26 +1,33 @@
-Goal: Create a Next.js 15 API route named <RouteName> following App Router conventions.
+Goal: Create a Next.js 15 API route named <RouteName> for the StockPulse application following App Router conventions.
+
+Project Context:
+- StockPulse: Real-time stock tracking PWA with Finnhub API integration
+- Existing routes: /api/health, /api/quote, /api/websocket-proxy, /api/push/*
+- Uses Finnhub API for stock data with rate limiting considerations
+- PWA with push notification capabilities
 
 Constraints:
 - Use Next.js 15 App Router API route structure (app/api/*)
 - Implement proper HTTP methods (GET, POST, PUT, DELETE)
-- Add TypeScript strict typing for request/response
+- Add TypeScript strict typing with noImplicitOverride: true
 - Include proper error handling and status codes
-- Add input validation and sanitization
-- Do not hardcode secrets or API keys
-- Use proper authentication middleware when needed
-- Follow RESTful API design principles
+- Add input validation and sanitization for stock data
+- Use environment variables for Finnhub API key and other secrets
+- Follow Finnhub API patterns and rate limiting
 - Add comprehensive JSDoc documentation
+- Support CORS for WebSocket proxy if needed
+- Handle AbortSignal for request timeouts
 
 Deliverables:
 - app/api/<route-path>/route.ts
-- Optional: app/api/<route-path>/types.ts (for complex types)
-- Unit tests for the API route
+- Unit tests with jest.config.cjs
+- Update any related types in @/core/types if needed
 
 Template Structure:
 
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
-import { ApiResponse, ApiError, isString, isNumber, isDefined } from '@/types';
+import { ApiResponse, isString, isNumber } from '@/core/types';
 
 // Define request/response types using utility types
 interface GetRequestParams {
@@ -160,21 +167,29 @@ Error Handling:
 - Log errors for debugging
 - Handle edge cases and validation failures
 
-TypeScript Utils Requirements:
-- ALWAYS use ApiResponse<T> and ApiError from '@/types' for consistent API responses
-- Use type guards (isDefined, isString, isNumber, etc.) for input validation
-- Use HttpMethod type for method definitions
-- Use RequestConfig type for external API calls
-- Define proper interfaces for request/response bodies
-- Use AsyncReturnType<T> when working with async functions
-- Use Timestamp type for ISO date strings
-- Validate all inputs using utility type guards before processing
+StockPulse Specific Requirements:
+- Use ApiResponse<T> from '@/core/types' for consistent API responses
+- Use type guards (isString, isNumber, isFinnhubStockQuote, etc.) for input validation
+- Handle Finnhub API integration patterns
+- Use AbortSignal.timeout() for external API calls (10s timeout)
+- Follow existing error handling patterns from /api/quote and /api/health
+- Support stock symbol validation with regex patterns
+- Handle rate limiting gracefully for Finnhub API
+- Use proper CORS headers for WebSocket proxy routes
+
+Available Types from @/core/types:
+- FinnhubStockQuote, StockOption, WatchedStock for stock data
+- FinnhubQuoteResponse for raw Finnhub API responses
+- StockQuoteResponse, AvailableStocksResponse for API responses
+- WebSocketMessage, TradeData for WebSocket communication
+- PriceAlertNotification for push notifications
 
 Testing Requirements:
+- Use jest.config.cjs configuration
 - Test all HTTP methods implemented
-- Test input validation using utility type guards
-- Test error scenarios and ApiError response format
-- Test ApiResponse<T> structure consistency
-- Test authentication/authorization if applicable
-- Mock external dependencies with proper typing
-- Validate TypeScript utility type usage in API responses
+- Test input validation using project type guards
+- Test error scenarios and API response format consistency
+- Test Finnhub API integration patterns
+- Mock external dependencies (Finnhub API, WebSocket connections)
+- Test timeout handling with AbortSignal
+- Validate stock symbol formats and sanitization
