@@ -60,7 +60,6 @@ chmod +x scripts/setup-vercel-env.sh
 ```bash
 # Stock API Keys
 vercel env add FINNHUB_API_KEY production
-vercel env add ALPHA_VANTAGE_API_KEY production
 
 # Security
 vercel env add JWT_SECRET production

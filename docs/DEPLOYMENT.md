@@ -43,7 +43,6 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
    
    # Set environment variables
    vercel env add FINNHUB_API_KEY production
-   vercel env add ALPHA_VANTAGE_API_KEY production
    vercel env add JWT_SECRET production
    ```
 
@@ -84,7 +83,6 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
    ```bash
    # Set production variables
    railway variables set FINNHUB_API_KEY=your_key_here
-   railway variables set ALPHA_VANTAGE_API_KEY=your_key_here
    railway variables set DATABASE_URL=your_db_url_here
    ```
 
@@ -101,13 +99,11 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
      environment:
        NODE_ENV: production
        FINNHUB_API_KEY: ${env:FINNHUB_API_KEY}
-       ALPHA_VANTAGE_API_KEY: ${env:ALPHA_VANTAGE_API_KEY}
    ```
 
 2. **Deploy with Secrets**
    ```bash
    export FINNHUB_API_KEY=your_key_here
-   export ALPHA_VANTAGE_API_KEY=your_key_here
    serverless deploy --stage production
    ```
 

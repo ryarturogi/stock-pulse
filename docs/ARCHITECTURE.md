@@ -158,9 +158,8 @@ export const StockCard: React.FC<StockCardProps> = ({
 
 ### External APIs
 
-1. **Finnhub API** - Real-time stock quotes, company profiles
-2. **Alpha Vantage API** - Historical data, technical indicators
-3. **News API** - Financial news and market updates
+1. **Finnhub API** - Real-time stock quotes, company profiles, historical data
+2. **News API** - Financial news and market updates
 
 ### API Client Pattern
 
@@ -344,7 +343,6 @@ interface EnvironmentConfig {
   NODE_ENV: 'development' | 'production' | 'test';
   VITE_API_BASE_URL: string;
   VITE_FINNHUB_API_KEY: string;
-  VITE_ALPHA_VANTAGE_API_KEY: string;
 }
 
 const config: EnvironmentConfig = {
