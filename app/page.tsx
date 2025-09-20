@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { 
   Search, 
   Moon, 
@@ -12,6 +11,11 @@ import {
   TrendingUp,
   Plus
 } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+
+import { 
+  DEFAULT_STOCK_OPTIONS
+} from '@/core/types';
 import { 
   StockForm, 
   StockCards, 
@@ -21,9 +25,6 @@ import {
   stockService,
   useStockStore
 } from '@/features/stocks';
-import { 
-  DEFAULT_STOCK_OPTIONS
-} from '@/core/types';
 import { 
   useSidebar, 
   useTheme, 
@@ -44,7 +45,6 @@ export default function HomePage() {
     updateStockPrice, 
     connectWebSocket, 
     disconnectWebSocket, 
-    startPeriodicRefresh,
     stopPeriodicRefresh,
     clearError, 
     error,
@@ -104,7 +104,7 @@ export default function HomePage() {
       stopPeriodicRefresh();
       isConnectedRef.current = false;
     };
-  }, [watchedStocks.length]); // Only depend on watchedStocks.length
+  }, [watchedStocks.length, connectWebSocket, disconnectWebSocket, stopPeriodicRefresh]); // Only depend on watchedStocks.length
 
   /**
    * Handle adding a new stock to watchlist
@@ -293,8 +293,9 @@ export default function HomePage() {
                     {/* Live Data Toggle */}
                     {watchedStocks.length > 0 && (
                       <div className="flex items-center space-x-2">
-                        <label className="flex items-center space-x-2 cursor-pointer">
+                        <label htmlFor="live-data-toggle" className="flex items-center space-x-2 cursor-pointer">
                           <input
+                            id="live-data-toggle"
                             type="checkbox"
                             checked={isLiveDataEnabled}
                             onChange={(e) => setLiveDataEnabled(e.target.checked)}
@@ -459,8 +460,10 @@ export default function HomePage() {
                     {watchedStocks.length > 0 && (
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Live Data</span>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label htmlFor="mobile-live-data-toggle" className="relative inline-flex items-center cursor-pointer">
+                          <span className="sr-only">Enable live data</span>
                           <input
+                            id="mobile-live-data-toggle"
                             type="checkbox"
                             checked={isLiveDataEnabled}
                             onChange={(e) => setLiveDataEnabled(e.target.checked)}
@@ -564,7 +567,7 @@ export default function HomePage() {
                 {searchQuery && (
                   <div className="mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border dark:border-blue-800">
                     <p className="text-sm text-blue-800 dark:text-blue-300">
-                      Showing {filteredWatchedStocks.length} of {watchedStocks.length} stocks matching "{searchQuery}"
+                      Showing {filteredWatchedStocks.length} of {watchedStocks.length} stocks matching &ldquo;{searchQuery}&rdquo;
                     </p>
             </div>
                 )}

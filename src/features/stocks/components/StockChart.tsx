@@ -81,7 +81,7 @@ export const StockChart: React.FC<StockChartProps> = ({
       .sort((a, b) => a - b); // Show all collected data points
 
     // Create chart data points with better time formatting
-    return sortedTimestamps.map((timestamp, index) => {
+    return sortedTimestamps.map((timestamp) => {
       const date = new Date(timestamp);
       // Use shorter time format for better readability with many data points
       const timeLabel = sortedTimestamps.length > 20 
@@ -111,15 +111,7 @@ export const StockChart: React.FC<StockChartProps> = ({
     });
   }, [stocksWithData]);
 
-  // Custom tooltip formatter with color indicators
-  const formatTooltipValue = useCallback((value: number, name: string) => {
-    return [`$${value.toFixed(2)}`, name];
-  }, []);
 
-  // Custom tooltip label formatter
-  const formatTooltipLabel = useCallback((label: string) => {
-    return `Time: ${label}`;
-  }, []);
 
   // Custom tooltip component for better visibility
   const CustomTooltip = useCallback(({ active, payload, label }: any) => {
