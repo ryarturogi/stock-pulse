@@ -14,15 +14,15 @@
   "crons": [
     {
       "path": "/api/cron/update-stock-prices",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/cron/cleanup-cache", 
-      "schedule": "0 */6 * * *"
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/cron/send-alerts",
-      "schedule": "*/1 * * * *"
+      "schedule": "0 12 * * *"
     }
   ],
   "headers": [
