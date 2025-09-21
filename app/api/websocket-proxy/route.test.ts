@@ -6,6 +6,7 @@
  */
 
 import { NextRequest } from 'next/server';
+
 import { GET } from './route';
 
 // Mock WebSocket
@@ -33,6 +34,7 @@ class MockWebSocket {
 
   send(data: string) {
     // Mock sending data
+    console.log('Mock WebSocket send:', data);
   }
 
   close() {
@@ -99,7 +101,7 @@ describe('/api/websocket-proxy', () => {
     global.WebSocket = jest.fn().mockImplementation((url) => {
       mockWebSocketInstance = new MockWebSocket(url);
       return mockWebSocketInstance;
-    });
+    }) as any;
 
     // Mock TextEncoder
     global.TextEncoder = jest.fn().mockImplementation(() => ({
@@ -229,11 +231,10 @@ describe('/api/websocket-proxy', () => {
   });
 
   describe('Message Handling', () => {
-    it('should forward trade messages to client', async () => {
+    it('should handle trade messages', async () => {
       const request = new NextRequest('http://localhost:3000/api/websocket-proxy?symbols=AAPL');
       
-      const response = await GET(request);
-      const reader = response.body?.getReader();
+      await GET(request);
       
       // Fast-forward to establish connection
       jest.advanceTimersByTime(100);
@@ -434,7 +435,7 @@ describe('/api/websocket-proxy', () => {
       // Mock WebSocket constructor to throw error
       global.WebSocket = jest.fn().mockImplementation(() => {
         throw new Error('WebSocket creation failed');
-      });
+      }) as any;
       
       const request = new NextRequest('http://localhost:3000/api/websocket-proxy?symbols=AAPL');
       

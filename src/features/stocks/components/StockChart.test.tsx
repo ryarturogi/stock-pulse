@@ -1,25 +1,33 @@
+// Mock Recharts components
+jest.mock('recharts', () => ({
+  LineChart: ({ children }: any) => (
+    <div data-testid='line-chart'>{children}</div>
+  ),
+  Line: ({ dataKey, stroke }: any) => (
+    <div data-testid={`line-${dataKey}`} data-stroke={stroke} />
+  ),
+  XAxis: () => <div data-testid='x-axis' />,
+  YAxis: () => <div data-testid='y-axis' />,
+  CartesianGrid: () => <div data-testid='grid' />,
+  Tooltip: () => <div data-testid='tooltip' />,
+  ResponsiveContainer: ({ children }: any) => (
+    <div data-testid='responsive-container'>{children}</div>
+  ),
+  Legend: () => <div data-testid='legend' />,
+}));
+
 /**
  * Unit Tests for StockChart Component
  * ===================================
- * 
+ *
  * Tests for stock chart visualization and data display
  */
 
 import { render, screen } from '@testing-library/react';
-import { StockChart } from './StockChart';
+
 import type { WatchedStock } from '@/core/types';
 
-// Mock Recharts components
-jest.mock('recharts', () => ({
-  LineChart: ({ children }: any) => <div data-testid="line-chart">{children}</div>,
-  Line: ({ dataKey, stroke }: any) => <div data-testid={`line-${dataKey}`} data-stroke={stroke} />,
-  XAxis: () => <div data-testid="x-axis" />,
-  YAxis: () => <div data-testid="y-axis" />,
-  CartesianGrid: () => <div data-testid="grid" />,
-  Tooltip: () => <div data-testid="tooltip" />,
-  ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
-  Legend: () => <div data-testid="legend" />,
-}));
+import { StockChart } from './StockChart';
 
 describe('StockChart', () => {
   const mockStocks: WatchedStock[] = [
@@ -28,7 +36,7 @@ describe('StockChart', () => {
       symbol: 'AAPL',
       name: 'Apple Inc.',
       alertPrice: 150.0,
-      currentPrice: 155.50,
+      currentPrice: 155.5,
       priceHistory: [
         { time: Date.now() - 2000, price: 154.0 },
         { time: Date.now() - 1000, price: 154.5 },
@@ -83,7 +91,9 @@ describe('StockChart', () => {
       render(<StockChart stocks={mockStocks} />);
 
       expect(screen.getByText('Stock Price Chart')).toBeInTheDocument();
-      expect(screen.getByText('Real-time price data for 2 stocks')).toBeInTheDocument();
+      expect(
+        screen.getByText('Real-time price data for 2 stocks')
+      ).toBeInTheDocument();
     });
 
     it('should display data points count', () => {
@@ -98,7 +108,9 @@ describe('StockChart', () => {
       render(<StockChart stocks={[]} />);
 
       expect(screen.getByText('No stocks to display')).toBeInTheDocument();
-      expect(screen.getByText('Add stocks to your watchlist to see the chart')).toBeInTheDocument();
+      expect(
+        screen.getByText('Add stocks to your watchlist to see the chart')
+      ).toBeInTheDocument();
       expect(screen.queryByTestId('line-chart')).not.toBeInTheDocument();
     });
 
@@ -122,7 +134,9 @@ describe('StockChart', () => {
       render(<StockChart stocks={[]} />);
 
       // Clock icon should be present (from lucide-react)
-      const emptyState = screen.getByText('No stocks to display').closest('div');
+      const emptyState = screen
+        .getByText('No stocks to display')
+        .closest('div');
       expect(emptyState).toBeInTheDocument();
     });
   });
@@ -135,7 +149,7 @@ describe('StockChart', () => {
           symbol: 'AAPL',
           name: 'Apple Inc.',
           alertPrice: 150.0,
-          currentPrice: 155.50,
+          currentPrice: 155.5,
           priceHistory: [],
         },
       ];
@@ -153,7 +167,7 @@ describe('StockChart', () => {
           symbol: 'AAPL',
           name: 'Apple Inc.',
           alertPrice: 150.0,
-          currentPrice: 155.50,
+          currentPrice: 155.5,
           priceHistory: [{ time: Date.now(), price: 155.5 }],
         },
         {
@@ -167,7 +181,9 @@ describe('StockChart', () => {
 
       render(<StockChart stocks={mixedStocks} />);
 
-      expect(screen.getByText('Real-time price data for 1 stock')).toBeInTheDocument();
+      expect(
+        screen.getByText('Real-time price data for 1 stock')
+      ).toBeInTheDocument();
       expect(screen.getByTestId('line-AAPL')).toBeInTheDocument();
       expect(screen.queryByTestId('line-GOOGL')).not.toBeInTheDocument();
     });
@@ -181,7 +197,7 @@ describe('StockChart', () => {
           symbol: 'AAPL',
           name: 'Apple Inc.',
           alertPrice: 150.0,
-          currentPrice: 155.50,
+          currentPrice: 155.5,
           priceHistory: [],
         },
       ];
@@ -207,7 +223,9 @@ describe('StockChart', () => {
 
       render(<StockChart stocks={fewPointsStocks} />);
 
-      expect(screen.getByText(/Showing all 2 collected data points/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Showing all 2 collected data points/)
+      ).toBeInTheDocument();
     });
 
     it('should show success message for many data points', () => {
@@ -226,7 +244,9 @@ describe('StockChart', () => {
 
       render(<StockChart stocks={manyPointsStocks} />);
 
-      expect(screen.getByText(/Displaying all 15 data points/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Displaying all 15 data points/)
+      ).toBeInTheDocument();
       expect(screen.getByText(/✅/)).toBeInTheDocument();
     });
   });
@@ -240,7 +260,7 @@ describe('StockChart', () => {
 
     it('should accept custom className', () => {
       const { container } = render(
-        <StockChart stocks={mockStocks} className="custom-chart" />
+        <StockChart stocks={mockStocks} className='custom-chart' />
       );
 
       expect(container.firstChild).toHaveClass('custom-chart');
@@ -274,7 +294,10 @@ describe('StockChart', () => {
       const { container } = render(<StockChart stocks={mockStocks} />);
 
       const chartContainer = container.firstChild as HTMLElement;
-      expect(chartContainer).toHaveClass('dark:bg-gray-800', 'dark:border-gray-700');
+      expect(chartContainer).toHaveClass(
+        'dark:bg-gray-800',
+        'dark:border-gray-700'
+      );
     });
   });
 
@@ -301,7 +324,7 @@ describe('StockChart', () => {
           symbol: 'AAPL',
           name: 'Apple Inc.',
           alertPrice: 150.0,
-          currentPrice: 155.50,
+          currentPrice: 155.5,
           priceHistory: [
             { time: Date.now() - 1000, price: 154.0 },
             { time: Date.now() - 500, price: 154.5 },
@@ -325,7 +348,7 @@ describe('StockChart', () => {
           symbol: 'AAPL',
           name: 'Apple Inc.',
           alertPrice: 150.0,
-          currentPrice: 155.50,
+          currentPrice: 155.5,
           priceHistory: [
             { time: Date.now() - 2000, price: 154.0 },
             { time: Date.now() - 1000, price: 154.5 },
@@ -361,7 +384,7 @@ describe('StockChart', () => {
           symbol: 'AAPL',
           name: 'Apple Inc.',
           alertPrice: 150.0,
-          currentPrice: 155.50,
+          currentPrice: 155.5,
           priceHistory: Array.from({ length: 10 }, (_, i) => ({
             time: Date.now() - (10 - i) * 100, // 100ms intervals
             price: 155 + i * 0.1,
@@ -430,7 +453,9 @@ describe('StockChart', () => {
     it('should provide screen reader friendly content', () => {
       render(<StockChart stocks={mockStocks} />);
 
-      expect(screen.getByText('Real-time price data for 2 stocks')).toBeInTheDocument();
+      expect(
+        screen.getByText('Real-time price data for 2 stocks')
+      ).toBeInTheDocument();
     });
   });
 });

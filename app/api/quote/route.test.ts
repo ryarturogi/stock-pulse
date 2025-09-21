@@ -6,6 +6,7 @@
  */
 
 import { NextRequest } from 'next/server';
+
 import { GET } from './route';
 
 // Mock fetch globally

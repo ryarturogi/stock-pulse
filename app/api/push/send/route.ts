@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ApiError, PriceAlertNotification } from '@/core/types';
+import { ApiError } from '@/core/types';
 
 // In-memory storage for subscriptions (in production, use a database)
 const subscriptions: Map<string, any> = new Map();

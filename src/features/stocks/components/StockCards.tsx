@@ -8,8 +8,9 @@
 
 'use client';
 
-import { TrendingUp } from 'lucide-react';
 import React from 'react';
+
+import { TrendingUp } from 'lucide-react';
 
 import { StockCardsProps } from '@/core/types';
 

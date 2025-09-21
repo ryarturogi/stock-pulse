@@ -9,7 +9,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
 import { TrendingUp, TrendingDown, Clock, X, Edit2, Check, X as XIcon } from 'lucide-react';
+
 import { 
   StockCardProps, 
   STOCK_COLORS
@@ -126,14 +128,14 @@ export const StockCard: React.FC<StockCardProps> = ({
   const LoadingSkeleton = () => (
     <div className="animate-pulse">
       <div className="flex items-center justify-between mb-3">
-        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12" />
       </div>
-      <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-2"></div>
-      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-3"></div>
+      <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-2" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-3" />
       <div className="flex justify-between items-center">
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16" />
       </div>
     </div>
   );
@@ -324,7 +326,7 @@ export const StockCard: React.FC<StockCardProps> = ({
               {wasRecentlyUpdated && (
                 <div className="flex items-center">
                   <span className="text-xs text-green-500 mr-1">LIVE</span>
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 </div>
               )}
             </div>
@@ -337,7 +339,7 @@ export const StockCard: React.FC<StockCardProps> = ({
       {isLoading && (
         <div className="mt-4">
           <div className="w-full h-1 bg-gray-200 rounded-full">
-            <div className="h-1 bg-blue-600 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+            <div className="h-1 bg-blue-600 rounded-full animate-pulse" style={{ width: '60%' }} />
           </div>
         </div>
       )}

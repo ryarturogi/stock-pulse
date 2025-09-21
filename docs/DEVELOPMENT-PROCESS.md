@@ -104,10 +104,8 @@ pnpm install
 # Install development dependencies
 pnpm add -D @typescript-eslint/eslint-plugin @typescript-eslint/parser
 pnpm add -D prettier eslint-config-prettier eslint-plugin-prettier
-pnpm add -D husky lint-staged
-
-# Configure pre-commit hooks
-npx husky install
+# Configure code quality tools
+# Quality checks are now run manually using npm scripts
 ```
 
 #### 2. IDE Configuration

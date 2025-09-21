@@ -365,7 +365,7 @@ describe('/api/health', () => {
 
     it('should handle non-Error exceptions', async () => {
       mockProcess.uptime.mockImplementation(() => {
-        throw 'String error'; // eslint-disable-line no-throw-literal
+        throw 'String error';  
       });
 
       const response = await GET();

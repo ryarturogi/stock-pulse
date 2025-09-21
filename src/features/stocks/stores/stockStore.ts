@@ -8,6 +8,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+
 import {
   StockStoreState,
   WatchedStock,
@@ -580,6 +581,17 @@ export const useStockStore = create<StockStoreState>()(
     {
       name: STORAGE_KEYS.WATCHED_STOCKS,
       storage: createJSONStorage(() => {
+        // Check if we're in a browser environment
+        if (typeof window === 'undefined') {
+          // Server-side rendering - use in-memory storage
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+          };
+        }
+        
+        // Browser environment - use localStorage
         try {
           return localStorage;
         } catch (error) {

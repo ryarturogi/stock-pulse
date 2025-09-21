@@ -6,6 +6,7 @@
  */
 
 import { NextRequest } from 'next/server';
+
 import { POST } from './route';
 
 // Mock console methods to avoid noise in tests
@@ -288,7 +289,7 @@ describe('/api/push/unsubscribe', () => {
       const originalDelete = route.subscriptions?.delete;
       if (route.subscriptions) {
         route.subscriptions.delete = jest.fn().mockImplementation(() => {
-          throw 'String error'; // eslint-disable-line no-throw-literal
+          throw 'String error';  
         });
       }
 

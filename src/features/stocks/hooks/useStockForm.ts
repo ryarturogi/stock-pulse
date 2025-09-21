@@ -8,6 +8,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+
 import { stockService } from '@/features/stocks/services/stockService';
 
 export interface StockFormState {

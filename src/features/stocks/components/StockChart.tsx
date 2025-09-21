@@ -8,8 +8,9 @@
 
 'use client';
 
-import { Clock } from 'lucide-react';
 import React, { useMemo, useCallback } from 'react';
+
+import { Clock } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -178,7 +179,7 @@ export const StockChart: React.FC<StockChartProps> = ({
               {chartData.length > 0 && `Latest: ${chartData[chartData.length - 1]?.timestamp}`}
             </p>
             <div className="flex items-center space-x-1 mt-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               <span className="text-xs text-green-600 dark:text-green-400">Live</span>
             </div>
           </div>

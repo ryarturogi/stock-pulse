@@ -9,6 +9,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
 import type { ComponentProps } from '@/core/types';
 
 interface MobileNotificationGuideProps extends ComponentProps {
