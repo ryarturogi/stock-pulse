@@ -1,28 +1,35 @@
 /**
- * Push Notification Service with VAPID
- * ====================================
+ * Push Notification Service - Mobile Optimized (No VAPID)
+ * ======================================================
  * 
- * Handles web push notifications using VAPID keys for secure
- * server-to-client communication.
+ * Handles web push notifications without VAPID keys for simplified
+ * server-to-client communication with mobile-specific optimizations.
  */
 
 'use client';
 
-// import { WatchedStock, PriceAlertNotification } from '@/core/types';
+import type { WatchedStock, PriceAlertNotification } from '@/core/types';
 
 /**
- * Push notification service for VAPID-based notifications
+ * Device type detection for mobile-specific handling
+ */
+type DeviceType = 'mobile' | 'desktop' | 'unknown';
+type BrowserType = 'ios-safari' | 'android-chrome' | 'desktop-chrome' | 'desktop-firefox' | 'unknown';
+
+/**
+ * Push notification service for notifications with mobile support (no VAPID)
  */
 export class PushNotificationService {
   private static instance: PushNotificationService;
   private registration: ServiceWorkerRegistration | null = null;
   private subscription: PushSubscription | null = null;
-  private vapidPublicKey: string | null = null;
+  private deviceType: DeviceType = 'unknown';
+  private browserType: BrowserType = 'unknown';
 
   private constructor() {
     // Only initialize on client side
     if (typeof window !== 'undefined') {
-      this.vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null;
+      this.detectDeviceAndBrowser();
     }
   }
 
@@ -37,24 +44,94 @@ export class PushNotificationService {
   }
 
   /**
-   * Check if push notifications are supported
+   * Detect device type and browser for mobile-specific handling
+   */
+  private detectDeviceAndBrowser(): void {
+    if (typeof window === 'undefined') return;
+
+    const userAgent = navigator.userAgent.toLowerCase();
+    
+    // Detect device type
+    if (/android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
+      this.deviceType = 'mobile';
+    } else if (/windows|macintosh|linux/i.test(userAgent)) {
+      this.deviceType = 'desktop';
+    } else {
+      this.deviceType = 'unknown';
+    }
+
+    // Detect browser type
+    if (/iphone|ipad|ipod/i.test(userAgent) && /safari/i.test(userAgent) && !/chrome/i.test(userAgent)) {
+      this.browserType = 'ios-safari';
+    } else if (/android/i.test(userAgent) && /chrome/i.test(userAgent)) {
+      this.browserType = 'android-chrome';
+    } else if (/chrome/i.test(userAgent) && this.deviceType === 'desktop') {
+      this.browserType = 'desktop-chrome';
+    } else if (/firefox/i.test(userAgent) && this.deviceType === 'desktop') {
+      this.browserType = 'desktop-firefox';
+    } else {
+      this.browserType = 'unknown';
+    }
+
+    console.log('Device detection:', { deviceType: this.deviceType, browserType: this.browserType });
+  }
+
+  /**
+   * Check if push notifications are supported (with mobile-specific checks)
    */
   public isSupported(): boolean {
-    return typeof window !== 'undefined' && 
-           'serviceWorker' in navigator && 
-           'PushManager' in window &&
-           'Notification' in window;
+    if (typeof window === 'undefined') return false;
+
+    // Basic support check
+    const basicSupport = 'serviceWorker' in navigator && 
+                        'PushManager' in window &&
+                        'Notification' in window;
+
+    if (!basicSupport) return false;
+
+    // iOS Safari has limited push notification support
+    if (this.browserType === 'ios-safari') {
+      // iOS 16.4+ supports push notifications in PWA mode
+      const iosVersion = this.getIOSVersion();
+      if (iosVersion && iosVersion < 16.4) {
+        console.warn('iOS version too old for push notifications:', iosVersion);
+        return false;
+      }
+      
+      // Check if running as PWA (standalone mode)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                          (window.navigator as any).standalone === true;
+      
+      if (!isStandalone) {
+        console.warn('iOS Safari requires PWA mode for push notifications');
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
-   * Check if VAPID is configured
+   * Get iOS version from user agent
    */
-  public isVapidConfigured(): boolean {
-    return this.vapidPublicKey !== null && this.vapidPublicKey.length > 0;
+  private getIOSVersion(): number | null {
+    const userAgent = navigator.userAgent;
+    const match = userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
+    if (match) {
+      return parseFloat(`${match[1]}.${match[2]}`);
+    }
+    return null;
   }
 
   /**
-   * Register service worker for push notifications
+   * Check if push notifications are ready (no VAPID required)
+   */
+  public isReady(): boolean {
+    return this.isSupported();
+  }
+
+  /**
+   * Register service worker for push notifications (mobile-optimized)
    */
   public async registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
     if (!this.isSupported()) {
@@ -63,8 +140,37 @@ export class PushNotificationService {
     }
 
     try {
-      this.registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('Service worker registered for push notifications:', this.registration);
+      // Use custom service worker for better mobile support
+      const swPath = this.deviceType === 'mobile' ? '/sw-custom.js' : '/sw.js';
+      this.registration = await navigator.serviceWorker.register(swPath);
+      
+      console.log(`Service worker registered for push notifications (${this.deviceType}):`, this.registration);
+      
+      // Wait for service worker to be ready
+      if (this.registration.installing) {
+        await new Promise<void>((resolve) => {
+          const installingWorker = this.registration!.installing!;
+          installingWorker.addEventListener('statechange', () => {
+            if (installingWorker.state === 'installed') {
+              resolve();
+            }
+          });
+        });
+      }
+      
+      // Ensure service worker is active
+      if (this.registration.waiting) {
+        this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        await new Promise<void>((resolve) => {
+          const waitingWorker = this.registration!.waiting!;
+          waitingWorker.addEventListener('statechange', () => {
+            if (waitingWorker.state === 'activated') {
+              resolve();
+            }
+          });
+        });
+      }
+      
       return this.registration;
     } catch (error) {
       console.error('Failed to register service worker:', error);
@@ -73,7 +179,7 @@ export class PushNotificationService {
   }
 
   /**
-   * Request notification permission
+   * Request notification permission (mobile-optimized)
    */
   public async requestPermission(): Promise<NotificationPermission> {
     if (!this.isSupported()) {
@@ -81,8 +187,25 @@ export class PushNotificationService {
     }
 
     try {
+      // For iOS Safari, ensure we're in PWA mode
+      if (this.browserType === 'ios-safari') {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                            (window.navigator as any).standalone === true;
+        
+        if (!isStandalone) {
+          console.warn('iOS Safari requires PWA mode for push notifications');
+          return 'denied';
+        }
+      }
+
       const permission = await Notification.requestPermission();
-      console.log('Notification permission:', permission);
+      console.log(`Notification permission (${this.browserType}):`, permission);
+      
+      // For mobile devices, provide additional guidance
+      if (this.deviceType === 'mobile' && permission === 'denied') {
+        console.warn('Push notifications denied on mobile device. User may need to enable in browser settings.');
+      }
+      
       return permission;
     } catch (error) {
       console.error('Failed to request notification permission:', error);
@@ -91,11 +214,11 @@ export class PushNotificationService {
   }
 
   /**
-   * Subscribe to push notifications with VAPID
+   * Subscribe to push notifications (mobile-optimized, no VAPID)
    */
   public async subscribeToPush(): Promise<PushSubscription | null> {
-    if (!this.isSupported() || !this.isVapidConfigured()) {
-      console.warn('Push notifications not supported or VAPID not configured');
+    if (!this.isSupported()) {
+      console.warn('Push notifications not supported');
       return null;
     }
 
@@ -115,20 +238,29 @@ export class PushNotificationService {
         return this.subscription;
       }
 
-      // Create new subscription with VAPID
-      this.subscription = await this.registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey!) as unknown as ArrayBuffer
-      });
+      // Create new subscription without VAPID (simplified)
+      const subscriptionOptions: PushSubscriptionOptionsInit = {
+        userVisibleOnly: true
+      };
 
-      console.log('Subscribed to push notifications:', this.subscription);
+      this.subscription = await this.registration.pushManager.subscribe(subscriptionOptions);
 
-      // Send subscription to server
+      console.log(`Subscribed to push notifications (${this.deviceType}):`, this.subscription);
+
+      // Send subscription to server with device info
       await this.sendSubscriptionToServer(this.subscription);
 
       return this.subscription;
     } catch (error) {
       console.error('Failed to subscribe to push notifications:', error);
+      
+      // Provide specific error guidance for mobile devices
+      if (this.deviceType === 'mobile') {
+        if (error instanceof Error && error.message.includes('permission')) {
+          console.error('Permission denied on mobile device. User may need to enable notifications in browser settings.');
+        }
+      }
+      
       return null;
     }
   }
@@ -158,7 +290,7 @@ export class PushNotificationService {
   }
 
   /**
-   * Send subscription to server
+   * Send subscription to server with device information
    */
   private async sendSubscriptionToServer(subscription: PushSubscription): Promise<void> {
     try {
@@ -170,6 +302,8 @@ export class PushNotificationService {
         body: JSON.stringify({
           subscription: subscription.toJSON(),
           userAgent: navigator.userAgent,
+          deviceType: this.deviceType,
+          browserType: this.browserType,
           timestamp: Date.now(),
         }),
       });
@@ -178,7 +312,7 @@ export class PushNotificationService {
         throw new Error(`Failed to send subscription to server: ${response.statusText}`);
       }
 
-      console.log('Subscription sent to server successfully');
+      console.log(`Subscription sent to server successfully (${this.deviceType})`);
     } catch (error) {
       console.error('Failed to send subscription to server:', error);
     }
@@ -209,36 +343,53 @@ export class PushNotificationService {
     }
   }
 
+
   /**
-   * Convert VAPID key from base64 to Uint8Array
+   * Get device and browser information
    */
-  private urlBase64ToUint8Array(base64String: string): Uint8Array {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
+  public getDeviceInfo(): {
+    deviceType: DeviceType;
+    browserType: BrowserType;
+    isMobile: boolean;
+    isIOS: boolean;
+    isAndroid: boolean;
+    isStandalone: boolean;
+  } {
+    const isStandalone = typeof window !== 'undefined' && (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true
+    );
 
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
+    return {
+      deviceType: this.deviceType,
+      browserType: this.browserType,
+      isMobile: this.deviceType === 'mobile',
+      isIOS: this.browserType === 'ios-safari',
+      isAndroid: this.browserType === 'android-chrome',
+      isStandalone,
+    };
   }
 
   /**
-   * Get current subscription status
+   * Get current subscription status (mobile-enhanced, no VAPID)
    */
   public async getSubscriptionStatus(): Promise<{
     isSupported: boolean;
-    isVapidConfigured: boolean;
+    isReady: boolean;
     hasPermission: NotificationPermission;
     isSubscribed: boolean;
     subscription: PushSubscription | null;
+    deviceInfo: {
+      deviceType: DeviceType;
+      browserType: BrowserType;
+      isMobile: boolean;
+      isIOS: boolean;
+      isAndroid: boolean;
+      isStandalone: boolean;
+    };
   }> {
     const isSupported = this.isSupported();
-    const isVapidConfigured = this.isVapidConfigured();
+    const isReady = this.isReady();
     const hasPermission = isSupported ? Notification.permission : 'denied';
     
     let isSubscribed = false;
@@ -251,15 +402,16 @@ export class PushNotificationService {
 
     return {
       isSupported,
-      isVapidConfigured,
+      isReady,
       hasPermission,
       isSubscribed,
       subscription,
+      deviceInfo: this.getDeviceInfo(),
     };
   }
 
   /**
-   * Show a test notification
+   * Show a test notification (mobile-optimized)
    */
   public async showTestNotification(): Promise<void> {
     if (!this.isSupported() || Notification.permission !== 'granted') {
@@ -268,18 +420,32 @@ export class PushNotificationService {
     }
 
     try {
-      const notification = new Notification('StockPulse Test', {
-        body: 'Push notifications are working! 🎉',
+      const deviceInfo = this.getDeviceInfo();
+      const notificationTitle = `StockPulse Test (${deviceInfo.deviceType})`;
+      const notificationBody = deviceInfo.isMobile 
+        ? 'Mobile push notifications are working! 📱🎉'
+        : 'Push notifications are working! 🎉';
+
+      const notification = new Notification(notificationTitle, {
+        body: notificationBody,
         icon: '/icons/icon-192x192.svg',
         badge: '/icons/icon-72x72.svg',
         tag: 'test-notification',
-        requireInteraction: false,
+        requireInteraction: deviceInfo.isMobile, // Keep mobile notifications visible longer
+        data: {
+          deviceType: deviceInfo.deviceType,
+          browserType: deviceInfo.browserType,
+          timestamp: Date.now(),
+        },
       });
 
-      // Auto-close after 5 seconds
+      // Auto-close after different durations based on device type
+      const autoCloseDelay = deviceInfo.isMobile ? 8000 : 5000;
       setTimeout(() => {
         notification.close();
-      }, 5000);
+      }, autoCloseDelay);
+
+      console.log(`Test notification shown for ${deviceInfo.deviceType} device`);
     } catch (error) {
       console.error('Failed to show test notification:', error);
     }

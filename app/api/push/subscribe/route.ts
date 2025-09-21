@@ -2,7 +2,7 @@
  * Push Subscription API Route
  * ===========================
  * 
- * Handles push notification subscriptions with VAPID validation.
+ * Handles push notification subscriptions (no VAPID required).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -31,15 +31,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
       }, { status: 400 });
     }
 
-    // Validate VAPID keys are configured
-    const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
-    if (!vapidPrivateKey) {
-      return NextResponse.json<ApiError>({
-        code: 'VAPID_NOT_CONFIGURED',
-        message: 'VAPID private key not configured',
-        details: { timestamp: new Date().toISOString() },
-      }, { status: 500 });
-    }
+    // No VAPID validation required - simplified implementation
 
     // Create subscription ID (use endpoint as unique identifier)
     const subscriptionId = subscription.endpoint;

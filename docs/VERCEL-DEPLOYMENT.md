@@ -66,8 +66,8 @@ vercel env add JWT_SECRET production
 vercel env add ENCRYPTION_KEY production
 vercel env add CRON_SECRET production
 
-# Push Notifications
-vercel env add VAPID_PRIVATE_KEY production
+# Push Notifications (No VAPID required)
+# VAPID has been removed for simplified push notification implementation
 
 # Optional: Database
 vercel env add DATABASE_URL production
@@ -80,7 +80,6 @@ These are set in your codebase and deployed automatically:
 - `NEXT_PUBLIC_APP_NAME`
 - `NEXT_PUBLIC_APP_VERSION` 
 - `NEXT_PUBLIC_FEATURE_*`
-- `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
 
 ### Environment Management
 

@@ -1,9 +1,10 @@
 /**
- * Custom Service Worker for StockPulse Push Notifications
- * =====================================================
+ * Custom Service Worker for StockPulse Push Notifications (No VAPID)
+ * =================================================================
  * 
  * Handles push notifications with mobile compatibility
  * and proper event handling for iOS and Android devices.
+ * Simplified implementation without VAPID dependencies.
  */
 
 const CACHE_NAME = 'stockpulse-v1';

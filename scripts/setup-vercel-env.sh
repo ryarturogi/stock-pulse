@@ -89,8 +89,8 @@ setup_environment() {
         set_env_var "CORS_ORIGIN" "$env" "CORS origins for $env (e.g., https://$env.stockpulse.com)" false
     fi
     
-    # Push Notifications (Private)
-    set_env_var "VAPID_PRIVATE_KEY" "$env" "VAPID private key for push notifications" true
+    # Push Notifications (No VAPID required)
+    # VAPID has been removed for simplified push notification implementation
     
     # Database (Private) - if using
     read -p "Do you want to set up database configuration? (y/n): " -n 1 -r

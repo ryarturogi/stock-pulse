@@ -2,11 +2,11 @@
  * Send Push Notification API Route
  * ================================
  * 
- * Sends push notifications to subscribed clients using VAPID.
+ * Sends push notifications to subscribed clients (no VAPID required).
+ * Simplified implementation using fetch API for push notifications.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import webpush from 'web-push';
 
 import { ApiError, PriceAlertNotification } from '@/core/types';
 
@@ -14,22 +14,24 @@ import { ApiError, PriceAlertNotification } from '@/core/types';
 const subscriptions: Map<string, any> = new Map();
 
 /**
- * Configure web-push with VAPID keys
+ * Send push notification using fetch API (no VAPID)
  */
-function configureWebPush() {
-  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
-  const vapidEmail = process.env.VAPID_EMAIL || 'mailto:admin@stockpulse.app';
+async function sendPushNotification(subscription: any, payload: string): Promise<boolean> {
+  try {
+    const response = await fetch(subscription.endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'TTL': '86400', // 24 hours
+      },
+      body: payload,
+    });
 
-  if (!vapidPublicKey || !vapidPrivateKey) {
-    throw new Error('VAPID keys not configured');
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to send push notification:', error);
+    return false;
   }
-
-  webpush.setVapidDetails(
-    vapidEmail,
-    vapidPublicKey,
-    vapidPrivateKey
-  );
 }
 
 /**
@@ -55,9 +57,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<{
         details: { timestamp: new Date().toISOString() },
       }, { status: 400 });
     }
-
-    // Configure web-push
-    configureWebPush();
 
     let sent = 0;
     let failed = 0;
@@ -93,13 +92,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<{
 
     for (const subscriptionData of subscriptionsToNotify) {
       try {
-        await webpush.sendNotification(subscriptionData.subscription, payload);
-        sent++;
+        const success = await sendPushNotification(subscriptionData.subscription, payload);
         
-        // Update last used timestamp
-        subscriptionData.lastUsed = Date.now();
-        
-        console.log(`✅ Push notification sent to: ${subscriptionData.subscription.endpoint}`);
+        if (success) {
+          sent++;
+          // Update last used timestamp
+          subscriptionData.lastUsed = Date.now();
+          console.log(`✅ Push notification sent to: ${subscriptionData.subscription.endpoint}`);
+        } else {
+          failed++;
+          errors.push(`Failed to send to ${subscriptionData.subscription.endpoint}`);
+        }
       } catch (error) {
         failed++;
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -156,21 +159,22 @@ export async function GET(): Promise<NextResponse<{
   message: string 
 } | ApiError>> {
   try {
-    const testNotification: PriceAlertNotification = {
+    const testNotification = {
       title: 'StockPulse Test',
-      body: 'Push notifications are working! 🎉',
+      body: 'This is a test push notification',
       icon: '/icons/icon-192x192.svg',
       badge: '/icons/icon-72x72.svg',
       data: {
         symbol: 'TEST',
-        currentPrice: 100.00,
-        alertPrice: 95.00,
-        type: 'above',
+        price: 100.00,
+        timestamp: Date.now()
       },
+      tag: 'test-notification',
+      requireInteraction: false,
     };
 
     // Use the POST handler logic
-    const request = new NextRequest('http://localhost:3000/api/push/send', {
+    const mockRequest = new NextRequest('http://localhost:3000/api/push/send', {
       method: 'POST',
       body: JSON.stringify({ notification: testNotification }),
       headers: {
@@ -178,7 +182,7 @@ export async function GET(): Promise<NextResponse<{
       },
     });
 
-    return POST(request);
+    return await POST(mockRequest);
 
   } catch (error) {
     console.error('Test push notification error:', error);

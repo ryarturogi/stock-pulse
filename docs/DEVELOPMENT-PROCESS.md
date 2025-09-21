@@ -162,7 +162,7 @@ npx husky install
 #### Progressive Web App
 - **next-pwa**: Service worker integration
 - **Web Notifications API**: Price alerts and push notifications
-- **VAPID Keys**: Secure push notification implementation
+- **Push Notifications**: Simplified push notification implementation (no VAPID required)
 - **Offline Functionality**: Cached data and offline pages
 
 ### Architecture Patterns
@@ -562,7 +562,7 @@ const withPWA = withPWAInit({
 
 #### 2. Web Push Notifications
 ```typescript
-// VAPID key generation and notification service
+// Simplified notification service (no VAPID required)
 export class NotificationService {
   async showNotification(options: NotificationOptions) {
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -776,7 +776,6 @@ NEXT_PUBLIC_APP_VERSION=1.0.0
 # Private variables (server-side only)
 FINNHUB_API_KEY=your_api_key_here
 JWT_SECRET=your_jwt_secret_32chars_minimum
-VAPID_PRIVATE_KEY=your_vapid_private_key
 ```
 
 #### 3. Secret Management
@@ -784,7 +783,6 @@ VAPID_PRIVATE_KEY=your_vapid_private_key
 # Vercel deployment with secure environment variables
 vercel env add FINNHUB_API_KEY production
 vercel env add JWT_SECRET production
-vercel env add VAPID_PRIVATE_KEY production
 
 # Automated environment setup script
 #!/bin/bash
@@ -1005,7 +1003,6 @@ lighthouse --chrome-flags="--headless" --output=json https://your-app.vercel.app
 const config = {
   finnhubApiKey: process.env.FINNHUB_API_KEY,
   jwtSecret: process.env.JWT_SECRET,
-  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY,
 };
 
 // Validate all required environment variables

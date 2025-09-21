@@ -74,9 +74,9 @@ Enterprise-grade Next.js 15 + React 19 + TypeScript stock market tracking applic
    # Edit .env.local with your API keys and configuration
    ```
 
-4. **Generate VAPID keys for push notifications**
+4. **Push notifications are ready to use (no VAPID required)**
    ```bash
-   pnpm run generate-vapid
+   # Push notifications work out of the box without additional setup
    ```
 
 5. **Start the development server**
@@ -125,7 +125,6 @@ NEXT_PUBLIC_APP_NAME=StockPulse
 NEXT_PUBLIC_APP_VERSION=1.0.0
 NEXT_PUBLIC_FEATURE_PORTFOLIO=true
 NEXT_PUBLIC_FEATURE_ALERTS=true
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public_key
 
 # 🔒 PRIVATE VARIABLES (Server-side only)
 # Stock API Keys
@@ -136,8 +135,8 @@ JWT_SECRET=your_jwt_secret_32chars_minimum
 ENCRYPTION_KEY=your_encryption_key_32chars_minimum
 CRON_SECRET=your_cron_secret_for_vercel_jobs
 
-# Push Notifications  
-VAPID_PRIVATE_KEY=your_vapid_private_key
+# Push Notifications (No VAPID required)
+# Push notifications work without additional configuration
 
 # CORS Configuration
 CORS_ORIGIN=http://localhost:3000
@@ -207,7 +206,7 @@ stock-pulse/
 │   ├── sw.js                   # Service worker (next-pwa)
 │   └── icons/                  # App icons
 ├── scripts/                     # Build and deployment scripts
-│   ├── generate-vapid.js       # VAPID key generator
+│   ├── create-pwa-icons.js     # PWA icon generator
 │   ├── setup-vercel-env.sh     # Environment setup script
 │   └── deploy-vercel.sh        # Deployment script
 ├── docs/                        # Comprehensive documentation

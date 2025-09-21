@@ -26,7 +26,6 @@
     "deploy:vercel": "vercel --prod",
     "deploy:preview": "vercel",
     "vercel:env": "vercel env pull .env.local",
-    "generate-vapid": "node scripts/generate-vapid.js"
   },
   "dependencies": {
     "autoprefixer": "^10.4.20",
