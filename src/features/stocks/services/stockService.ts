@@ -23,6 +23,9 @@ export class StockService {
   private static instance: StockService;
   private baseUrl: string;
   private apiKey: string;
+  // Request deduplication cache
+  private requestCache = new Map<string, Promise<any>>();
+  private cacheTimeout = 2000; // 2 seconds cache for deduplication
 
   private constructor() {
     this.baseUrl = '/api';
@@ -40,13 +43,43 @@ export class StockService {
   }
 
   /**
-   * Fetch stock quote from Finnhub API
+   * Fetch stock quote from Finnhub API with request deduplication
    */
   async fetchStockQuote(symbol: string): Promise<FinnhubStockQuote> {
     if (!isString(symbol) || symbol.trim() === '') {
       throw new Error('Invalid stock symbol');
     }
 
+    const cacheKey = `quote_${symbol.toUpperCase()}`;
+    
+    // Check if there's already a pending request for this symbol
+    if (this.requestCache.has(cacheKey)) {
+      console.log(`📦 Using cached request for ${symbol}`);
+      return this.requestCache.get(cacheKey)!;
+    }
+
+    // Create new request and cache it
+    const requestPromise = this._fetchStockQuoteInternal(symbol);
+    this.requestCache.set(cacheKey, requestPromise);
+
+    // Set timeout to clear cache
+    setTimeout(() => {
+      this.requestCache.delete(cacheKey);
+    }, this.cacheTimeout);
+
+    try {
+      return await requestPromise;
+    } catch (error) {
+      // Remove failed request from cache immediately
+      this.requestCache.delete(cacheKey);
+      throw error;
+    }
+  }
+
+  /**
+   * Internal method for actual API call
+   */
+  private async _fetchStockQuoteInternal(symbol: string): Promise<FinnhubStockQuote> {
     try {
       const response = await fetch(`${this.baseUrl}/quote?symbol=${symbol}`, {
         method: 'GET',
@@ -388,6 +421,24 @@ export class StockService {
       console.error('Health check failed:', error);
       return false;
     }
+  }
+
+  /**
+   * Clear request cache manually
+   */
+  clearRequestCache(): void {
+    console.log(`🧹 Clearing ${this.requestCache.size} cached requests`);
+    this.requestCache.clear();
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): { size: number; keys: string[] } {
+    return {
+      size: this.requestCache.size,
+      keys: Array.from(this.requestCache.keys())
+    };
   }
 }
 

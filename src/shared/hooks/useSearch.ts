@@ -40,8 +40,14 @@ export const useSearch = <T>(
 
   // Filter items based on search query
   const filteredItems = useMemo(() => {
+    if (!items || !Array.isArray(items)) return [];
     if (!query.trim()) return items;
-    return items.filter(item => filterFn(item, query.toLowerCase()));
+    try {
+      return items.filter(item => filterFn(item, query.toLowerCase()));
+    } catch (error) {
+      console.error('Error filtering items:', error);
+      return [];
+    }
   }, [items, query, filterFn]);
 
   // Clear search query

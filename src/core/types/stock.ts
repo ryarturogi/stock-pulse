@@ -200,8 +200,8 @@ export interface StockStoreState {
   
   // WebSocket connection
   webSocketStatus: WebSocketStatus;
-  webSocketConnection: any; // WebSocket | null;
-  refreshInterval: any; // NodeJS.Timeout | null;
+  webSocketConnection: EventSource | null;
+  refreshInterval: NodeJS.Timeout | number | null;
   isConnecting: boolean;
   lastUpdateTimes: Map<string, number>;
   
@@ -210,6 +210,9 @@ export interface StockStoreState {
   
   // Live data toggle
   isLiveDataEnabled: boolean;
+  
+  // Connection management
+  connectionAttempts: number;
   
   // UI state
   isLoading: boolean;
@@ -221,7 +224,7 @@ export interface StockStoreState {
   updateStockPrice: (_symbol: string, _quote: FinnhubStockQuote) => void;
   updateAlertPrice: (_symbol: string, _newAlertPrice: number) => void;
   setWebSocketStatus: (_status: WebSocketStatus) => void;
-  setWebSocketConnection: (_connection: any) => void;
+  setWebSocketConnection: (_connection: EventSource | null) => void;
   setLoading: (_loading: boolean) => void;
   setError: (_error: string | null) => void;
   clearError: () => void;

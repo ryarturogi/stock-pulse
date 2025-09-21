@@ -28,7 +28,7 @@ export interface SidebarState {
  * @returns SidebarState object with state and actions
  */
 export const useSidebar = (initialOpen: boolean = false): SidebarState => {
-  const [isOpen, setIsOpen] = useState(initialOpen);
+  const [isOpen, setIsOpen] = useState(Boolean(initialOpen));
 
   const open = useCallback(() => {
     setIsOpen(true);

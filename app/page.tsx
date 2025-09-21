@@ -200,7 +200,7 @@ export default function HomePage() {
     lastManualRefreshRef.current = now;
     console.log('🔄 Manual refresh triggered...');
     
-    // Refresh all watched stocks with real API data
+    // Refresh all watched stocks with real API data (with better error isolation)
     const refreshPromises = watchedStocks.map(async (stock) => {
       try {
         const quoteData = await stockService.fetchStockQuote(stock.symbol);
@@ -218,14 +218,30 @@ export default function HomePage() {
             previousClose: quoteData.previousClose,
             timestamp: Date.now()
           });
+          return { symbol: stock.symbol, success: true };
+        } else {
+          console.warn(`No quote data for ${stock.symbol}`);
+          return { symbol: stock.symbol, success: false, error: 'No quote data' };
         }
       } catch (error) {
         console.error(`Failed to refresh ${stock.symbol}:`, error);
+        return { symbol: stock.symbol, success: false, error: error instanceof Error ? error.message : 'Unknown error' };
       }
     });
     
     try {
-      await Promise.all(refreshPromises);
+      const results = await Promise.allSettled(refreshPromises);
+      const successful = results.filter((result, index) => {
+        if (result.status === 'fulfilled' && result.value.success) {
+          return true;
+        }
+        if (result.status === 'rejected') {
+          console.error(`Refresh failed for ${watchedStocks[index].symbol}:`, result.reason);
+        }
+        return false;
+      });
+      
+      console.log(`📊 Manual refresh completed: ${successful.length}/${watchedStocks.length} stocks updated`);
     } catch (error) {
       console.error('Failed to refresh stocks:', error);
     }

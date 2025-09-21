@@ -114,13 +114,29 @@ export const StockCard: React.FC<StockCardProps> = ({
     ? (displayChangePercent >= 0 ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400')
     : 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
   
-  // Get border color based on alert status
+  // Get border color based on alert status  
   const getBorderColor = () => {
-    if (isLoading) return 'border-gray-300';
-    if (isAboveAlert) return 'border-green-500';
-    if (isBelowAlert) return 'border-red-500';
-    return 'border-gray-300';
+    if (isLoading) return 'border-blue-300 dark:border-blue-600';
+    if (isAboveAlert) return 'border-green-500 dark:border-green-400';
+    if (isBelowAlert) return 'border-red-500 dark:border-red-400';
+    return 'border-gray-300 dark:border-gray-600';
   };
+
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
+    <div className="animate-pulse">
+      <div className="flex items-center justify-between mb-3">
+        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+      </div>
+      <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-2"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-3"></div>
+      <div className="flex justify-between items-center">
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+      </div>
+    </div>
+  );
 
   // Get alert badge
   const getAlertBadge = () => {
@@ -188,18 +204,17 @@ export const StockCard: React.FC<StockCardProps> = ({
       </div>
 
       {/* Price Information */}
-      <div className="space-y-1 lg:space-y-2">
-        {/* Current Price */}
-        <p className={`text-xl lg:text-2xl font-bold text-gray-900 dark:text-white 
+      {isLoading ? (
+        <LoadingSkeleton />
+      ) : (
+        <div className="space-y-1 lg:space-y-2">
+          {/* Current Price */}
+          <p className={`text-xl lg:text-2xl font-bold text-gray-900 dark:text-white 
           ${wasJustUpdated ? 'text-blue-600 transition-colors duration-300' : ''}`}>
-          {isLoading ? (
-            <span className="text-gray-500 dark:text-gray-400">Loading...</span>
-          ) : (
             <span className={wasJustUpdated ? 'animate-pulse' : ''}>
               {formattedPrice}
             </span>
-          )}
-        </p>
+          </p>
 
         {/* Change Amount and Percentage - Finnhub Style */}
         <div className="flex items-center space-x-2">
@@ -315,7 +330,8 @@ export const StockCard: React.FC<StockCardProps> = ({
             </div>
           )}
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Loading Indicator */}
       {isLoading && (

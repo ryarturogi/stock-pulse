@@ -1,6 +1,5 @@
-import type { Config } from 'jest';
-
-const config: Config = {
+/** @type {import('jest').Config} */
+const config = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   roots: ['<rootDir>', '<rootDir>/tests'],
@@ -9,29 +8,33 @@ const config: Config = {
     '**/*.(test|spec).(ts|tsx|js)',
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: {
+        jsx: 'react-jsx',
+        noImplicitOverride: false,
+      }
+    }],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(.*\\.mjs$))',
+  ],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
-    '^@/components/(.*)$': '<rootDir>/components/$1',
-    '^@/hooks/(.*)$': '<rootDir>/hooks/$1',
-    '^@/services/(.*)$': '<rootDir>/services/$1',
-    '^@/styles/(.*)$': '<rootDir>/styles/$1',
-    '^@/types/(.*)$': '<rootDir>/types/$1',
-    '^@/utils/(.*)$': '<rootDir>/utils/$1',
-    '^@/lib/(.*)$': '<rootDir>/lib/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/core/(.*)$': '<rootDir>/src/core/$1',
+    '^@/features/(.*)$': '<rootDir>/src/features/$1',
+    '^@/shared/(.*)$': '<rootDir>/src/shared/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   collectCoverageFrom: [
     'app/**/*.(ts|tsx)',
-    'components/**/*.(ts|tsx)',
-    'lib/**/*.(ts|tsx)',
-    'hooks/**/*.(ts|tsx)',
-    'services/**/*.(ts|tsx)',
+    'src/**/*.(ts|tsx)',
     '!**/*.d.ts',
     '!**/layout.tsx',
     '!**/page.tsx',
+    '!**/index.ts',
+    '!**/*.test.(ts|tsx)',
+    '!**/*.spec.(ts|tsx)',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
@@ -49,4 +52,4 @@ const config: Config = {
   restoreMocks: true,
 };
 
-export default config;
+module.exports = config;

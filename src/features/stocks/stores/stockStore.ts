@@ -43,6 +43,7 @@ export const useStockStore = create<StockStoreState>()(
       lastUpdateTimes: new Map<string, number>(),
       refreshTimeInterval: '2m', // Default to 2 minutes to respect API rate limits
       isLiveDataEnabled: true, // Default to live data enabled
+      connectionAttempts: 0, // Track connection attempts for exponential backoff
 
       // Stock management actions
       addStock: (symbol: string, name: string, alertPrice: number) => {
@@ -69,15 +70,24 @@ export const useStockStore = create<StockStoreState>()(
           error: null,
         }));
 
-        // Reconnect WebSocket to include new stock
-        const { webSocketStatus } = get();
-        if (webSocketStatus === 'connected') {
+        // Reconnect WebSocket to include new stock (with proper cleanup)
+        const { webSocketStatus, webSocketConnection } = get();
+        if (webSocketStatus === 'connected' && webSocketConnection) {
           console.log(`📡 Reconnecting WebSocket to include ${symbol}`);
+          // Immediate disconnect and reconnect with new symbol
+          (webSocketConnection as EventSource).close();
+          set({ 
+            webSocketConnection: null, 
+            webSocketStatus: 'disconnected' 
+          });
+          
+          // Reconnect after a short delay to ensure clean state
           setTimeout(() => {
             const currentState = get();
-            currentState.disconnectWebSocket();
-            currentState.connectWebSocket();
-          }, 200 + Math.random() * 300); // 200-500ms delay for uniqueness
+            if (currentState.watchedStocks.some(s => s.symbol === symbol)) {
+              currentState.connectWebSocket();
+            }
+          }, 300);
         }
       },
 
@@ -87,15 +97,24 @@ export const useStockStore = create<StockStoreState>()(
           error: null,
         }));
 
-        // Reconnect WebSocket to remove stock from subscription
-        const { webSocketStatus } = get();
-        if (webSocketStatus === 'connected') {
+        // Reconnect WebSocket to remove stock from subscription (with proper cleanup)
+        const { webSocketStatus, webSocketConnection } = get();
+        if (webSocketStatus === 'connected' && webSocketConnection) {
           console.log(`📡 Reconnecting WebSocket to remove ${symbol}`);
+          // Immediate disconnect and reconnect with remaining symbols
+          (webSocketConnection as EventSource).close();
+          set({ 
+            webSocketConnection: null, 
+            webSocketStatus: 'disconnected' 
+          });
+          
+          // Reconnect after a short delay if there are still stocks to watch
           setTimeout(() => {
             const currentState = get();
-            currentState.disconnectWebSocket();
-            currentState.connectWebSocket();
-          }, 200);
+            if (currentState.watchedStocks.length > 0) {
+              currentState.connectWebSocket();
+            }
+          }, 300);
         }
       },
 
@@ -255,7 +274,8 @@ export const useStockStore = create<StockStoreState>()(
               webSocketStatus: 'connected', 
               isConnecting: false, 
               error: null,
-              webSocketConnection: eventSource 
+              webSocketConnection: eventSource,
+              connectionAttempts: 0 // Reset connection attempts on successful connection
             });
             
             // Stop periodic refresh when WebSocket connects (real-time data available)
@@ -357,14 +377,20 @@ export const useStockStore = create<StockStoreState>()(
               errorState.startPeriodicRefresh();
             }
 
-            // Attempt to reconnect after a delay
+            // Attempt to reconnect after exponential backoff delay
+            const reconnectState = get();
+            const backoffDelay = Math.min(1000 * Math.pow(2, reconnectState.connectionAttempts), 30000); // Max 30s
+            
             setTimeout(() => {
-              console.log('🔄 Attempting to reconnect WebSocket proxy...');
-              const currentState = get();
-              if (currentState.watchedStocks.length > 0) {
-                currentState.connectWebSocket();
+              const retryState = get();
+              if (retryState.watchedStocks.length > 0 && 
+                  retryState.webSocketStatus !== 'connecting' && 
+                  retryState.webSocketStatus !== 'connected') {
+                console.log(`🔄 Attempting to reconnect WebSocket proxy... (attempt ${retryState.connectionAttempts + 1}, delay: ${backoffDelay}ms)`);
+                set(prevState => ({ connectionAttempts: prevState.connectionAttempts + 1 }));
+                retryState.connectWebSocket();
               }
-            }, 5000);
+            }, backoffDelay);
           };
 
         } catch (error) {
