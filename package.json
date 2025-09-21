@@ -25,7 +25,7 @@
     "build:vercel": "next build",
     "deploy:vercel": "vercel --prod",
     "deploy:preview": "vercel",
-    "vercel:env": "vercel env pull .env.local",
+    "vercel:env": "vercel env pull .env.local"
   },
   "dependencies": {
     "autoprefixer": "^10.4.20",
@@ -70,8 +70,7 @@
     "next-pwa": "^5.6.0",
     "prettier": "^3.3.3",
     "ts-jest": "^29.2.5",
-    "typescript": "^5.6.3",
-    "web-push": "^3.6.7"
+    "typescript": "^5.6.3"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
