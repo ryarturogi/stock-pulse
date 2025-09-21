@@ -9,6 +9,10 @@
   "theme_color": "#000000",
   "background_color": "#ffffff",
   "categories": ["finance", "business", "productivity"],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
   "icons": [
     {
       "src": "/icons/icon-72x72.svg",
@@ -86,5 +90,24 @@
     }
   ],
   "related_applications": [],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "notification": {
+    "action": "view",
+    "badge": "/icons/icon-72x72.svg",
+    "icon": "/icons/icon-192x192.svg",
+    "lang": "en",
+    "tag": "stockpulse-notification",
+    "vibrate": [200, 100, 200],
+    "requireInteraction": true,
+    "silent": false
+  },
+  "permissions": [
+    "notifications"
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+stockpulse",
+      "url": "/?symbol=%s"
+    }
+  ]
 }

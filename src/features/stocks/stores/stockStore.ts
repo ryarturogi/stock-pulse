@@ -142,9 +142,9 @@ export const useStockStore = create<StockStoreState>()(
         const state = get();
         const now = Date.now();
         const lastUpdate = state.lastUpdateTimes.get(symbol) || 0;
-        const throttleMs = 2000; // 2 seconds throttle
+        const throttleMs = 500; // Reduced to 500ms for better chart responsiveness
 
-        // Throttle updates to prevent excessive re-renders
+        // Throttle updates to prevent excessive re-renders but allow chart updates
         if (now - lastUpdate < throttleMs) {
           return;
         }

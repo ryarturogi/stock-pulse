@@ -21,12 +21,18 @@ export async function GET(request: NextRequest) {
     return new Response('Connection already exists for these symbols', { status: 409 });
   }
   
-  // Check cooldown period to prevent rapid reconnections
+  // Check cooldown period to prevent rapid reconnections (reduced for development)
   const cooldownTime = connectionCooldowns.get(connectionKey);
   if (cooldownTime && Date.now() < cooldownTime) {
     const remainingTime = Math.ceil((cooldownTime - Date.now()) / 1000);
     console.log(`⏰ Connection cooldown active for symbols: ${symbols}. ${remainingTime}s remaining.`);
-    return new Response(`Connection cooldown active. Try again in ${remainingTime} seconds.`, { status: 429 });
+    // In development, allow connections after 5 seconds instead of 10 minutes
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    if (isDevelopment && remainingTime > 5) {
+      console.log('🔧 Development mode: Allowing connection despite cooldown');
+    } else {
+      return new Response(`Connection cooldown active. Try again in ${remainingTime} seconds.`, { status: 429 });
+    }
   }
   
   const apiKey = process.env.FINNHUB_API_KEY;
@@ -137,8 +143,10 @@ export async function GET(request: NextRequest) {
               console.log(`❌ Max reconnection attempts reached (${reconnectAttempts}/${maxReconnectAttempts}) or rate limited (code: ${event.code}). Stopping reconnection.`);
               // Remove from active connections and set cooldown
               activeConnections.delete(connectionKey);
-              // Set 10 minute cooldown for rate limited connections
-              connectionCooldowns.set(connectionKey, Date.now() + 600000);
+              // Set shorter cooldown for development, longer for production
+              const isDevelopment = process.env.NODE_ENV === 'development';
+              const cooldownMs = isDevelopment ? 10000 : 600000; // 10s dev, 10min prod
+              connectionCooldowns.set(connectionKey, Date.now() + cooldownMs);
               return;
             }
             

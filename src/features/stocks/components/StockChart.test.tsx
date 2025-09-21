@@ -286,6 +286,93 @@ describe('StockChart', () => {
       const latestTime = screen.getByText(/Latest:/);
       expect(latestTime).toBeInTheDocument();
     });
+
+    it('should show live indicator', () => {
+      render(<StockChart stocks={mockStocks} />);
+
+      // Should show live indicator
+      expect(screen.getByText('Live')).toBeInTheDocument();
+    });
+
+    it('should handle millisecond precision in timestamps', () => {
+      const stocksWithMillisecondData = [
+        {
+          id: 'stock_1',
+          symbol: 'AAPL',
+          name: 'Apple Inc.',
+          alertPrice: 150.0,
+          currentPrice: 155.50,
+          priceHistory: [
+            { time: Date.now() - 1000, price: 154.0 },
+            { time: Date.now() - 500, price: 154.5 },
+            { time: Date.now(), price: 155.5 },
+          ],
+        },
+      ];
+
+      render(<StockChart stocks={stocksWithMillisecondData} />);
+
+      // Should show data points count
+      expect(screen.getByText('3 data points')).toBeInTheDocument();
+    });
+  });
+
+  describe('Real-time Data Updates', () => {
+    it('should update chart when new data points are added', () => {
+      const initialStocks = [
+        {
+          id: 'stock_1',
+          symbol: 'AAPL',
+          name: 'Apple Inc.',
+          alertPrice: 150.0,
+          currentPrice: 155.50,
+          priceHistory: [
+            { time: Date.now() - 2000, price: 154.0 },
+            { time: Date.now() - 1000, price: 154.5 },
+          ],
+          lastUpdated: Date.now() - 1000,
+        },
+      ];
+
+      const { rerender } = render(<StockChart stocks={initialStocks} />);
+      expect(screen.getByText('2 data points')).toBeInTheDocument();
+
+      // Simulate new data point being added
+      const updatedStocks = [
+        {
+          ...initialStocks[0],
+          currentPrice: 156.0,
+          priceHistory: [
+            ...initialStocks[0].priceHistory,
+            { time: Date.now(), price: 156.0 },
+          ],
+          lastUpdated: Date.now(),
+        },
+      ];
+
+      rerender(<StockChart stocks={updatedStocks} />);
+      expect(screen.getByText('3 data points')).toBeInTheDocument();
+    });
+
+    it('should handle rapid data updates', () => {
+      const rapidUpdateStocks = [
+        {
+          id: 'stock_1',
+          symbol: 'AAPL',
+          name: 'Apple Inc.',
+          alertPrice: 150.0,
+          currentPrice: 155.50,
+          priceHistory: Array.from({ length: 10 }, (_, i) => ({
+            time: Date.now() - (10 - i) * 100, // 100ms intervals
+            price: 155 + i * 0.1,
+          })),
+          lastUpdated: Date.now(),
+        },
+      ];
+
+      render(<StockChart stocks={rapidUpdateStocks} />);
+      expect(screen.getByText('10 data points')).toBeInTheDocument();
+    });
   });
 
   describe('Performance', () => {

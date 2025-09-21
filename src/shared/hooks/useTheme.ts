@@ -30,8 +30,8 @@ export interface ThemeState {
 export const useTheme = (initialDark: boolean = false): ThemeState => {
   const [isDarkMode, setIsDarkMode] = useState(initialDark);
 
-  // Update DOM theme class
-  const updateDOMTheme = useCallback((dark: boolean) => {
+  // Update DOM theme class - defined as regular function to avoid hoisting issues
+  const updateDOMTheme = (dark: boolean) => {
     if (typeof document === 'undefined') return;
 
     if (dark) {
@@ -39,7 +39,7 @@ export const useTheme = (initialDark: boolean = false): ThemeState => {
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, []);
+  };
 
   // Load theme from localStorage on mount
   useEffect(() => {
@@ -70,7 +70,7 @@ export const useTheme = (initialDark: boolean = false): ThemeState => {
       setIsDarkMode(initialDark);
       updateDOMTheme(initialDark);
     }
-  }, [initialDark, updateDOMTheme]);
+  }, [initialDark]);
 
   // Toggle theme
   const toggle = useCallback(() => {
@@ -84,7 +84,7 @@ export const useTheme = (initialDark: boolean = false): ThemeState => {
     } catch {
       // Ignore localStorage errors
     }
-  }, [isDarkMode, updateDOMTheme]);
+  }, [isDarkMode]);
 
   // Set specific theme
   const setDarkMode = useCallback(
@@ -99,7 +99,7 @@ export const useTheme = (initialDark: boolean = false): ThemeState => {
         // Ignore localStorage errors
       }
     },
-    [updateDOMTheme]
+    []
   );
 
   return {

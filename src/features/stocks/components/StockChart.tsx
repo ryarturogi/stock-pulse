@@ -39,6 +39,7 @@ export const StockChart: React.FC<StockChartProps> = ({
   // Get stock store methods (no methods needed for chart)
   
   // Memoize stocks with data to prevent unnecessary recalculations
+  // Only recalculate when stocks array changes or when price history actually changes
   const stocksWithData = useMemo(() => {
     return stocks.filter(
       stock => (stock.priceHistory && stock.priceHistory.length > 0) || stock.currentPrice
@@ -51,11 +52,15 @@ export const StockChart: React.FC<StockChartProps> = ({
     return stocksWithData.map(stock => stock.symbol);
   }, [stocksWithData]);
 
-  // Generate chart data from stock price history - simplified for live data only
+  // Generate chart data from stock price history - fixed to properly show real-time updates
   const chartData = useMemo((): ChartDataPoint[] => {
     if (stocksWithData.length === 0) return [];
 
     const now = Date.now();
+    // Only log in development and when there are actual changes
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📊 Chart data recalculating for', stocksWithData.length, 'stocks');
+    }
 
     // Get all unique timestamps from all stocks
     const allTimestamps = new Set<number>();
@@ -80,13 +85,14 @@ export const StockChart: React.FC<StockChartProps> = ({
     const sortedTimestamps = Array.from(allTimestamps)
       .sort((a, b) => a - b); // Show all collected data points
 
-    // Create chart data points with better time formatting
-    return sortedTimestamps.map((timestamp) => {
+    // Create chart data points with unique timestamp formatting
+    return sortedTimestamps.map((timestamp, index) => {
       const date = new Date(timestamp);
-      // Use shorter time format for better readability with many data points
+      // Create unique time labels to prevent duplicate timestamps
+      // Use milliseconds for precision when multiple points in same second
       const timeLabel = sortedTimestamps.length > 20 
-        ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : date.toLocaleTimeString();
+        ? `${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.${String(timestamp % 1000).padStart(3, '0')}`
+        : `${date.toLocaleTimeString()}.${String(timestamp % 1000).padStart(3, '0')}`;
       
       const dataPoint: ChartDataPoint = {
         timestamp: timeLabel,
@@ -109,7 +115,7 @@ export const StockChart: React.FC<StockChartProps> = ({
 
       return dataPoint;
     });
-  }, [stocksWithData]);
+  }, [stocksWithData, stocksWithData.map(s => s.priceHistory?.length || 0).join(','), stocksWithData.map(s => s.lastUpdated || 0).join(',')]);
 
 
 
@@ -171,6 +177,10 @@ export const StockChart: React.FC<StockChartProps> = ({
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {chartData.length > 0 && `Latest: ${chartData[chartData.length - 1]?.timestamp}`}
             </p>
+            <div className="flex items-center space-x-1 mt-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs text-green-600 dark:text-green-400">Live</span>
+            </div>
           </div>
         </div>
       </div>

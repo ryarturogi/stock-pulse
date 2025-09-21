@@ -20,7 +20,7 @@ const subscriptions: Map<string, any> = new Map();
 export async function POST(request: NextRequest): Promise<NextResponse<{ success: boolean; message: string } | ApiError>> {
   try {
     const body = await request.json();
-    const { subscription, userAgent, timestamp } = body;
+    const { subscription, userAgent, deviceType, browserType, timestamp } = body;
 
     // Validate required fields
     if (!subscription || !subscription.endpoint) {
@@ -44,16 +44,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
     // Create subscription ID (use endpoint as unique identifier)
     const subscriptionId = subscription.endpoint;
     
-    // Store subscription
+    // Store subscription with device information
     subscriptions.set(subscriptionId, {
       subscription,
       userAgent,
+      deviceType: deviceType || 'unknown',
+      browserType: browserType || 'unknown',
       timestamp,
       createdAt: Date.now(),
       lastUsed: Date.now(),
     });
 
-    console.log(`✅ Push subscription stored: ${subscriptionId}`);
+    console.log(`✅ Push subscription stored: ${subscriptionId} (${deviceType || 'unknown'})`);
     console.log(`📊 Total subscriptions: ${subscriptions.size}`);
 
     return NextResponse.json({
