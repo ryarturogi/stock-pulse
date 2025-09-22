@@ -62,16 +62,16 @@ export async function GET(request: NextRequest) {
   globalRateLimit.attempts++;
   globalRateLimit.lastAttempt = now;
   
-  // If more than 10 attempts in the last 5 minutes, block for 2 minutes
-  if (globalRateLimit.attempts > 10) {
+  // If more than 20 attempts in the last 5 minutes, block for 1 minute (less aggressive)
+  if (globalRateLimit.attempts > 20) {
     globalRateLimit.blocked = true;
-    globalRateLimit.blockUntil = now + (2 * 60 * 1000); // 2 minutes
-    console.log('🚫 EMERGENCY: Too many attempts, blocking all connections for 2 minutes');
+    globalRateLimit.blockUntil = now + (1 * 60 * 1000); // 1 minute
+    console.log('🚫 Rate limit: Too many attempts, blocking connections for 1 minute');
     return new Response(JSON.stringify({
       type: 'error',
-      message: 'Too many connection attempts. Blocked for 2 minutes.',
-      code: 'EMERGENCY_BLOCK',
-      remainingTime: 120
+      message: 'Connection rate limited. Try again in 1 minute.',
+      code: 'RATE_LIMITED',
+      remainingTime: 60
     }), { 
       status: 429,
       headers: {
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
   const breaker = circuitBreaker.get(connectionKey);
   if (breaker && breaker.state === 'open') {
     const timeSinceLastFailure = Date.now() - breaker.lastFailure;
-    const resetTimeout = 30 * 60 * 1000; // 30 minutes - much more aggressive
+    const resetTimeout = 5 * 60 * 1000; // 5 minutes - more reasonable
     
     if (timeSinceLastFailure < resetTimeout) {
       const remainingTime = Math.ceil((resetTimeout - timeSinceLastFailure) / 1000);
@@ -289,20 +289,20 @@ export async function GET(request: NextRequest) {
               console.log(`❌ Max reconnection attempts reached (${reconnectAttempts}/${maxReconnectAttempts}) or permanent error (code: ${event.code}). Stopping reconnection.`);
               // Remove from active connections and set cooldown
               activeConnections.delete(connectionKey);
-              // Set longer cooldown for rate limiting, shorter for other errors
+              // Set reasonable cooldown periods
               const isDevelopment = process.env.NODE_ENV === 'development';
               const cooldownMs = isRateLimited 
-                ? (isDevelopment ? 30000 : 60000) // 30s dev, 1min prod for rate limits
-                : (isDevelopment ? 10000 : 30000); // 10s dev, 30s prod for other errors
+                ? (isDevelopment ? 15000 : 30000) // 15s dev, 30s prod for rate limits
+                : (isDevelopment ? 5000 : 15000); // 5s dev, 15s prod for other errors
               connectionCooldowns.set(connectionKey, Date.now() + cooldownMs);
               return;
             }
             
             reconnectAttempts++;
             
-            // Longer exponential backoff for rate limiting: 10s, 30s, 90s, 180s, 300s
-            const baseDelay = isRateLimited ? 10000 : 5000;
-            const backoffDelay = Math.min(Math.pow(3, reconnectAttempts) * baseDelay, 300000); // Cap at 5 minutes
+            // Reasonable exponential backoff: 5s, 15s, 45s, 90s, 180s
+            const baseDelay = isRateLimited ? 5000 : 3000;
+            const backoffDelay = Math.min(Math.pow(3, reconnectAttempts) * baseDelay, 180000); // Cap at 3 minutes
             
             if (reconnectTimeout) {
               clearTimeout(reconnectTimeout);
