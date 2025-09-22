@@ -10,6 +10,8 @@ export { StockForm } from './StockForm';
 export { StockCard } from './StockCard';
 export { StockCards } from './StockCards';
 export { StockChart } from './StockChart';
+export { StockSearch } from './StockSearch';
+export { InfiniteStockSelector } from './InfiniteStockSelector';
 export { RefreshIntervalSelector } from './RefreshIntervalSelector';
 export { SlideOutSidebar } from './SlideOutSidebar';
 

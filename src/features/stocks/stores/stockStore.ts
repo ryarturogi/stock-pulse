@@ -9,16 +9,17 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+import { STORAGE_KEYS } from '@/core/constants/constants';
 import {
   StockStoreState,
   WatchedStock,
   FinnhubStockQuote,
   WebSocketStatus,
-  STORAGE_KEYS,
   RefreshInterval,
   REFRESH_INTERVALS
 } from '@/core/types';
 import { getNotificationService } from '@/features/notifications';
+import { StockWebSocketService } from '@/features/stocks/services/stockWebSocketService';
 
 /**
  * Generate unique ID for watched stocks
@@ -26,6 +27,11 @@ import { getNotificationService } from '@/features/notifications';
 const generateStockId = (): string => {
   return `stock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
+
+/**
+ * WebSocket service instance for the stock store
+ */
+let webSocketService: StockWebSocketService | null = null;
 
 /**
  * Stock tracking store implementation
@@ -205,333 +211,82 @@ export const useStockStore = create<StockStoreState>()(
       },
 
 
-      // Connect to real-time updates using secure WebSocket proxy
+      // Connect to real-time updates using dedicated WebSocket service
       connectWebSocket: async () => {
-        // Don't create connections on server side
-        if (typeof window === 'undefined') {
-          return;
-        }
-
-        const state = get();
-        
-        // Don't connect if live data is disabled
-        if (!state.isLiveDataEnabled) {
-          console.log('⚠️ Live data is disabled, skipping WebSocket connection');
-          return;
-        }
-        
-        // Check if already connected
-        if (state.webSocketStatus === 'connected' && state.webSocketConnection) {
-          console.log('✅ WebSocket already connected');
-          return;
-        }
-
-        // Check if already connecting to prevent duplicate connection attempts
-        if (state.webSocketStatus === 'connecting' || state.isConnecting) {
-          console.log('⚠️ WebSocket connection already in progress, skipping duplicate attempt');
-          return;
-        }
-
-        // Check if we're in a cooldown period from previous failures
-        const lastConnectionAttempt = state.lastConnectionAttempt || 0;
-        const timeSinceLastAttempt = Date.now() - lastConnectionAttempt;
-        const minConnectionInterval = 30 * 1000; // 30 seconds minimum between connection attempts
-        
-        if (timeSinceLastAttempt < minConnectionInterval) {
-          const remainingTime = Math.ceil((minConnectionInterval - timeSinceLastAttempt) / 1000);
-          console.log(`⏰ Connection attempt too soon, waiting ${remainingTime}s before retry`);
-          return;
-        }
-
-        // If we're in an error state, wait even longer before retrying
-        if (state.webSocketStatus === 'error') {
-          const errorCooldown = 60 * 1000; // 1 minute for error state
-          if (timeSinceLastAttempt < errorCooldown) {
-            const remainingTime = Math.ceil((errorCooldown - timeSinceLastAttempt) / 1000);
-            console.log(`⏰ Error state cooldown active, waiting ${remainingTime}s before retry`);
-            return;
-          }
-        }
-
-        // If we've had too many connection attempts, disable WebSocket temporarily
-        const maxConnectionAttempts = 5;
-        if (state.connectionAttempts >= maxConnectionAttempts) {
-          console.log('🚫 EMERGENCY: Too many connection attempts, disabling WebSocket and using API only');
-          set({
-            webSocketStatus: 'error',
-            isConnecting: false,
-            error: 'WebSocket disabled due to repeated failures - using API fallback',
-            webSocketConnection: null,
-            isLiveDataEnabled: false // Disable live data to prevent further attempts
-          });
-          return;
-        }
-
-        // Close existing connection if any
-        if (state.webSocketConnection) {
-          (state.webSocketConnection as EventSource).close();
-        }
-
-        if (state.watchedStocks.length === 0) {
-          console.log('⚠️ No stocks to connect to');
-          return;
-        }
-
-        console.log('🔌 Connecting to secure WebSocket proxy...');
-        set({ 
-          webSocketStatus: 'connecting', 
-          isConnecting: true,
-          error: null,
-          lastConnectionAttempt: Date.now()
-        });
-
-        try {
-          const symbols = state.watchedStocks.map(stock => stock.symbol).join(',');
-          const proxyUrl = `/api/websocket-proxy?symbols=${symbols}`;
-          console.log('🔗 Proxy URL:', proxyUrl);
-
-          const eventSource = new EventSource(proxyUrl);
-          
-          // Set connection timeout
-          const connectionTimeout = setTimeout(() => {
-            if (get().webSocketStatus === 'connecting') {
-              console.log('⏰ WebSocket proxy connection timeout, switching to API mode...');
-              eventSource.close();
-              set({
-                webSocketStatus: 'error',
-                isConnecting: false,
-                error: 'Connection timeout - using API fallback',
-                webSocketConnection: null
-              });
-              
-              // Start periodic refresh as fallback
-              const errorState = get();
-              if (errorState.isLiveDataEnabled && errorState.watchedStocks.length > 0) {
-                errorState.startPeriodicRefresh();
-              }
+        // Initialize WebSocket service if needed
+        if (!webSocketService) {
+          webSocketService = new StockWebSocketService({
+            onStatusChange: (status) => set({ webSocketStatus: status }),
+            onConnectionChange: (connection) => set({ webSocketConnection: connection }),
+            onConnectingChange: (isConnecting) => set({ isConnecting }),
+            onErrorChange: (error) => set({ error }),
+            onUpdateConnectionAttempts: (attempts) => set({ connectionAttempts: attempts }),
+            onUpdateLastConnectionAttempt: (timestamp) => set({ lastConnectionAttempt: timestamp }),
+            onDisableLiveData: () => set({ isLiveDataEnabled: false }),
+            onStartPeriodicRefresh: () => get().startPeriodicRefresh(),
+            onUpdateStockPrice: (symbol, quote) => get().updateStockPrice(symbol, quote),
+            getWatchedStocks: () => get().watchedStocks,
+            getState: () => {
+              const state = get();
+              return {
+                isLiveDataEnabled: state.isLiveDataEnabled,
+                webSocketStatus: state.webSocketStatus,
+                webSocketConnection: state.webSocketConnection,
+                isConnecting: state.isConnecting,
+                connectionAttempts: state.connectionAttempts,
+                lastConnectionAttempt: state.lastConnectionAttempt,
+                watchedStocks: state.watchedStocks
+              };
             }
-          }, 60000); // 60 second timeout (increased for better reliability and rate limit handling)
-
-          eventSource.onopen = () => {
-            console.log('✅ Connected to secure WebSocket proxy');
-            clearTimeout(connectionTimeout);
-            set({ 
-              webSocketStatus: 'connected', 
-              isConnecting: false, 
-              error: null,
-              webSocketConnection: eventSource,
-              connectionAttempts: 0 // Reset connection attempts on successful connection
-            });
-            
-            // WebSocket connected - real-time data is now available, but keep periodic refresh running
-            // for reliability and to honor user's refresh interval preference
-            console.log('🔌 WebSocket connected - real-time data active, periodic refresh continues for reliability');
-          };
-
-          eventSource.onerror = (error) => {
-            console.error('❌ WebSocket proxy connection error:', error);
-            clearTimeout(connectionTimeout);
-            
-            // Check if this is a connection error (409, 429, 503)
-            if (eventSource.readyState === EventSource.CLOSED) {
-              console.log('🔌 WebSocket connection closed, likely due to rate limiting or circuit breaker');
-              set({
-                webSocketStatus: 'error',
-                isConnecting: false,
-                error: 'Connection blocked - using API fallback',
-                webSocketConnection: null,
-                lastConnectionAttempt: Date.now()
-              });
-              
-              // Start periodic refresh as fallback
-              const errorState = get();
-              if (errorState.isLiveDataEnabled && errorState.watchedStocks.length > 0) {
-                errorState.startPeriodicRefresh();
-              }
-            }
-          };
-
-          eventSource.onclose = (event) => {
-            console.log('🔌 WebSocket proxy connection closed:', event);
-            clearTimeout(connectionTimeout);
-            
-            // Only attempt reconnection if we're not in an error state and live data is enabled
-            const currentState = get();
-            if (currentState.isLiveDataEnabled && currentState.watchedStocks.length > 0 && 
-                currentState.webSocketStatus !== 'error') {
-              
-              // Implement exponential backoff for reconnection with longer delays
-              const attempts = currentState.connectionAttempts || 0;
-              const maxAttempts = 3; // Reduced max attempts
-              
-              if (attempts < maxAttempts) {
-                // Exponential backoff: 5s, 10s, 20s (reasonable delays)
-                const backoffDelay = Math.min(Math.pow(2, attempts) * 5000, 30000); // 5s, 10s, 20s, max 30s
-                console.log(`🔄 WebSocket connection closed, retrying in ${backoffDelay/1000}s (attempt ${attempts + 1}/${maxAttempts})`);
-                
-                set({ 
-                  webSocketStatus: 'disconnected',
-                  isConnecting: false,
-                  connectionAttempts: attempts + 1,
-                  lastConnectionAttempt: Date.now()
-                });
-                
-                setTimeout(() => {
-                  const retryState = get();
-                  if (retryState.isLiveDataEnabled && retryState.watchedStocks.length > 0) {
-                    retryState.connectWebSocket();
-                  }
-                }, backoffDelay);
-              } else {
-                console.log('❌ Max WebSocket reconnection attempts reached, switching to API mode');
-                set({
-                  webSocketStatus: 'error',
-                  isConnecting: false,
-                  error: 'Connection failed - using API fallback',
-                  webSocketConnection: null,
-                  connectionAttempts: 0,
-                  lastConnectionAttempt: Date.now()
-                });
-                
-                // Start periodic refresh as fallback
-                const errorState = get();
-                if (errorState.isLiveDataEnabled && errorState.watchedStocks.length > 0) {
-                  errorState.startPeriodicRefresh();
-                }
-              }
-            }
-          };
-
-          eventSource.onmessage = (event) => {
-            try {
-              const data = JSON.parse(event.data);
-              console.log('📨 WebSocket proxy message received:', data);
-
-              if (data.type === 'trade' && data.data) {
-                const trade = data.data;
-                if (trade.symbol && trade.price) {
-                  const symbol = trade.symbol;
-                  const price = trade.price;
-
-                  console.log(`💰 Real-time trade update: ${symbol} = $${price}`);
-                  
-                  // Update stock price in store
-                  const currentState = get();
-                  const stock = currentState.watchedStocks.find(s => s.symbol === symbol);
-                  if (stock) {
-                    // Calculate change if we have previous data
-                    const previousPrice = stock.previousClose || stock.currentPrice || price;
-                    const change = price - previousPrice;
-                    const percentChange = previousPrice > 0 ? (change / previousPrice) * 100 : 0;
-                    
-                    currentState.updateStockPrice(symbol, {
-                      symbol,
-                      current: price,
-                      change: change,
-                      percentChange: percentChange,
-                      high: Math.max(stock.high || price, price),
-                      low: Math.min(stock.low || price, price),
-                      open: stock.open || price,
-                      previousClose: stock.previousClose || price,
-                      timestamp: trade.timestamp || Date.now()
-                    });
-                  }
-                }
-              } else if (data.type === 'connected') {
-                console.log('✅ WebSocket proxy connected:', data.message);
-              } else if (data.type === 'error') {
-                console.warn('⚠️ WebSocket proxy message:', data.message);
-                set({ 
-                  webSocketStatus: 'error', 
-                  isConnecting: false, 
-                  error: data.message 
-                });
-              }
-            } catch (error) {
-              console.error('Failed to parse WebSocket proxy message:', error);
-            }
-          };
-
-          eventSource.onerror = (error) => {
-            console.warn('⚠️ WebSocket proxy connection issue (likely rate limited or cooldown active)');
-            if (error instanceof ErrorEvent && error.message) {
-              console.info('Connection details:', {
-                message: error.message,
-                type: 'EventSource error'
-              });
-            }
-            clearTimeout(connectionTimeout);
-            
-            // Check if this is just an initial connection error
-            const currentState = get();
-            if (currentState.webSocketStatus === 'connecting') {
-              console.log('⚠️ Initial WebSocket proxy connection error, will retry...');
-              return;
-            }
-            
-            // Check EventSource readyState for more specific error info
-            const readyStateText = eventSource.readyState === 0 ? 'CONNECTING' : 
-                                  eventSource.readyState === 1 ? 'OPEN' : 'CLOSED';
-            console.log(`EventSource readyState: ${readyStateText} (${eventSource.readyState})`);
-            
-            // Determine error message based on likely causes
-            let errorMessage = `WebSocket proxy connection failed (${readyStateText})`;
-            if (readyStateText === 'CLOSED') {
-              errorMessage = 'WebSocket proxy disconnected - likely rate limited or cooldown active';
-            }
-            
-            set({
-              webSocketStatus: 'error',
-              isConnecting: false,
-              error: errorMessage,
-              webSocketConnection: null
-            });
-
-            // Start periodic refresh as fallback when WebSocket fails
-            const errorState = get();
-            if (errorState.isLiveDataEnabled && errorState.watchedStocks.length > 0) {
-              errorState.startPeriodicRefresh();
-            }
-
-            // Attempt to reconnect after exponential backoff delay
-            const reconnectState = get();
-            const backoffDelay = Math.min(1000 * Math.pow(2, reconnectState.connectionAttempts), 30000); // Max 30s
-            
-            setTimeout(() => {
-              const retryState = get();
-              if (retryState.watchedStocks.length > 0 && 
-                  retryState.webSocketStatus !== 'connecting' && 
-                  retryState.webSocketStatus !== 'connected') {
-                console.log(`🔄 Attempting to reconnect WebSocket proxy... (attempt ${retryState.connectionAttempts + 1}, delay: ${backoffDelay}ms)`);
-                set(prevState => ({ connectionAttempts: prevState.connectionAttempts + 1 }));
-                retryState.connectWebSocket();
-              }
-            }, backoffDelay);
-          };
-
-        } catch (error) {
-          console.error('Failed to create WebSocket proxy connection:', error);
-          set({ 
-            webSocketStatus: 'error', 
-            isConnecting: false, 
-            error: error instanceof Error ? error.message : 'WebSocket proxy connection failed' 
           });
         }
+
+        await webSocketService.connectWebSocket();
       },
 
       // Disconnect WebSocket
       disconnectWebSocket: () => {
-        const { webSocketConnection } = get();
-        
-        if (webSocketConnection) {
-          (webSocketConnection as EventSource).close();
-          set({ 
-            webSocketConnection: null, 
-            webSocketStatus: 'disconnected' 
-          });
+        if (webSocketService) {
+          webSocketService.disconnectWebSocket();
+        } else {
+          // Fallback if service not initialized
+          const { webSocketConnection } = get();
+          if (webSocketConnection) {
+            (webSocketConnection as EventSource).close();
+            set({ 
+              webSocketConnection: null, 
+              webSocketStatus: 'disconnected' 
+            });
+          }
         }
-        
-        console.log('❌ WebSocket proxy disconnected');
+      },
+
+      // Reset WebSocket state and re-enable live data
+      resetWebSocketState: () => {
+        if (webSocketService) {
+          webSocketService.resetWebSocketState();
+          // Re-enable live data in the store as well
+          set({ isLiveDataEnabled: true });
+        } else {
+          // Fallback if service not initialized
+          const { webSocketConnection } = get();
+          if (webSocketConnection) {
+            (webSocketConnection as EventSource).close();
+          }
+          
+          // Reset all WebSocket-related state
+          set({
+            webSocketConnection: null,
+            webSocketStatus: 'disconnected',
+            connectionAttempts: 0,
+            isConnecting: false,
+            error: null,
+            lastConnectionAttempt: 0,
+            isLiveDataEnabled: true
+          });
+          
+          console.log('🔄 WebSocket state reset and live data re-enabled');
+        }
       },
 
       // Start periodic refresh only as fallback when WebSocket is not connected
@@ -788,6 +543,7 @@ export const useStockActions = () => ({
 export const useWebSocketActions = () => ({
   connectWebSocket: useStockStore(state => state.connectWebSocket),
   disconnectWebSocket: useStockStore(state => state.disconnectWebSocket),
+  resetWebSocketState: useStockStore(state => state.resetWebSocketState),
   startPeriodicRefresh: useStockStore(state => state.startPeriodicRefresh),
   stopPeriodicRefresh: useStockStore(state => state.stopPeriodicRefresh),
 });

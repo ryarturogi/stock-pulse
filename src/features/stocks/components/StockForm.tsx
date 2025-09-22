@@ -12,9 +12,14 @@ import React, { useEffect, FormEvent } from 'react';
 
 import { Plus, TrendingUp, AlertCircle } from 'lucide-react';
 
-import { StockFormProps, DEFAULT_STOCK_OPTIONS } from '@/core/types';
+import { DEFAULT_STOCK_OPTIONS } from '@/core/constants/constants';
+import { StockFormProps, StockOption } from '@/core/types';
 import { useStockForm } from '@/features/stocks/hooks';
+import { stockService } from '@/features/stocks/services';
 import { Button } from '@/shared/components/ui/Button';
+
+import { InfiniteStockSelector } from './InfiniteStockSelector';
+import { StockSearch } from './StockSearch';
 
 /**
  * Stock Form Component
@@ -29,6 +34,9 @@ export const StockForm: React.FC<StockFormProps> = ({
   isLoading = false,
   className = '',
 }) => {
+  const [allAvailableStocks, setAllAvailableStocks] = React.useState<StockOption[]>(availableStocks);
+  const [isLoadingStocks, setIsLoadingStocks] = React.useState(false);
+
   const {
     selectedStock,
     alertPrice,
@@ -42,8 +50,27 @@ export const StockForm: React.FC<StockFormProps> = ({
     fetchCurrentPrice,
   } = useStockForm();
 
-  // Filter out stocks that are already being watched
-  const availableStocksToShow = availableStocks.filter(
+  // Load available stocks from Finnhub API (for legacy dropdown fallback)
+  useEffect(() => {
+    const loadAvailableStocks = async () => {
+      setIsLoadingStocks(true);
+      try {
+        const stocks = await stockService.getAvailableStocksLegacy();
+        setAllAvailableStocks(stocks);
+      } catch (error) {
+        console.error('Failed to load available stocks:', error);
+        // Keep default stocks as fallback
+        setAllAvailableStocks(availableStocks);
+      } finally {
+        setIsLoadingStocks(false);
+      }
+    };
+
+    loadAvailableStocks();
+  }, [availableStocks]);
+
+  // Filter out stocks that are already being watched (for legacy dropdown)
+  const availableStocksToShow = allAvailableStocks.filter(
     stock => !watchedStocks.some(watched => watched.symbol === stock.symbol)
   );
 
@@ -60,33 +87,34 @@ export const StockForm: React.FC<StockFormProps> = ({
   /**
    * Handle form submission
    */
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    const selectedStockData = availableStocks.find(
+    // Try to find stock info in the loaded stocks
+    const selectedStockData = allAvailableStocks.find(
       stock => stock.symbol === selectedStock
     );
-    if (!selectedStockData) {
-      // This should be handled by the hook's validation
-      return;
-    }
 
     const price = parseFloat(alertPrice);
-    onAddStock(selectedStock, price);
+    
+    // Pass stock name if found, otherwise let handleAddStock figure it out
+    const stockName = selectedStockData?.name;
+    onAddStock(selectedStock, price, stockName);
 
     // Reset form
     resetForm();
   };
 
   /**
-   * Handle stock selection change
+   * Handle stock selection from search
    */
-  const handleStockChange = (e: React.ChangeEvent<{ value: string }>) => {
-    setSelectedStock(e.target.value);
+  const handleSearchStockSelect = async (symbol: string, alertPrice: number, stockName?: string) => {
+    // Call the parent's onAddStock function
+    onAddStock(symbol, alertPrice, stockName);
   };
 
   /**
@@ -126,44 +154,52 @@ export const StockForm: React.FC<StockFormProps> = ({
             Add Stock to Watch
           </h2>
 
+          {/* Stock Search */}
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              Search & Add Stock
+            </label>
+            <StockSearch
+              onSelectStock={handleSearchStockSelect}
+              watchedStocks={watchedStocks}
+              className="mb-4"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Search for any stock symbol or company name
+            </p>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                or select from popular stocks
+              </span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className='space-y-4'>
-            {/* Stock Selection */}
+            {/* Enhanced Stock Selection with Infinite Loading */}
             <div>
               <label
-                htmlFor='stock-select'
+                htmlFor='stock-selector'
                 className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
               >
                 Select Stock
               </label>
-              <select
-                id='stock-select'
+              <InfiniteStockSelector
                 value={selectedStock}
-                onChange={handleStockChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white dark:text-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 ${errors.stock ? 'border-red-300' : ''}`}
+                onChange={setSelectedStock}
+                placeholder="Choose a stock..."
                 disabled={isLoading}
-              >
-                <option value=''>Choose a stock...</option>
-                {availableStocksToShow.length > 0 ? (
-                  availableStocksToShow.map(stock => (
-                    <option key={stock.symbol} value={stock.symbol}>
-                      {stock.symbol} - {stock.name}
-                    </option>
-                  ))
-                ) : (
-                  <option value='' disabled>
-                    All stocks are already being watched
-                  </option>
-                )}
-              </select>
-              {errors.stock && (
-                <div className='flex items-center mt-1 text-sm text-red-600'>
-                  <AlertCircle className='mr-1 w-4 h-4' />
-                  {errors.stock}
-                </div>
-              )}
-              {availableStocksToShow.length === 0 && (
+                error={errors.stock || ''}
+                watchedStocks={watchedStocks}
+              />
+              {availableStocksToShow.length === 0 && !isLoadingStocks && (
                 <div className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-                  All available stocks are already being watched
+                  All default stocks are being watched. Use the search above to find more stocks.
                 </div>
               )}
             </div>
