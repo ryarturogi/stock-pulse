@@ -39,16 +39,16 @@ describe('Shared Components Index', () => {
       expect(typeof ComponentsIndex.Button).toBe('function');
     });
 
-    it('should maintain reference equality for UI re-exports', () => {
-      const { Button: directButton } = require('./ui/Button');
+    it('should maintain reference equality for UI re-exports', async () => {
+      const { Button: directButton } = await import('./ui/Button');
       expect(ComponentsIndex.Button).toBe(directButton);
     });
   });
 
   describe('Direct Component Exports', () => {
-    it('should maintain reference equality for direct exports', () => {
-      const { ErrorBoundary: directErrorBoundary } = require('./ErrorBoundary');
-      const { ErrorBoundaryWrapper: directWrapper } = require('./ErrorBoundaryWrapper');
+    it('should maintain reference equality for direct exports', async () => {
+      const { ErrorBoundary: directErrorBoundary } = await import('./ErrorBoundary');
+      const { ErrorBoundaryWrapper: directWrapper } = await import('./ErrorBoundaryWrapper');
       
       expect(ComponentsIndex.ErrorBoundary).toBe(directErrorBoundary);
       expect(ComponentsIndex.ErrorBoundaryWrapper).toBe(directWrapper);
@@ -61,7 +61,7 @@ describe('Shared Components Index', () => {
       
       expectedComponents.forEach(componentName => {
         expect(ComponentsIndex).toHaveProperty(componentName);
-        expect(typeof ComponentsIndex[componentName as keyof typeof ComponentsIndex]).toBe('function');
+        expect(typeof (ComponentsIndex as any)[componentName]).toBe('function');
       });
     });
 
@@ -82,7 +82,7 @@ describe('Shared Components Index', () => {
     });
 
     it('should not have default export', () => {
-      expect(ComponentsIndex.default).toBeUndefined();
+      expect((ComponentsIndex as any).default).toBeUndefined();
     });
   });
 

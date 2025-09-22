@@ -132,7 +132,6 @@ describe('Core Type Utilities', () => {
       expect(isObject(123)).toBe(false);
       expect(isObject(true)).toBe(false);
       expect(isObject([])).toBe(false);
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(isObject(() => {})).toBe(false);
     });
   });
@@ -153,7 +152,6 @@ describe('Core Type Utilities', () => {
       expect(isArray('string')).toBe(false);
       expect(isArray(123)).toBe(false);
       expect(isArray(true)).toBe(false);
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(isArray(() => {})).toBe(false);
     });
 
@@ -168,11 +166,8 @@ describe('Core Type Utilities', () => {
 
   describe('isFunction', () => {
     it('should return true for valid functions', () => {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(isFunction(() => {})).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(isFunction(() => {})).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(isFunction(async () => {})).toBe(true);
       expect(isFunction(Math.max)).toBe(true);
       expect(isFunction(console.log)).toBe(true);
@@ -212,22 +207,17 @@ describe('Core Type Utilities', () => {
   describe('isPromise', () => {
     it('should return true for valid promises', () => {
       expect(isPromise(Promise.resolve())).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(isPromise(Promise.reject().catch(() => {}))).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(isPromise(new Promise(() => {}))).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(isPromise((async () => {})())).toBe(true);
     });
 
     it('should return false for non-promises', () => {
       expect(isPromise({})).toBe(false);
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(isPromise({ then: () => {} })).toBe(false);
       expect(isPromise(null)).toBe(false);
       expect(isPromise(undefined)).toBe(false);
       expect(isPromise('promise')).toBe(false);
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(isPromise(() => {})).toBe(false);
     });
   });

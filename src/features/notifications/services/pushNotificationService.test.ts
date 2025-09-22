@@ -163,7 +163,7 @@ describe('PushNotificationService', () => {
 
     it('should handle server-side initialization', () => {
       const originalWindow = global.window;
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.window for server-side testing
       delete global.window;
       
       (PushNotificationService as any).instance = null;
@@ -234,7 +234,7 @@ describe('PushNotificationService', () => {
 
     it('should return denied when not supported', async () => {
       const originalNotification = global.Notification;
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.Notification for testing
       delete global.Notification;
       
       const permission = await service.requestPermission();

@@ -76,7 +76,7 @@ describe('useResponsive', () => {
   describe('Server-Side Rendering', () => {
     it('should handle SSR when window is undefined', () => {
       const originalWindow = global.window;
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.window for SSR testing
       delete global.window;
 
       const { result } = renderHook(() => useResponsive());
@@ -340,7 +340,7 @@ describe('useResponsive', () => {
 
     it('should not add event listeners when window is undefined', () => {
       const originalWindow = global.window;
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.window for testing
       delete global.window;
 
       const addEventListenerSpy = jest.spyOn(global, 'addEventListener').mockImplementation();

@@ -463,9 +463,7 @@ export const useStockStore = create<StockStoreState>()(
           // Server-side rendering - use in-memory storage
           return {
             getItem: () => null,
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
             setItem: () => {},
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
             removeItem: () => {},
           };
         }
@@ -478,9 +476,7 @@ export const useStockStore = create<StockStoreState>()(
           console.warn('localStorage not available, using in-memory storage:', error);
           return {
             getItem: () => null,
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
             setItem: () => {},
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
             removeItem: () => {},
           };
         }

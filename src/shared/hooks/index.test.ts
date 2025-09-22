@@ -53,14 +53,14 @@ describe('Shared Hooks Index', () => {
 
       hookExports.forEach(hookName => {
         expect(HooksIndex).toHaveProperty(hookName);
-        expect(typeof HooksIndex[hookName as keyof typeof HooksIndex]).toBe('function');
+        expect(typeof (HooksIndex as any)[hookName]).toBe('function');
       });
     });
 
     it('should not export unexpected functions', () => {
       // Get all function exports
       const functionKeys = Object.keys(HooksIndex).filter(
-        key => typeof HooksIndex[key as keyof typeof HooksIndex] === 'function'
+        key => typeof (HooksIndex as any)[key] === 'function'
       );
 
       const expectedHooks = [
@@ -96,10 +96,10 @@ describe('Shared Hooks Index', () => {
   });
 
   describe('Re-export Consistency', () => {
-    it('should maintain reference equality for re-exported functions', () => {
+    it('should maintain reference equality for re-exported functions', async () => {
       // Import from the actual source files
-      const { useSearch: directUseSearch } = require('./useSearch');
-      const { useSidebar: directUseSidebar } = require('./useSidebar');
+      const { useSearch: directUseSearch } = await import('./useSearch');
+      const { useSidebar: directUseSidebar } = await import('./useSidebar');
       
       // These should be the same function references
       expect(HooksIndex.useSearch).toBe(directUseSearch);
@@ -116,7 +116,7 @@ describe('Shared Hooks Index', () => {
 
     it('should not have default export conflicts', () => {
       // Verify we're dealing with named exports, not default
-      expect(HooksIndex.default).toBeUndefined();
+      expect((HooksIndex as any).default).toBeUndefined();
     });
   });
 });

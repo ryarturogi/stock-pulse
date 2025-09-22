@@ -31,7 +31,7 @@ describe('/api/push/subscribe', () => {
     };
 
     // Clear in-memory subscriptions
-    const route = require('./route');
+    const route = await import('./route');
     route.subscriptions?.clear?.();
   });
 
@@ -246,7 +246,7 @@ describe('/api/push/subscribe', () => {
       expect(data.success).toBe(true);
 
       // Verify subscription was stored with device info
-      const route = require('./route');
+      const route = await import('./route');
       const storedSubscriptions = Array.from(route.subscriptions.values());
       expect(storedSubscriptions).toHaveLength(1);
       
@@ -300,7 +300,7 @@ describe('/api/push/subscribe', () => {
       expect(response2.status).toBe(200);
 
       // Verify both subscriptions were stored
-      const route = require('./route');
+      const route = await import('./route');
       expect(route.subscriptions.size).toBe(2);
     });
   });

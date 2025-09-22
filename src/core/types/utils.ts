@@ -211,54 +211,54 @@ export type FormSubmitHandler<T> = (_values: T) => Promise<void> | void;
 /**
  * Component props with children
  */
-export type WithChildren<T = {}> = T & {
+export type WithChildren<T = Record<string, never>> = T & {
   children?: React.ReactNode;
 };
 
 /**
  * Component props with className
  */
-export type WithClassName<T = {}> = T & {
+export type WithClassName<T = Record<string, never>> = T & {
   className?: string;
 };
 
 /**
  * Component props with optional ref
  */
-export type WithRef<T = {}, R = HTMLElement> = T & {
+export type WithRef<T = Record<string, never>, R = HTMLElement> = T & {
   ref?: React.Ref<R>;
 };
 
 /**
  * Component props with all common properties
  */
-export type ComponentProps<T = {}> = WithChildren<WithClassName<T>>;
+export type ComponentProps<T = Record<string, never>> = WithChildren<WithClassName<T>>;
 
 /**
  * Props for components that can be disabled
  */
-export type Disableable<T = {}> = T & {
+export type Disableable<T = Record<string, never>> = T & {
   disabled?: boolean;
 };
 
 /**
  * Props for components with loading state
  */
-export type Loadable<T = {}> = T & {
+export type Loadable<T = Record<string, never>> = T & {
   loading?: boolean;
 };
 
 /**
  * Props for components with size variants
  */
-export type Sizeable<T = {}> = T & {
+export type Sizeable<T = Record<string, never>> = T & {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 };
 
 /**
  * Props for components with color variants
  */
-export type Colorable<T = {}> = T & {
+export type Colorable<T = Record<string, never>> = T & {
   variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info';
 };
 
@@ -447,7 +447,7 @@ export const isArray = <T>(value: unknown): value is T[] => {
 /**
  * Type guard for checking if value is a function
  */
-export const isFunction = (value: unknown): value is Function => {
+export const isFunction = (value: unknown): value is (...args: unknown[]) => unknown => {
   return typeof value === 'function';
 };
 

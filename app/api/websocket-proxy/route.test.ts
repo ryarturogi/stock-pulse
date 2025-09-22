@@ -93,7 +93,7 @@ describe('/api/websocket-proxy', () => {
     };
 
     // Clear connection pools
-    const route = require('./route');
+    const route = await import('./route');
     route.activeConnections?.clear?.();
     route.connectionCooldowns?.clear?.();
 
@@ -174,7 +174,7 @@ describe('/api/websocket-proxy', () => {
 
     it('should enforce cooldown periods', async () => {
       // Simulate a connection that sets a cooldown
-      const route = require('./route');
+      const route = await import('./route');
       const connectionKey = 'AAPL';
       route.connectionCooldowns.set(connectionKey, Date.now() + 60000); // 1 minute cooldown
       

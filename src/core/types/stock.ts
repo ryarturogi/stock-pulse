@@ -13,6 +13,7 @@ import type { ComponentProps, ApiResponse } from './utils';
 
 // Global types for NodeJS
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
     interface Timeout {
       ref(): Timeout;
@@ -147,45 +148,45 @@ export interface TradeData {
 /**
  * Props for StockForm component
  */
-export interface StockFormProps extends ComponentProps {
+export type StockFormProps = ComponentProps<{
   availableStocks: StockOption[];
   onAddStock: (_symbol: string, _alertPrice: number, _stockName?: string) => void;
   watchedStocks?: WatchedStock[];
   isLoading?: boolean;
-}
+}>;
 
 /**
  * Props for StockCard component
  */
-export interface StockCardProps extends ComponentProps {
+export type StockCardProps = ComponentProps<{
   stock: WatchedStock;
   onRemove?: ((_symbol: string) => void) | undefined;
-}
+}>;
 
 /**
  * Props for StockCards component
  */
-export interface StockCardsProps extends ComponentProps {
+export type StockCardsProps = ComponentProps<{
   stocks: WatchedStock[];
   onRemoveStock?: (_symbol: string) => void;
-}
+}>;
 
 /**
  * Props for StockChart component
  */
-export interface StockChartProps extends ComponentProps {
+export type StockChartProps = ComponentProps<{
   stocks: WatchedStock[];
   timeRange?: '1H' | '1D' | '1W' | '1M';
   height?: number;
-}
+}>;
 
 /**
  * Props for WebSocketStatus component
  */
-export interface WebSocketStatusProps extends ComponentProps {
+export type WebSocketStatusProps = ComponentProps<{
   status: WebSocketStatus;
   lastUpdate?: number;
-}
+}>;
 
 // ============================================================================
 // STATE MANAGEMENT TYPES

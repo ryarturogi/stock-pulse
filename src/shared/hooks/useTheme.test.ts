@@ -109,7 +109,7 @@ describe('useTheme', () => {
   describe('Server-Side Rendering', () => {
     it('should handle SSR when window is undefined', () => {
       const originalWindow = global.window;
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.window for SSR testing
       delete global.window;
 
       const { result } = renderHook(() => useTheme());
@@ -122,7 +122,7 @@ describe('useTheme', () => {
 
     it('should handle SSR when document is undefined', () => {
       const originalDocument = global.document;
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.document for SSR testing
       delete global.document;
 
       const { result } = renderHook(() => useTheme());
@@ -238,7 +238,7 @@ describe('useTheme', () => {
 
     it('should handle DOM updates when document is undefined', () => {
       const originalDocument = global.document;
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.document for testing
       delete global.document;
 
       const { result } = renderHook(() => useTheme());

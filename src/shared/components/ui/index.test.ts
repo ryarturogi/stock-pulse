@@ -27,7 +27,7 @@ describe('UI Components Index', () => {
       
       expectedExports.forEach(exportName => {
         expect(UIIndex).toHaveProperty(exportName);
-        expect(typeof UIIndex[exportName as keyof typeof UIIndex]).toBe('function');
+        expect(typeof (UIIndex as any)[exportName]).toBe('function');
       });
     });
 
@@ -38,8 +38,8 @@ describe('UI Components Index', () => {
   });
 
   describe('Re-export Consistency', () => {
-    it('should maintain reference equality for re-exported component', () => {
-      const { Button: directButton } = require('./Button');
+    it('should maintain reference equality for re-exported component', async () => {
+      const { Button: directButton } = await import('./Button');
       expect(UIIndex.Button).toBe(directButton);
     });
   });
@@ -52,7 +52,7 @@ describe('UI Components Index', () => {
     });
 
     it('should not have default export', () => {
-      expect(UIIndex.default).toBeUndefined();
+      expect((UIIndex as any).default).toBeUndefined();
     });
   });
 });

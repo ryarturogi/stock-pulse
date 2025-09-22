@@ -11,11 +11,8 @@ import {
   isWatchedStock,
   isTradeData,
   
-  // Constants
-  DEFAULT_STOCK_OPTIONS,
-  STOCK_COLORS,
+  // Constants from constants file
   WEBSOCKET_CONFIG,
-  STORAGE_KEYS,
   PWA_CONFIG,
   REFRESH_INTERVALS,
   
@@ -30,6 +27,13 @@ import {
   type MarketStatus,
   type ChartTimeRange,
 } from './stock';
+
+import {
+  // Constants from constants file
+  DEFAULT_STOCK_OPTIONS,
+  STOCK_COLORS,
+  STORAGE_KEYS,
+} from '../constants/constants';
 
 describe('Stock Types', () => {
   describe('Type Guards', () => {

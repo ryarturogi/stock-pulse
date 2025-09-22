@@ -12,10 +12,10 @@ import { useState, useEffect } from 'react';
 
 import type { ComponentProps } from '@/core/types';
 
-interface MobileNotificationGuideProps extends ComponentProps {
+type MobileNotificationGuideProps = ComponentProps<{
   onClose?: () => void;
   showTestButton?: boolean;
-}
+}>;
 
 /**
  * Mobile notification guide with device-specific instructions

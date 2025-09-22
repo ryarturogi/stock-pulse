@@ -102,7 +102,7 @@ describe('useNotifications', () => {
   describe('Server-Side Rendering', () => {
     it('should handle SSR when window is undefined', () => {
       const originalWindow = global.window;
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.window for SSR testing
       delete global.window;
 
       const { result } = renderHook(() => useNotifications());
@@ -172,7 +172,7 @@ describe('useNotifications', () => {
       const { result } = renderHook(() => useNotifications());
 
       // Remove window after hook initialization
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.window for testing
       delete global.window;
 
       await act(async () => {
@@ -277,7 +277,7 @@ describe('useNotifications', () => {
       const { result } = renderHook(() => useNotifications());
 
       // Remove window after hook initialization
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.window for testing
       delete global.window;
 
       await act(async () => {
@@ -309,7 +309,7 @@ describe('useNotifications', () => {
       const { result } = renderHook(() => useNotifications());
 
       // Remove window after hook initialization
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.window for testing
       delete global.window;
 
       act(() => {

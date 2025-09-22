@@ -115,7 +115,7 @@ describe('NotificationService', () => {
 
     it('should handle missing Notification API', () => {
       const originalNotification = global.Notification;
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting global.Notification for testing
       delete global.Notification;
       
       // Create new instance without Notification API
@@ -129,7 +129,7 @@ describe('NotificationService', () => {
 
     it('should handle missing ServiceWorker API', () => {
       const originalServiceWorker = navigator.serviceWorker;
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting navigator.serviceWorker for testing
       delete navigator.serviceWorker;
       
       (NotificationService as any).instance = null;
@@ -219,7 +219,7 @@ describe('NotificationService', () => {
 
     it('should handle missing service worker support', async () => {
       const originalServiceWorker = navigator.serviceWorker;
-      // @ts-ignore
+      // @ts-expect-error - Intentionally deleting navigator.serviceWorker for testing
       delete navigator.serviceWorker;
       
       (NotificationService as any).instance = null;

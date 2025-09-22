@@ -26,7 +26,7 @@ describe('/api/push/unsubscribe', () => {
     jest.clearAllMocks();
     
     // Clear in-memory subscriptions and add test data
-    const route = require('./route');
+    const route = await import('./route');
     route.subscriptions?.clear?.();
     
     // Add some test subscriptions
@@ -182,7 +182,7 @@ describe('/api/push/unsubscribe', () => {
 
     it('should handle bulk removal when no subscriptions exist', async () => {
       // Clear all subscriptions first
-      const route = require('./route');
+      const route = await import('./route');
       route.subscriptions?.clear?.();
 
       const requestBody = {
@@ -285,7 +285,7 @@ describe('/api/push/unsubscribe', () => {
 
     it('should handle non-Error exceptions', async () => {
       // Mock Map.delete to throw a non-Error
-      const route = require('./route');
+      const route = await import('./route');
       const originalDelete = route.subscriptions?.delete;
       if (route.subscriptions) {
         route.subscriptions.delete = jest.fn().mockImplementation(() => {
@@ -358,7 +358,7 @@ describe('/api/push/unsubscribe', () => {
       const specialSubscriptionId = 'subscription-with-special-chars-!@#$%^&*()[]{}';
       
       // Add the special subscription first
-      const route = require('./route');
+      const route = await import('./route');
       route.subscriptions?.set?.(specialSubscriptionId, {
         endpoint: 'https://example.com/endpoint',
         timestamp: Date.now(),
@@ -386,7 +386,7 @@ describe('/api/push/unsubscribe', () => {
       const unicodeSubscriptionId = 'subscription-ñáéíóú-🚀-测试';
       
       // Add the unicode subscription first
-      const route = require('./route');
+      const route = await import('./route');
       route.subscriptions?.set?.(unicodeSubscriptionId, {
         endpoint: 'https://example.com/endpoint',
         timestamp: Date.now(),

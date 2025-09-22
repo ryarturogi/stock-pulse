@@ -572,7 +572,6 @@ describe('WebSocket Service Integration', () => {
     it('should respect health check timeout', async () => {
       // Mock fetch to hang
       mockFetch.mockImplementationOnce(
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
         () => new Promise(() => {}) // Never resolves
       );
 
