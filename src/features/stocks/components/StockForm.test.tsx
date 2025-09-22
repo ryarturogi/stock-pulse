@@ -523,7 +523,7 @@ describe('StockForm', () => {
 
   describe('Default Props', () => {
     it('should use default props when not provided', () => {
-      render(<StockForm onAddStock={mockOnAddStock} />);
+      render(<StockForm availableStocks={[]} onAddStock={mockOnAddStock} />);
 
       // Should use DEFAULT_STOCK_OPTIONS
       expect(screen.getByText('Choose a stock...')).toBeInTheDocument();
