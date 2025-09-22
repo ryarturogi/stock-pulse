@@ -248,3 +248,54 @@ export interface PushNotificationRequest {
   notification: PushNotificationPayload;
   targetSubscriptionId?: string;
 }
+
+/**
+ * Notification permission types
+ */
+export type NotificationPermissionType = 'default' | 'granted' | 'denied';
+
+/**
+ * Notification store state interface
+ */
+export interface NotificationStoreState {
+  // Permission and enabled state
+  permission: NotificationPermissionType;
+  isEnabled: boolean;
+  
+  // Push subscription data
+  pushSubscription: PushSubscriptionData | null;
+  
+  // Notification history
+  notifications: Notification[];
+  unreadCount: number;
+  
+  // Settings
+  showDesktopNotifications: boolean;
+  showPushNotifications: boolean;
+  soundEnabled: boolean;
+  
+  // Actions
+  setPermission: (permission: NotificationPermissionType) => void;
+  setEnabled: (enabled: boolean) => void;
+  toggleNotifications: () => Promise<void>;
+  requestPermission: () => Promise<NotificationPermissionType>;
+  
+  // Push subscription management
+  setPushSubscription: (subscription: PushSubscriptionData | null) => void;
+  clearPushSubscription: () => void;
+  
+  // Notification history management
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
+  markAsRead: (notificationId: string) => void;
+  markAllAsRead: () => void;
+  removeNotification: (notificationId: string) => void;
+  clearNotifications: () => void;
+  
+  // Settings management
+  setShowDesktopNotifications: (enabled: boolean) => void;
+  setShowPushNotifications: (enabled: boolean) => void;
+  setSoundEnabled: (enabled: boolean) => void;
+  
+  // Utility actions
+  clearError: () => void;
+}

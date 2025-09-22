@@ -30,9 +30,9 @@ import {
 import { 
   useSidebar, 
   useTheme, 
-  useNotifications, 
   useSearch 
 } from '@/shared/hooks';
+import { useNotificationPermission } from '@/features/notifications';
 
 
 export default function HomePage() {
@@ -66,7 +66,7 @@ export default function HomePage() {
     isEnabled: notificationsEnabled, 
     requestPermission: requestNotificationPermission,
     toggleNotifications: handleToggleNotifications 
-  } = useNotifications();
+  } = useNotificationPermission();
   
   // Search functionality
   const { query: searchQuery, setQuery: setSearchQuery, filteredItems: filteredWatchedStocks } = useSearch(

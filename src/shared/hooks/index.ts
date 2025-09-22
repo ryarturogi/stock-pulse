@@ -8,7 +8,7 @@
 export { useResponsive } from './useResponsive';
 export { useSidebar } from './useSidebar';
 export { useTheme } from './useTheme';
-export { useNotifications } from './useNotifications';
+export { useNotifications } from './useNotificationsCompat';
 export { useSearch } from './useSearch';
 
 // Re-export types
