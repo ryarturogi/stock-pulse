@@ -118,3 +118,92 @@ afterAll(() => {
   console.error = originalError;
   console.warn = originalWarn;
 });
+
+// Mock Web APIs for Node.js environment (for API route tests)
+if (typeof global.Request === 'undefined') {
+  global.Request = class Request {
+    constructor(public url: string, public init?: any) {}
+    async json() { return this.init?.body ? JSON.parse(this.init.body) : {}; }
+    async text() { return this.init?.body || ''; }
+  } as any;
+}
+
+if (typeof global.Response === 'undefined') {
+  global.Response = class Response {
+    constructor(public body?: any, public init?: any) {}
+    get status() { return this.init?.status || 200; }
+    get ok() { return this.status >= 200 && this.status < 300; }
+    async json() { return this.body; }
+    async text() { return typeof this.body === 'string' ? this.body : JSON.stringify(this.body); }
+    get headers() { 
+      return {
+        get: (name: string) => this.init?.headers?.[name] || null,
+      };
+    }
+  } as any;
+}
+
+if (typeof global.Headers === 'undefined') {
+  global.Headers = class Headers {
+    private headers: Record<string, string> = {};
+    constructor(init?: Record<string, string>) {
+      if (init) {
+        Object.assign(this.headers, init);
+      }
+    }
+    get(name: string) { return this.headers[name.toLowerCase()] || null; }
+    set(name: string, value: string) { this.headers[name.toLowerCase()] = value; }
+    has(name: string) { return name.toLowerCase() in this.headers; }
+  } as any;
+}
+
+if (typeof global.URL === 'undefined') {
+  global.URL = class URL {
+    public searchParams: URLSearchParams;
+    constructor(public href: string) {
+      const parts = href.split('?');
+      this.searchParams = new URLSearchParams(parts[1]);
+    }
+  } as any;
+}
+
+if (typeof global.URLSearchParams === 'undefined') {
+  global.URLSearchParams = class URLSearchParams {
+    private params: Record<string, string> = {};
+    constructor(init?: string) {
+      if (init) {
+        init.split('&').forEach(pair => {
+          const [key, value] = pair.split('=');
+          if (key) this.params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+        });
+      }
+    }
+    get(name: string) { return this.params[name] || null; }
+    set(name: string, value: string) { this.params[name] = value; }
+    has(name: string) { return name in this.params; }
+  } as any;
+}
+
+// Mock TextEncoder for Node.js
+if (typeof global.TextEncoder === 'undefined') {
+  global.TextEncoder = class TextEncoder {
+    encode(str: string) {
+      return new Uint8Array(Buffer.from(str, 'utf8'));
+    }
+  } as any;
+}
+
+// Mock AbortSignal for API route tests
+if (typeof global.AbortSignal === 'undefined') {
+  global.AbortSignal = class AbortSignal {
+    static timeout(delay: number) {
+      const signal = new AbortSignal();
+      setTimeout(() => {
+        (signal as any).aborted = true;
+      }, delay);
+      return signal;
+    }
+    addEventListener() {}
+    removeEventListener() {}
+  } as any;
+}

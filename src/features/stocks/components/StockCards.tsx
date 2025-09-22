@@ -8,8 +8,9 @@
 
 'use client';
 
-import { TrendingUp } from 'lucide-react';
 import React from 'react';
+
+import { TrendingUp } from 'lucide-react';
 
 import { StockCardsProps } from '@/core/types';
 
@@ -53,7 +54,7 @@ export const StockCards: React.FC<StockCardsProps> = ({
         <StockCard 
           key={`${stock.id}-${stock.lastUpdated || 0}`} 
           stock={stock} 
-          onRemove={onRemoveStock} 
+          onRemove={onRemoveStock}
         />
       ))}
     </div>

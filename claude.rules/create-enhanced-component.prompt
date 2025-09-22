@@ -1,0 +1,236 @@
+# Create Enhanced Component Prompt
+# ================================
+# 
+# Use this prompt when creating new UI components or enhancing existing components
+# for the StockPulse application with advanced features like infinite loading,
+# search functionality, and accessibility.
+
+## Context
+StockPulse uses enhanced UI components with infinite loading, search functionality,
+keyboard navigation, and comprehensive accessibility features.
+
+## Requirements
+
+### 1. Component Structure
+```typescript
+'use client';
+
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { ComponentProps } from '@/core/types';
+
+interface ComponentNameProps extends ComponentProps {
+  // Define your props here
+}
+
+export const ComponentName: React.FC<ComponentNameProps> = ({
+  className = '',
+  // Destructure other props
+}) => {
+  // Component implementation
+};
+```
+
+### 2. Infinite Loading Pattern
+```typescript
+import { useIntersectionObserver } from '@/shared/hooks';
+
+const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
+
+// Intersection Observer for infinite loading
+useEffect(() => {
+  if (!loadMoreTriggerRef.current || !hasMore || isLoadingMore) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+        loadMore();
+      }
+    },
+    { threshold: 0.1 }
+  );
+
+  observer.observe(loadMoreTriggerRef.current);
+  return () => observer.disconnect();
+}, [hasMore, isLoadingMore]);
+```
+
+### 3. Search with Debouncing
+```typescript
+// Search with debouncing
+useEffect(() => {
+  const timer = setTimeout(() => {
+    if (searchQuery !== '') {
+      performSearch(searchQuery);
+    }
+  }, 300); // 300ms delay
+
+  return () => clearTimeout(timer);
+}, [searchQuery]);
+```
+
+### 4. Keyboard Navigation
+```typescript
+const handleKeyDown = (e: React.KeyboardEvent) => {
+  switch (e.key) {
+    case 'Escape':
+      // Close dropdown/modal
+      break;
+    case 'ArrowDown':
+      e.preventDefault();
+      // Navigate down
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      // Navigate up
+      break;
+    case 'Enter':
+      e.preventDefault();
+      // Select item
+      break;
+  }
+};
+```
+
+### 5. Accessibility Features
+```typescript
+// ARIA attributes
+<div
+  role="button"
+  aria-haspopup="listbox"
+  aria-expanded={isOpen}
+  aria-disabled={disabled}
+  tabIndex={disabled ? -1 : 0}
+  onKeyDown={handleKeyDown}
+>
+  {/* Content */}
+</div>
+
+// Focus management
+useEffect(() => {
+  if (isOpen) {
+    searchInputRef.current?.focus();
+  }
+}, [isOpen]);
+```
+
+### 6. Loading States
+```typescript
+{isLoading ? (
+  <div className="p-4 text-center">
+    <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-blue-600" />
+    <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+  </div>
+) : (
+  // Content
+)}
+```
+
+### 7. Error States
+```typescript
+{error && (
+  <div className="p-4 text-center text-red-600 dark:text-red-400">
+    <AlertCircle className="w-6 h-6 mx-auto mb-2" />
+    <p className="text-sm">{error}</p>
+    <button
+      onClick={retry}
+      className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+    >
+      Try again
+    </button>
+  </div>
+)}
+```
+
+## Component Patterns
+
+### 1. Infinite Stock Selector Pattern
+```typescript
+// Use this pattern for selectors with infinite loading
+import { InfiniteStockSelector } from '@/features/stocks/components';
+
+<InfiniteStockSelector
+  value={selectedValue}
+  onChange={handleChange}
+  placeholder="Choose an option..."
+  disabled={isLoading}
+  error={errors.field}
+  watchedItems={watchedItems}
+/>
+```
+
+### 2. Search Component Pattern
+```typescript
+// Use this pattern for search functionality
+import { StockSearch } from '@/features/stocks/components';
+
+<StockSearch
+  onSelectItem={handleSelect}
+  watchedItems={watchedItems}
+  className="mb-4"
+/>
+```
+
+### 3. Form Component Pattern
+```typescript
+// Use this pattern for form components
+import { useStockForm } from '@/features/stocks/hooks';
+
+const {
+  selectedItem,
+  alertPrice,
+  errors,
+  validateForm,
+  resetForm,
+} = useStockForm();
+```
+
+## Best Practices
+
+1. **Always extend ComponentProps** - For consistent className support
+2. **Use proper TypeScript types** - Import from `@/core/types`
+3. **Implement keyboard navigation** - Full keyboard accessibility
+4. **Add loading and error states** - Better user experience
+5. **Use intersection observer** - For infinite loading
+6. **Implement debounced search** - 300ms delay for API calls
+7. **Add proper ARIA attributes** - For screen readers
+8. **Handle focus management** - Proper focus flow
+9. **Use consistent styling** - Tailwind CSS with dark mode support
+10. **Add proper error boundaries** - Graceful error handling
+
+## Styling Guidelines
+
+### Dark Mode Support
+```typescript
+className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+```
+
+### Responsive Design
+```typescript
+className="w-full lg:w-auto p-2 lg:p-4 text-sm lg:text-base"
+```
+
+### State-based Styling
+```typescript
+className={`base-classes ${
+  error ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
+} ${
+  disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+}`}
+```
+
+## Testing Requirements
+
+1. **Unit tests** - Test component logic and state
+2. **Accessibility tests** - Test keyboard navigation and ARIA
+3. **Integration tests** - Test with real data and API calls
+4. **Error scenarios** - Test error states and recovery
+5. **Loading states** - Test loading and skeleton components
+6. **Responsive design** - Test on different screen sizes
+
+## Performance Considerations
+
+1. **Use React.memo** - For expensive components
+2. **Implement proper memoization** - Use useMemo and useCallback
+3. **Lazy load heavy components** - Use React.lazy
+4. **Optimize re-renders** - Minimize unnecessary updates
+5. **Use intersection observer** - For efficient infinite loading

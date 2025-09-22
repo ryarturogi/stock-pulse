@@ -8,8 +8,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "lint:fix": "next lint --fix",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "lint:next": "next lint",
+    "format:all": "prettier --write .",
+    "check:all": "pnpm run lint && pnpm run type-check && pnpm run format:check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "type-check": "tsc --noEmit",
@@ -19,14 +22,14 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "prepare": "husky install",
-    "precommit": "lint-staged",
+    "volta:setup": "volta pin node@20 && volta pin pnpm@8.12.1",
+    "node:check": "node --version && pnpm --version",
+    "node:upgrade": "volta install node@20 && volta pin node@20",
     "build:analyze": "ANALYZE=true next build",
     "build:vercel": "next build",
     "deploy:vercel": "vercel --prod",
     "deploy:preview": "vercel",
-    "vercel:env": "vercel env pull .env.local",
-    "generate-vapid": "node scripts/generate-vapid.js"
+    "vercel:env": "vercel env pull .env.local"
   },
   "dependencies": {
     "autoprefixer": "^10.4.20",
@@ -41,6 +44,7 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@jest/globals": "^30.1.2",
     "@next/bundle-analyzer": "^15.0.3",
     "@playwright/test": "^1.48.2",
     "@tailwindcss/aspect-ratio": "^0.4.2",
@@ -55,37 +59,21 @@
     "@types/react-dom": "^19.0.0",
     "@types/web-push": "^3.6.4",
     "@types/ws": "^8.18.1",
-    "@typescript-eslint/eslint-plugin": "^8.11.0",
-    "@typescript-eslint/parser": "^8.11.0",
     "babel-plugin-react-compiler": "19.1.0-rc.3",
-    "eslint": "^9.13.0",
-    "eslint-config-next": "^15.0.3",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-react": "^7.37.2",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "husky": "^9.1.6",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "lint-staged": "^15.2.10",
     "next-pwa": "^5.6.0",
     "prettier": "^3.3.3",
     "ts-jest": "^29.2.5",
-    "typescript": "^5.6.3",
-    "web-push": "^3.6.7"
-  },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,css,scss}": [
-      "prettier --write"
-    ]
+    "typescript": "^5.6.3"
   },
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=16.0.0",
     "pnpm": ">=8.0.0"
   },
-  "packageManager": "pnpm@8.12.1"
+  "packageManager": "pnpm@8.12.1",
+  "volta": {
+    "node": "20.19.5",
+    "pnpm": "8.12.1"
+  }
 }

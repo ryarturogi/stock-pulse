@@ -39,7 +39,7 @@ stock-pulse/
 │   └── utils.ts                # Comprehensive utility types
 ├── utils/                       # Pure utility functions
 ├── scripts/                     # Build and deployment automation
-│   ├── generate-vapid.js       # VAPID key generation
+│   ├── create-pwa-icons.js     # PWA icon generation
 │   ├── setup-vercel-env.sh     # Environment setup
 │   └── deploy-vercel.sh        # Deployment automation
 ├── docs/                        # Comprehensive documentation

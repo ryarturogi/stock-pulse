@@ -13,6 +13,7 @@ import type { ComponentProps, ApiResponse } from './utils';
 
 // Global types for NodeJS
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
     interface Timeout {
       ref(): Timeout;
@@ -60,7 +61,7 @@ export interface WatchedStock {
   alertPrice: number;
   currentPrice?: number;
   change?: number;
-  changePercent?: number;
+  percentChange?: number;
   high?: number;
   low?: number;
   open?: number;
@@ -127,7 +128,7 @@ export const REFRESH_INTERVALS: RefreshIntervalConfig[] = [
 export interface WebSocketMessage {
   type: 'subscribe' | 'unsubscribe' | 'trade' | 'ping' | 'pong';
   symbol?: string;
-  data?: any;
+  data?: TradeData | TradeData[] | string | Record<string, unknown>;
 }
 
 /**
@@ -147,45 +148,45 @@ export interface TradeData {
 /**
  * Props for StockForm component
  */
-export interface StockFormProps extends ComponentProps {
+export type StockFormProps = ComponentProps<{
   availableStocks: StockOption[];
-  onAddStock: (symbol: string, alertPrice: number) => void;
+  onAddStock: (_symbol: string, _alertPrice: number, _stockName?: string) => void;
   watchedStocks?: WatchedStock[];
   isLoading?: boolean;
-}
+}>;
 
 /**
  * Props for StockCard component
  */
-export interface StockCardProps extends ComponentProps {
+export type StockCardProps = ComponentProps<{
   stock: WatchedStock;
-  onRemove?: ((symbol: string) => void) | undefined;
-}
+  onRemove?: ((_symbol: string) => void) | undefined;
+}>;
 
 /**
  * Props for StockCards component
  */
-export interface StockCardsProps extends ComponentProps {
+export type StockCardsProps = ComponentProps<{
   stocks: WatchedStock[];
-  onRemoveStock?: (symbol: string) => void;
-}
+  onRemoveStock?: (_symbol: string) => void;
+}>;
 
 /**
  * Props for StockChart component
  */
-export interface StockChartProps extends ComponentProps {
+export type StockChartProps = ComponentProps<{
   stocks: WatchedStock[];
   timeRange?: '1H' | '1D' | '1W' | '1M';
   height?: number;
-}
+}>;
 
 /**
  * Props for WebSocketStatus component
  */
-export interface WebSocketStatusProps extends ComponentProps {
+export type WebSocketStatusProps = ComponentProps<{
   status: WebSocketStatus;
   lastUpdate?: number;
-}
+}>;
 
 // ============================================================================
 // STATE MANAGEMENT TYPES
@@ -200,8 +201,8 @@ export interface StockStoreState {
   
   // WebSocket connection
   webSocketStatus: WebSocketStatus;
-  webSocketConnection: any; // WebSocket | null;
-  refreshInterval: any; // NodeJS.Timeout | null;
+  webSocketConnection: EventSource | null;
+  refreshInterval: NodeJS.Timeout | number | null;
   isConnecting: boolean;
   lastUpdateTimes: Map<string, number>;
   
@@ -210,6 +211,10 @@ export interface StockStoreState {
   
   // Live data toggle
   isLiveDataEnabled: boolean;
+  
+  // Connection management
+  connectionAttempts: number;
+  lastConnectionAttempt?: number;
   
   // UI state
   isLoading: boolean;
@@ -221,7 +226,7 @@ export interface StockStoreState {
   updateStockPrice: (_symbol: string, _quote: FinnhubStockQuote) => void;
   updateAlertPrice: (_symbol: string, _newAlertPrice: number) => void;
   setWebSocketStatus: (_status: WebSocketStatus) => void;
-  setWebSocketConnection: (_connection: any) => void;
+  setWebSocketConnection: (_connection: EventSource | null) => void;
   setLoading: (_loading: boolean) => void;
   setError: (_error: string | null) => void;
   clearError: () => void;
@@ -230,6 +235,7 @@ export interface StockStoreState {
   // WebSocket actions
   connectWebSocket: () => void;
   disconnectWebSocket: () => void;
+  resetWebSocketState: () => void;
   
   // Periodic refresh actions
   startPeriodicRefresh: () => void;
@@ -343,14 +349,33 @@ export type MarketStatus = 'open' | 'closed' | 'pre-market' | 'after-hours';
  * Type guard for FinnhubStockQuote
  */
 export const isFinnhubStockQuote = (value: unknown): value is FinnhubStockQuote => {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as FinnhubStockQuote).symbol === 'string' &&
-    typeof (value as FinnhubStockQuote).current === 'number' &&
-    typeof (value as FinnhubStockQuote).change === 'number' &&
-    typeof (value as FinnhubStockQuote).percentChange === 'number'
-  );
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  
+  const quote = value as FinnhubStockQuote;
+  
+  // Check required fields exist and have valid values
+  const hasSymbol = typeof quote.symbol === 'string' && quote.symbol.length > 0;
+  const hasCurrent = typeof quote.current === 'number' && !isNaN(quote.current) && quote.current >= 0;
+  const hasChange = typeof quote.change === 'number' && !isNaN(quote.change);
+  const hasPercentChange = typeof quote.percentChange === 'number' && !isNaN(quote.percentChange);
+  
+  // For debugging: log validation details
+  if (!hasSymbol || !hasCurrent || !hasChange || !hasPercentChange) {
+    console.debug('Quote validation failed:', {
+      hasSymbol,
+      hasCurrent,
+      hasChange,
+      hasPercentChange,
+      symbol: quote.symbol,
+      current: quote.current,
+      change: quote.change,
+      percentChange: quote.percentChange
+    });
+  }
+  
+  return hasSymbol && hasCurrent && hasChange && hasPercentChange;
 };
 
 /**
@@ -384,33 +409,7 @@ export const isTradeData = (value: unknown): value is TradeData => {
 // CONSTANTS
 // ============================================================================
 
-/**
- * Default stock options for the test
- */
-export const DEFAULT_STOCK_OPTIONS: StockOption[] = [
-  { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ' },
-  { symbol: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ' },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.', exchange: 'NASDAQ' },
-  { symbol: 'TSLA', name: 'Tesla Inc.', exchange: 'NASDAQ' },
-  { symbol: 'META', name: 'Meta Platforms Inc.', exchange: 'NASDAQ' },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ' },
-  { symbol: 'NFLX', name: 'Netflix Inc.', exchange: 'NASDAQ' },
-];
-
-/**
- * Stock color mapping for charts
- */
-export const STOCK_COLORS: StockColorMap = {
-  AAPL: '#2563eb',  // blue-600 (Apple brand blue)
-  GOOGL: '#ea4335', // Google brand red
-  MSFT: '#16a34a',  // green-600
-  AMZN: '#ff9900',  // Amazon orange
-  TSLA: '#dc2626',  // red-600
-  META: '#1877f2',  // Meta brand blue
-  NVDA: '#76b900',  // NVIDIA green
-  NFLX: '#e50914',  // Netflix red
-};
+// DEFAULT_STOCK_OPTIONS and STOCK_COLORS moved to @/core/constants
 
 /**
  * WebSocket configuration
@@ -422,14 +421,7 @@ export const WEBSOCKET_CONFIG = {
   SUBSCRIPTION_LIMIT: 50,
 } as const;
 
-/**
- * Local storage keys
- */
-export const STORAGE_KEYS = {
-  WATCHED_STOCKS: 'stockpulse_watched_stocks',
-  LAST_SYNC: 'stockpulse_last_sync',
-  VERSION: 'stockpulse_version',
-} as const;
+// STORAGE_KEYS moved to @/core/constants
 
 /**
  * PWA configuration

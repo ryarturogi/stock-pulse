@@ -11,7 +11,7 @@ import { useState, useMemo, useCallback } from 'react';
 
 export interface SearchState<T> {
   query: string;
-  setQuery: (query: string) => void;
+  setQuery: (_query: string) => void;
   clearQuery: () => void;
   filteredItems: T[];
   isSearching: boolean;
@@ -33,15 +33,21 @@ export interface SearchState<T> {
  */
 export const useSearch = <T>(
   items: T[],
-  filterFn: (item: T, query: string) => boolean,
+  filterFn: (_item: T, _query: string) => boolean,
   initialQuery: string = ''
 ): SearchState<T> => {
   const [query, setQuery] = useState(initialQuery);
 
   // Filter items based on search query
   const filteredItems = useMemo(() => {
+    if (!items || !Array.isArray(items)) return [];
     if (!query.trim()) return items;
-    return items.filter(item => filterFn(item, query.toLowerCase()));
+    try {
+      return items.filter(item => filterFn(item, query.toLowerCase()));
+    } catch (error) {
+      console.error('Error filtering items:', error);
+      return [];
+    }
   }, [items, query, filterFn]);
 
   // Clear search query

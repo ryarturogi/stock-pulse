@@ -8,8 +8,9 @@
 
 'use client';
 
-import { Clock } from 'lucide-react';
 import React, { useMemo, useCallback } from 'react';
+
+import { Clock } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -21,7 +22,8 @@ import {
   Legend,
 } from 'recharts';
 
-import { StockChartProps, ChartDataPoint, STOCK_COLORS } from '@/core/types';
+import { STOCK_COLORS } from '@/core/constants/constants';
+import { StockChartProps, ChartDataPoint } from '@/core/types';
 
 /**
  * Stock Chart Component
@@ -39,6 +41,7 @@ export const StockChart: React.FC<StockChartProps> = ({
   // Get stock store methods (no methods needed for chart)
   
   // Memoize stocks with data to prevent unnecessary recalculations
+  // Only recalculate when stocks array changes or when price history actually changes
   const stocksWithData = useMemo(() => {
     return stocks.filter(
       stock => (stock.priceHistory && stock.priceHistory.length > 0) || stock.currentPrice
@@ -51,11 +54,15 @@ export const StockChart: React.FC<StockChartProps> = ({
     return stocksWithData.map(stock => stock.symbol);
   }, [stocksWithData]);
 
-  // Generate chart data from stock price history - simplified for live data only
+  // Generate chart data from stock price history - fixed to properly show real-time updates
   const chartData = useMemo((): ChartDataPoint[] => {
     if (stocksWithData.length === 0) return [];
 
     const now = Date.now();
+    // Only log in development and when there are actual changes
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📊 Chart data recalculating for', stocksWithData.length, 'stocks');
+    }
 
     // Get all unique timestamps from all stocks
     const allTimestamps = new Set<number>();
@@ -63,6 +70,10 @@ export const StockChart: React.FC<StockChartProps> = ({
       stock.priceHistory?.forEach(point => {
         allTimestamps.add(point.time);
       });
+      // Add current timestamp if we have current price but no history
+      if (stock.currentPrice && (!stock.priceHistory || stock.priceHistory.length === 0)) {
+        allTimestamps.add(stock.lastUpdated || now);
+      }
     });
 
     // If no historical data, show current prices as single point
@@ -80,13 +91,14 @@ export const StockChart: React.FC<StockChartProps> = ({
     const sortedTimestamps = Array.from(allTimestamps)
       .sort((a, b) => a - b); // Show all collected data points
 
-    // Create chart data points with better time formatting
+    // Create chart data points with unique timestamp formatting
     return sortedTimestamps.map((timestamp) => {
       const date = new Date(timestamp);
-      // Use shorter time format for better readability with many data points
+      // Create unique time labels to prevent duplicate timestamps
+      // Use milliseconds for precision when multiple points in same second
       const timeLabel = sortedTimestamps.length > 20 
-        ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : date.toLocaleTimeString();
+        ? `${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.${String(timestamp % 1000).padStart(3, '0')}`
+        : `${date.toLocaleTimeString()}.${String(timestamp % 1000).padStart(3, '0')}`;
       
       const dataPoint: ChartDataPoint = {
         timestamp: timeLabel,
@@ -114,12 +126,16 @@ export const StockChart: React.FC<StockChartProps> = ({
 
 
   // Custom tooltip component for better visibility
-  const CustomTooltip = useCallback(({ active, payload, label }: any) => {
+  const CustomTooltip = useCallback(({ active, payload, label }: {
+    active?: boolean;
+    payload?: Array<{ dataKey: string; value: number; color: string; name: string }>;
+    label?: string;
+  }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3 dark:bg-gray-800 dark:border-gray-600">
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{`Time: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index: number) => (
             <div key={index} className="flex items-center space-x-2 mb-1 last:mb-0">
               <div 
                 className="w-3 h-3 rounded-full" 

@@ -1,0 +1,338 @@
+# Create Stock Service Prompt
+# ===========================
+# 
+# Use this prompt when creating or enhancing stock-related services
+# for the StockPulse application with request deduplication, caching,
+# and comprehensive error handling.
+
+## Context
+StockPulse uses an enhanced stock service with request deduplication,
+batch processing, caching, and comprehensive error handling for
+Finnhub API integration.
+
+## Requirements
+
+### 1. Service Structure
+```typescript
+import { DEFAULT_STOCK_OPTIONS } from '@/core/constants/constants';
+import {
+  type FinnhubStockQuote,
+  type StockOption,
+  isFinnhubStockQuote,
+  isString,
+  isNumber
+} from '@/core/types';
+import { isValidSymbol, isValidAlertPrice } from '@/core/utils/validation';
+
+export class StockService {
+  private static instance: StockService;
+  private baseUrl: string;
+  // Request deduplication cache
+  private requestCache = new Map<string, Promise<FinnhubStockQuote>>();
+  private cacheTimeout = 2000; // 2 seconds cache for deduplication
+
+  private constructor() {
+    this.baseUrl = '/api';
+  }
+
+  public static getInstance(): StockService {
+    if (!StockService.instance) {
+      StockService.instance = new StockService();
+    }
+    return StockService.instance;
+  }
+}
+```
+
+### 2. Request Deduplication Pattern
+```typescript
+async fetchStockQuote(symbol: string): Promise<FinnhubStockQuote> {
+  if (!isString(symbol) || symbol.trim() === '') {
+    throw new Error('Invalid stock symbol');
+  }
+
+  const cacheKey = `quote_${symbol.toUpperCase()}`;
+  
+  // Check if there's already a pending request for this symbol
+  if (this.requestCache.has(cacheKey)) {
+    console.log(`📦 [API] Using cached request for ${symbol}`, { symbol });
+    return this.requestCache.get(cacheKey)!;
+  }
+
+  // Create new request and cache it
+  const requestPromise = this._fetchStockQuoteInternal(symbol);
+  this.requestCache.set(cacheKey, requestPromise);
+
+  // Set timeout to clear cache
+  setTimeout(() => {
+    this.requestCache.delete(cacheKey);
+  }, this.cacheTimeout);
+
+  try {
+    return await requestPromise;
+  } catch (error) {
+    // Remove failed request from cache immediately
+    this.requestCache.delete(cacheKey);
+    throw error;
+  }
+}
+```
+
+### 3. Batch Processing Pattern
+```typescript
+async fetchMultipleQuotes(symbols: string[]): Promise<Record<string, FinnhubStockQuote>> {
+  if (!Array.isArray(symbols) || symbols.length === 0) {
+    return {};
+  }
+
+  // Limit concurrent requests to avoid rate limiting
+  const BATCH_SIZE = 5;
+  const results: Record<string, FinnhubStockQuote> = {};
+
+  for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+    const batch = symbols.slice(i, i + BATCH_SIZE);
+    
+    const promises = batch.map(async (symbol) => {
+      try {
+        const quote = await this.fetchStockQuote(symbol);
+        return { symbol, quote };
+      } catch (error) {
+        console.error(`❌ [API] Failed to fetch quote for ${symbol}`, { symbol, error });
+        return { symbol, quote: null };
+      }
+    });
+
+    const batchResults = await Promise.all(promises);
+    
+    batchResults.forEach(({ symbol, quote }) => {
+      if (quote) {
+        results[symbol] = quote;
+      }
+    });
+
+    // Add delay between batches to respect rate limits
+    if (i + BATCH_SIZE < symbols.length) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+
+  return results;
+}
+```
+
+### 4. API Call with Timeout and Error Handling
+```typescript
+private async _fetchStockQuoteInternal(symbol: string): Promise<FinnhubStockQuote> {
+  try {
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const response = await fetch(`${this.baseUrl}/quote?symbol=${symbol}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Handle standardized API response format
+    let quoteData;
+    if (data.success && data.data) {
+      // New standardized format
+      quoteData = data.data;
+    } else if (data.symbol && data.current !== undefined) {
+      // Legacy direct format (for backward compatibility)
+      quoteData = data;
+    } else {
+      throw new Error(data.error || 'Failed to fetch stock quote');
+    }
+
+    // Validate the quote data
+    if (!isFinnhubStockQuote(quoteData)) {
+      throw new Error(`Invalid quote data structure received for ${symbol}`);
+    }
+
+    return quoteData;
+
+  } catch (error) {
+    console.error(`❌ [API] Failed to fetch quote for ${symbol}`, { symbol, error });
+    
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    throw new Error(`Failed to fetch quote for ${symbol}`);
+  }
+}
+```
+
+### 5. Fallback Mechanisms
+```typescript
+async getAvailableStocks(options: {
+  exchange?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+} = {}): Promise<{
+  data: StockOption[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+  search?: string;
+}> {
+  try {
+    // Try API call first
+    const response = await fetch(/* API call */);
+    
+    if (!response.ok) {
+      console.error('❌ [API] Failed to fetch stock symbols', { status: response.status });
+      // Fallback to default options
+      return this.getFallbackResponse();
+    }
+
+    const data = await response.json();
+    return this.processApiResponse(data);
+    
+  } catch (error) {
+    console.error('❌ [API] Error fetching available stocks', { error });
+    // Fallback to default options
+    return this.getFallbackResponse();
+  }
+}
+
+private getFallbackResponse() {
+  return {
+    data: this.getDefaultStockOptions(),
+    pagination: {
+      page: 1,
+      limit: 8,
+      total: 8,
+      totalPages: 1,
+      hasMore: false
+    }
+  };
+}
+```
+
+## Service Patterns
+
+### 1. Singleton Pattern
+```typescript
+// Always use singleton for services
+export const stockService = StockService.getInstance();
+```
+
+### 2. Validation Pattern
+```typescript
+// Always validate inputs
+if (!isString(symbol) || symbol.trim() === '') {
+  throw new Error('Invalid stock symbol');
+}
+
+if (!isValidSymbol(symbol)) {
+  throw new Error('Invalid stock symbol format');
+}
+```
+
+### 3. Error Handling Pattern
+```typescript
+// Consistent error handling
+try {
+  // API call
+} catch (error) {
+  console.error(`❌ [API] Failed to fetch data`, { error });
+  
+  if (error instanceof Error) {
+    throw error;
+  }
+  
+  throw new Error('Failed to fetch data');
+}
+```
+
+### 4. Logging Pattern
+```typescript
+// Consistent logging format
+console.log(`✅ [API] Data received`, { symbol, data });
+console.warn(`⚠️ [API] Warning message`, { details });
+console.error(`❌ [API] Error occurred`, { error, context });
+```
+
+## Best Practices
+
+1. **Use singleton pattern** - Single instance for consistency
+2. **Implement request deduplication** - Prevent duplicate API calls
+3. **Add proper validation** - Validate all inputs
+4. **Handle timeouts** - Use AbortController with 10-second timeout
+5. **Implement fallbacks** - Always have fallback mechanisms
+6. **Use batch processing** - Limit concurrent requests
+7. **Add proper logging** - Consistent logging format
+8. **Handle errors gracefully** - Don't let errors crash the app
+9. **Use type guards** - Runtime validation with type guards
+10. **Cache requests** - Short-term caching for deduplication
+
+## Utility Methods
+
+### 1. Formatting Methods
+```typescript
+formatPrice(price: number): string {
+  if (!isNumber(price)) return '---.--';
+  return price.toFixed(2);
+}
+
+formatPercentageChange(change: number): string {
+  if (!isNumber(change)) return '--.--%';
+  const sign = change >= 0 ? '+' : '';
+  return `${sign}${change.toFixed(2)}%`;
+}
+```
+
+### 2. Validation Methods
+```typescript
+validateSymbol(symbol: string): boolean {
+  return isValidSymbol(symbol);
+}
+
+validateAlertPrice(price: number | string): boolean {
+  return isValidAlertPrice(price);
+}
+```
+
+### 3. Cache Management
+```typescript
+clearRequestCache(): void {
+  console.log(`🧹 [API] Clearing ${this.requestCache.size} cached requests`);
+  this.requestCache.clear();
+}
+
+getCacheStats(): { size: number; keys: string[] } {
+  return {
+    size: this.requestCache.size,
+    keys: Array.from(this.requestCache.keys())
+  };
+}
+```
+
+## Testing Requirements
+
+1. **Unit tests** - Test all service methods
+2. **Error scenarios** - Test error handling and fallbacks
+3. **Request deduplication** - Test caching behavior
+4. **Batch processing** - Test concurrent request handling
+5. **Validation** - Test input validation
+6. **Timeout handling** - Test timeout scenarios
+7. **Fallback mechanisms** - Test fallback behavior

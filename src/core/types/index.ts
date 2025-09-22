@@ -123,16 +123,7 @@ export interface NewsArticle {
   imageUrl?: string;
 }
 
-/**
- * API response wrapper (uses utility type from utils.ts)
- * @deprecated Use ApiResponse from utils.ts instead
- */
-export interface LegacyApiResponse<T> {
-  data: T;
-  success: boolean;
-  message?: string;
-  error?: string;
-}
+// LegacyApiResponse removed - use ApiResponse from @/core/types/utils instead
 
 /**
  * Pagination structure
@@ -215,4 +206,45 @@ export interface Notification {
   timestamp: string;
   read: boolean;
   actionUrl?: string;
+}
+
+/**
+ * Push notification subscription data structure
+ */
+export interface PushSubscriptionData {
+  subscription: PushSubscription;
+  userId?: string;
+  userAgent?: string;
+  deviceType?: string;
+  browserType?: string;
+  subscribedAt?: number;
+  lastUsed: number;
+  timestamp?: number;
+  createdAt: number;
+}
+
+/**
+ * Push notification payload structure
+ */
+export interface PushNotificationPayload {
+  title: string;
+  body: string;
+  icon?: string;
+  badge?: string;
+  data?: Record<string, unknown>;
+  tag?: string;
+  requireInteraction?: boolean;
+  actions?: Array<{
+    action: string;
+    title: string;
+    icon?: string;
+  }>;
+}
+
+/**
+ * Push notification request structure
+ */
+export interface PushNotificationRequest {
+  notification: PushNotificationPayload;
+  targetSubscriptionId?: string;
 }
