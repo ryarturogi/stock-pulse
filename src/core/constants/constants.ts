@@ -57,7 +57,6 @@ export const STORAGE_KEYS = {
  * Default values
  */
 export const DEFAULTS = {
-  REFRESH_INTERVAL: 30000, // 30 seconds
   CHART_POINTS: 100,
   PAGINATION_LIMIT: 20,
   PRICE_DECIMAL_PLACES: 2,

@@ -6,11 +6,9 @@
  * following the React Developer test requirements with Finnhub integration.
  */
 
-import type {
-  FinnhubStockQuote,
-  StockOption
-} from '@/core/types';
-import { 
+import {
+  type FinnhubStockQuote,
+  type StockOption,
   isFinnhubStockQuote,
   isString,
   isNumber
@@ -24,7 +22,7 @@ export class StockService {
   private baseUrl: string;
   private apiKey: string;
   // Request deduplication cache
-  private requestCache = new Map<string, Promise<any>>();
+  private requestCache = new Map<string, Promise<FinnhubStockQuote>>();
   private cacheTimeout = 2000; // 2 seconds cache for deduplication
 
   private constructor() {
@@ -173,23 +171,18 @@ export class StockService {
    * Get available stock options (for dropdown)
    */
   async getAvailableStocks(): Promise<StockOption[]> {
-    try {
-      // For now, return the default stock options
-      // In a real app, this could fetch from an API
-      return [
-        { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ' },
-        { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ' },
-        { symbol: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ' },
-        { symbol: 'AMZN', name: 'Amazon.com Inc.', exchange: 'NASDAQ' },
-        { symbol: 'TSLA', name: 'Tesla Inc.', exchange: 'NASDAQ' },
-        { symbol: 'META', name: 'Meta Platforms Inc.', exchange: 'NASDAQ' },
-        { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ' },
-        { symbol: 'NFLX', name: 'Netflix Inc.', exchange: 'NASDAQ' },
-      ];
-    } catch (error) {
-      console.error('Failed to fetch available stocks:', error);
-      throw new Error('Failed to fetch available stocks');
-    }
+    // For now, return the default stock options
+    // In a real app, this could fetch from an API
+    return [
+      { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ' },
+      { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ' },
+      { symbol: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ' },
+      { symbol: 'AMZN', name: 'Amazon.com Inc.', exchange: 'NASDAQ' },
+      { symbol: 'TSLA', name: 'Tesla Inc.', exchange: 'NASDAQ' },
+      { symbol: 'META', name: 'Meta Platforms Inc.', exchange: 'NASDAQ' },
+      { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ' },
+      { symbol: 'NFLX', name: 'Netflix Inc.', exchange: 'NASDAQ' },
+    ];
   }
 
   /**
@@ -344,11 +337,24 @@ export class StockService {
   /**
    * Parse WebSocket trade message
    */
-  parseTradeMessage(data: any): { symbol: string; price: number; timestamp: number } | null {
+  parseTradeMessage(data: unknown): { symbol: string; price: number; timestamp: number } | null {
     try {
-      if (data.type === 'trade' && data.data && Array.isArray(data.data)) {
-        const trade = data.data[0]; // Get first trade
-        if (trade && trade.s && trade.p && trade.t) {
+      if (
+        typeof data === 'object' && 
+        data !== null && 
+        'type' in data && 
+        (data as { type: string }).type === 'trade' && 
+        'data' in data && 
+        Array.isArray((data as { data: unknown }).data)
+      ) {
+        const tradeData = (data as { data: unknown[] }).data;
+        const trade = tradeData[0] as Record<string, unknown>; // Get first trade
+        if (
+          trade && 
+          typeof trade.s === 'string' && 
+          typeof trade.p === 'number' && 
+          typeof trade.t === 'number'
+        ) {
           return {
             symbol: trade.s,
             price: trade.p,

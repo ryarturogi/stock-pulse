@@ -5,7 +5,7 @@
  * Tests for stock card display and interactions
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StockCard } from './StockCard';
 import type { WatchedStock } from '@/core/types';

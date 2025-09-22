@@ -54,7 +54,7 @@ export const StockCards: React.FC<StockCardsProps> = ({
         <StockCard 
           key={`${stock.id}-${stock.lastUpdated || 0}`} 
           stock={stock} 
-          onRemove={onRemoveStock} 
+          onRemove={onRemoveStock}
         />
       ))}
     </div>

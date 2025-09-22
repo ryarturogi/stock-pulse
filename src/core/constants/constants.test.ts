@@ -141,7 +141,7 @@ describe('Application Constants', () => {
   describe('DEFAULTS', () => {
     it('should have all expected default properties', () => {
       const expectedDefaults = [
-        'REFRESH_INTERVAL', 'CHART_POINTS', 'PAGINATION_LIMIT',
+        'CHART_POINTS', 'PAGINATION_LIMIT',
         'PRICE_DECIMAL_PLACES', 'PERCENTAGE_DECIMAL_PLACES',
         'CURRENCY', 'LANGUAGE', 'THEME'
       ];
@@ -152,7 +152,6 @@ describe('Application Constants', () => {
     });
 
     it('should have reasonable numeric defaults', () => {
-      expect(DEFAULTS.REFRESH_INTERVAL).toBe(30000);
       expect(DEFAULTS.CHART_POINTS).toBe(100);
       expect(DEFAULTS.PAGINATION_LIMIT).toBe(20);
       expect(DEFAULTS.PRICE_DECIMAL_PLACES).toBe(2);
@@ -166,7 +165,6 @@ describe('Application Constants', () => {
     });
 
     it('should have positive numeric values', () => {
-      expect(DEFAULTS.REFRESH_INTERVAL).toBeGreaterThan(0);
       expect(DEFAULTS.CHART_POINTS).toBeGreaterThan(0);
       expect(DEFAULTS.PAGINATION_LIMIT).toBeGreaterThan(0);
       expect(DEFAULTS.PRICE_DECIMAL_PLACES).toBeGreaterThanOrEqual(0);

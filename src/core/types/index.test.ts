@@ -11,22 +11,20 @@ import {
   isDefined,
   isString,
   isNumber,
-} from './index';
-import type {
-  StockQuote,
-  PortfolioHolding,
-  Portfolio,
-  WatchlistItem,
-  PriceAlert,
-  NewsArticle,
-  LegacyApiResponse,
-  UserPreferences,
-  TimeRange,
-  StockSearchResult,
-  Notification,
   // Re-exported utility types
-  ApiResponse,
-  AsyncState,
+  type StockQuote,
+  type PortfolioHolding,
+  type Portfolio,
+  type WatchlistItem,
+  type PriceAlert,
+  type NewsArticle,
+  type LegacyApiResponse,
+  type UserPreferences,
+  type TimeRange,
+  type StockSearchResult,
+  type Notification,
+  type ApiResponse,
+  type AsyncState,
 } from './index';
 
 describe('Types Index', () => {

@@ -60,7 +60,7 @@ export interface WatchedStock {
   alertPrice: number;
   currentPrice?: number;
   change?: number;
-  changePercent?: number;
+  percentChange?: number;
   high?: number;
   low?: number;
   open?: number;
@@ -127,7 +127,7 @@ export const REFRESH_INTERVALS: RefreshIntervalConfig[] = [
 export interface WebSocketMessage {
   type: 'subscribe' | 'unsubscribe' | 'trade' | 'ping' | 'pong';
   symbol?: string;
-  data?: any;
+  data?: TradeData | TradeData[] | string | Record<string, unknown>;
 }
 
 /**
@@ -219,14 +219,14 @@ export interface StockStoreState {
   error: string | null;
   
   // Actions
-  addStock: (_symbol: string, _name: string, _alertPrice: number) => void;
-  removeStock: (_symbol: string) => void;
-  updateStockPrice: (_symbol: string, _quote: FinnhubStockQuote) => void;
-  updateAlertPrice: (_symbol: string, _newAlertPrice: number) => void;
-  setWebSocketStatus: (_status: WebSocketStatus) => void;
-  setWebSocketConnection: (_connection: EventSource | null) => void;
-  setLoading: (_loading: boolean) => void;
-  setError: (_error: string | null) => void;
+  addStock: (symbol: string, name: string, alertPrice: number) => void;
+  removeStock: (symbol: string) => void;
+  updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => void;
+  updateAlertPrice: (symbol: string, newAlertPrice: number) => void;
+  setWebSocketStatus: (status: WebSocketStatus) => void;
+  setWebSocketConnection: (connection: EventSource | null) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
   clearError: () => void;
   
   
@@ -237,10 +237,10 @@ export interface StockStoreState {
   // Periodic refresh actions
   startPeriodicRefresh: () => void;
   stopPeriodicRefresh: () => void;
-  setRefreshTimeInterval: (_interval: RefreshInterval) => void;
+  setRefreshTimeInterval: (interval: RefreshInterval) => void;
   
   // Live data toggle actions
-  setLiveDataEnabled: (_enabled: boolean) => void;
+  setLiveDataEnabled: (enabled: boolean) => void;
 }
 
 // ============================================================================

@@ -42,9 +42,10 @@ export const useStockStore = create<StockStoreState>()(
       isLoading: false,
       error: null,
       lastUpdateTimes: new Map<string, number>(),
-      refreshTimeInterval: '2m', // Default to 2 minutes to respect API rate limits
+      refreshTimeInterval: '30s', // Default to 30 seconds for timely updates
       isLiveDataEnabled: true, // Default to live data enabled
       connectionAttempts: 0, // Track connection attempts for exponential backoff
+      lastConnectionAttempt: 0, // Track last connection attempt timestamp
 
       // Stock management actions
       addStock: (symbol: string, name: string, alertPrice: number) => {
@@ -71,9 +72,9 @@ export const useStockStore = create<StockStoreState>()(
           error: null,
         }));
 
-        // Reconnect WebSocket to include new stock (with proper cleanup)
-        const { webSocketStatus, webSocketConnection } = get();
-        if (webSocketStatus === 'connected' && webSocketConnection) {
+        // Only reconnect WebSocket if we're currently connected and live data is enabled
+        const { webSocketStatus, webSocketConnection, isLiveDataEnabled } = get();
+        if (webSocketStatus === 'connected' && webSocketConnection && isLiveDataEnabled) {
           console.log(`📡 Reconnecting WebSocket to include ${symbol}`);
           // Immediate disconnect and reconnect with new symbol
           (webSocketConnection as EventSource).close();
@@ -82,14 +83,15 @@ export const useStockStore = create<StockStoreState>()(
             webSocketStatus: 'disconnected' 
           });
           
-          // Reconnect after a short delay to ensure clean state
+          // Reconnect after a short delay to allow UI to update
           setTimeout(() => {
             const currentState = get();
-            if (currentState.watchedStocks.some(s => s.symbol === symbol)) {
+            if (currentState.watchedStocks.some(s => s.symbol === symbol) && currentState.isLiveDataEnabled) {
               currentState.connectWebSocket();
             }
-          }, 300);
+          }, 5000); // 5 seconds - reasonable delay
         }
+        // Note: If not connected, the useEffect in the main page will handle the connection
       },
 
       removeStock: (symbol: string) => {
@@ -224,6 +226,47 @@ export const useStockStore = create<StockStoreState>()(
           return;
         }
 
+        // Check if already connecting to prevent duplicate connection attempts
+        if (state.webSocketStatus === 'connecting' || state.isConnecting) {
+          console.log('⚠️ WebSocket connection already in progress, skipping duplicate attempt');
+          return;
+        }
+
+        // Check if we're in a cooldown period from previous failures
+        const lastConnectionAttempt = state.lastConnectionAttempt || 0;
+        const timeSinceLastAttempt = Date.now() - lastConnectionAttempt;
+        const minConnectionInterval = 30 * 1000; // 30 seconds minimum between connection attempts
+        
+        if (timeSinceLastAttempt < minConnectionInterval) {
+          const remainingTime = Math.ceil((minConnectionInterval - timeSinceLastAttempt) / 1000);
+          console.log(`⏰ Connection attempt too soon, waiting ${remainingTime}s before retry`);
+          return;
+        }
+
+        // If we're in an error state, wait even longer before retrying
+        if (state.webSocketStatus === 'error') {
+          const errorCooldown = 60 * 1000; // 1 minute for error state
+          if (timeSinceLastAttempt < errorCooldown) {
+            const remainingTime = Math.ceil((errorCooldown - timeSinceLastAttempt) / 1000);
+            console.log(`⏰ Error state cooldown active, waiting ${remainingTime}s before retry`);
+            return;
+          }
+        }
+
+        // If we've had too many connection attempts, disable WebSocket temporarily
+        const maxConnectionAttempts = 5;
+        if (state.connectionAttempts >= maxConnectionAttempts) {
+          console.log('🚫 EMERGENCY: Too many connection attempts, disabling WebSocket and using API only');
+          set({
+            webSocketStatus: 'error',
+            isConnecting: false,
+            error: 'WebSocket disabled due to repeated failures - using API fallback',
+            webSocketConnection: null,
+            isLiveDataEnabled: false // Disable live data to prevent further attempts
+          });
+          return;
+        }
+
         // Close existing connection if any
         if (state.webSocketConnection) {
           (state.webSocketConnection as EventSource).close();
@@ -238,7 +281,8 @@ export const useStockStore = create<StockStoreState>()(
         set({ 
           webSocketStatus: 'connecting', 
           isConnecting: true,
-          error: null 
+          error: null,
+          lastConnectionAttempt: Date.now()
         });
 
         try {
@@ -266,7 +310,7 @@ export const useStockStore = create<StockStoreState>()(
                 errorState.startPeriodicRefresh();
               }
             }
-          }, 15000); // 15 second timeout (increased for better reliability)
+          }, 60000); // 60 second timeout (increased for better reliability and rate limit handling)
 
           eventSource.onopen = () => {
             console.log('✅ Connected to secure WebSocket proxy');
@@ -279,11 +323,82 @@ export const useStockStore = create<StockStoreState>()(
               connectionAttempts: 0 // Reset connection attempts on successful connection
             });
             
-            // Stop periodic refresh when WebSocket connects (real-time data available)
+            // WebSocket connected - real-time data is now available, but keep periodic refresh running
+            // for reliability and to honor user's refresh interval preference
+            console.log('🔌 WebSocket connected - real-time data active, periodic refresh continues for reliability');
+          };
+
+          eventSource.onerror = (error) => {
+            console.error('❌ WebSocket proxy connection error:', error);
+            clearTimeout(connectionTimeout);
+            
+            // Check if this is a connection error (409, 429, 503)
+            if (eventSource.readyState === EventSource.CLOSED) {
+              console.log('🔌 WebSocket connection closed, likely due to rate limiting or circuit breaker');
+              set({
+                webSocketStatus: 'error',
+                isConnecting: false,
+                error: 'Connection blocked - using API fallback',
+                webSocketConnection: null,
+                lastConnectionAttempt: Date.now()
+              });
+              
+              // Start periodic refresh as fallback
+              const errorState = get();
+              if (errorState.isLiveDataEnabled && errorState.watchedStocks.length > 0) {
+                errorState.startPeriodicRefresh();
+              }
+            }
+          };
+
+          eventSource.onclose = (event) => {
+            console.log('🔌 WebSocket proxy connection closed:', event);
+            clearTimeout(connectionTimeout);
+            
+            // Only attempt reconnection if we're not in an error state and live data is enabled
             const currentState = get();
-            if (currentState.refreshInterval) {
-              console.log('🔌 WebSocket connected, stopping periodic refresh - switching to real-time data');
-              currentState.stopPeriodicRefresh();
+            if (currentState.isLiveDataEnabled && currentState.watchedStocks.length > 0 && 
+                currentState.webSocketStatus !== 'error') {
+              
+              // Implement exponential backoff for reconnection with longer delays
+              const attempts = currentState.connectionAttempts || 0;
+              const maxAttempts = 3; // Reduced max attempts
+              
+              if (attempts < maxAttempts) {
+                // Exponential backoff: 5s, 10s, 20s (reasonable delays)
+                const backoffDelay = Math.min(Math.pow(2, attempts) * 5000, 30000); // 5s, 10s, 20s, max 30s
+                console.log(`🔄 WebSocket connection closed, retrying in ${backoffDelay/1000}s (attempt ${attempts + 1}/${maxAttempts})`);
+                
+                set({ 
+                  webSocketStatus: 'disconnected',
+                  isConnecting: false,
+                  connectionAttempts: attempts + 1,
+                  lastConnectionAttempt: Date.now()
+                });
+                
+                setTimeout(() => {
+                  const retryState = get();
+                  if (retryState.isLiveDataEnabled && retryState.watchedStocks.length > 0) {
+                    retryState.connectWebSocket();
+                  }
+                }, backoffDelay);
+              } else {
+                console.log('❌ Max WebSocket reconnection attempts reached, switching to API mode');
+                set({
+                  webSocketStatus: 'error',
+                  isConnecting: false,
+                  error: 'Connection failed - using API fallback',
+                  webSocketConnection: null,
+                  connectionAttempts: 0,
+                  lastConnectionAttempt: Date.now()
+                });
+                
+                // Start periodic refresh as fallback
+                const errorState = get();
+                if (errorState.isLiveDataEnabled && errorState.watchedStocks.length > 0) {
+                  errorState.startPeriodicRefresh();
+                }
+              }
             }
           };
 
@@ -433,11 +548,9 @@ export const useStockStore = create<StockStoreState>()(
           return;
         }
 
-        // Don't start periodic refresh if WebSocket is connected
-        if (state.webSocketStatus === 'connected') {
-          console.log('🔌 WebSocket is connected, skipping periodic refresh - using real-time data');
-          return;
-        }
+        // WebSocket provides real-time data, but we still want periodic refresh for reliability
+        // and to respect user's chosen refresh interval
+        console.log(`🔄 Starting periodic refresh every ${state.refreshTimeInterval} (WebSocket: ${state.webSocketStatus})`);  
 
         // Clear any existing interval
         if (state.refreshInterval) {
@@ -461,14 +574,8 @@ export const useStockStore = create<StockStoreState>()(
         const interval = setInterval(async () => {
           const currentState = get();
           
-          // Stop periodic refresh if WebSocket reconnects
-          if (currentState.webSocketStatus === 'connected') {
-            console.log('🔌 WebSocket reconnected, stopping periodic refresh');
-            currentState.stopPeriodicRefresh();
-            return;
-          }
-          
           if (currentState.watchedStocks.length > 0) {
+            console.log(`🔄 Periodic refresh executing (${currentState.refreshTimeInterval}) - WebSocket: ${currentState.webSocketStatus}`);
             
             // Use Promise.all for concurrent API calls
             const refreshPromises = currentState.watchedStocks.map(async (stock) => {
@@ -510,14 +617,16 @@ export const useStockStore = create<StockStoreState>()(
         console.log(`🔄 Changing refresh interval from ${get().refreshTimeInterval} to ${interval}`);
         set({ refreshTimeInterval: interval });
         
-        // Only restart periodic refresh if live data is enabled
+        // Restart periodic refresh with new interval if live data is enabled
         const state = get();
-        if (state.refreshInterval && state.watchedStocks.length > 0 && state.isLiveDataEnabled) {
+        if (state.watchedStocks.length > 0 && state.isLiveDataEnabled) {
           console.log(`🔄 Restarting periodic refresh with new interval: ${interval} (Live data enabled)`);
           state.stopPeriodicRefresh();
           state.startPeriodicRefresh();
         } else if (!state.isLiveDataEnabled) {
           console.log(`⚠️ Refresh interval change ignored - live data is disabled`);
+        } else if (state.watchedStocks.length === 0) {
+          console.log(`⚠️ Refresh interval change ignored - no stocks to watch`);
         }
       },
 
@@ -530,12 +639,12 @@ export const useStockStore = create<StockStoreState>()(
         
         // Handle refresh intervals and WebSocket connections based on live data toggle
         if (enabled) {
-          // Start periodic refresh when enabling live data
-          if (state.watchedStocks.length > 0 && !state.refreshInterval) {
+          // Always start periodic refresh when enabling live data (regardless of WebSocket status)
+          if (state.watchedStocks.length > 0) {
             console.log(`🔄 Starting periodic refresh - live data enabled`);
             state.startPeriodicRefresh();
           }
-          // Connect to WebSocket when enabling live data
+          // Connect to WebSocket when enabling live data (runs in parallel with periodic refresh)
           if (state.watchedStocks.length > 0) {
             console.log(`🔌 Connecting to WebSocket - live data enabled`);
             state.connectWebSocket();
@@ -613,7 +722,7 @@ export const useStockStore = create<StockStoreState>()(
             // Return default state structure
             return {
               watchedStocks: persistedState?.watchedStocks || [],
-              refreshTimeInterval: persistedState?.refreshTimeInterval || '2m',
+              refreshTimeInterval: persistedState?.refreshTimeInterval || '30s',
               isLiveDataEnabled: persistedState?.isLiveDataEnabled ?? true,
             };
           }
@@ -625,7 +734,7 @@ export const useStockStore = create<StockStoreState>()(
           // Return safe defaults if migration fails
           return {
             watchedStocks: [],
-            refreshTimeInterval: '2m',
+            refreshTimeInterval: '30s',
             isLiveDataEnabled: true,
           };
         }

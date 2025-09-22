@@ -121,7 +121,7 @@ describe('Stock Types', () => {
           alertPrice: 150.00,
           currentPrice: 152.00,
           change: 2.00,
-          changePercent: 1.33,
+          percentChange: 1.33,
           isLoading: false,
           lastUpdated: Date.now(),
         };
@@ -473,7 +473,7 @@ describe('Stock Types', () => {
         alertPrice: 150.00,
         currentPrice: 152.50,
         change: 2.50,
-        changePercent: 1.67,
+        percentChange: 1.67,
         high: 155.00,
         low: 148.00,
         open: 149.00,

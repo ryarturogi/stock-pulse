@@ -69,6 +69,10 @@ export const StockChart: React.FC<StockChartProps> = ({
       stock.priceHistory?.forEach(point => {
         allTimestamps.add(point.time);
       });
+      // Add current timestamp if we have current price but no history
+      if (stock.currentPrice && (!stock.priceHistory || stock.priceHistory.length === 0)) {
+        allTimestamps.add(stock.lastUpdated || now);
+      }
     });
 
     // If no historical data, show current prices as single point
@@ -87,7 +91,7 @@ export const StockChart: React.FC<StockChartProps> = ({
       .sort((a, b) => a - b); // Show all collected data points
 
     // Create chart data points with unique timestamp formatting
-    return sortedTimestamps.map((timestamp, index) => {
+    return sortedTimestamps.map((timestamp) => {
       const date = new Date(timestamp);
       // Create unique time labels to prevent duplicate timestamps
       // Use milliseconds for precision when multiple points in same second
@@ -116,17 +120,26 @@ export const StockChart: React.FC<StockChartProps> = ({
 
       return dataPoint;
     });
-  }, [stocksWithData, stocksWithData.map(s => s.priceHistory?.length || 0).join(','), stocksWithData.map(s => s.lastUpdated || 0).join(',')]);
+  }, [
+    stocksWithData, 
+    stocksWithData.map(s => s.priceHistory?.length || 0).join(','), 
+    stocksWithData.map(s => s.lastUpdated || 0).join(','),
+    stocksWithData.map(s => s.currentPrice || 0).join(',') // Track current price changes
+  ]);
 
 
 
   // Custom tooltip component for better visibility
-  const CustomTooltip = useCallback(({ active, payload, label }: any) => {
+  const CustomTooltip = useCallback(({ active, payload, label }: {
+    active?: boolean;
+    payload?: Array<{ dataKey: string; value: number; color: string; name: string }>;
+    label?: string;
+  }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3 dark:bg-gray-800 dark:border-gray-600">
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{`Time: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index: number) => (
             <div key={index} className="flex items-center space-x-2 mb-1 last:mb-0">
               <div 
                 className="w-3 h-3 rounded-full" 
@@ -178,10 +191,6 @@ export const StockChart: React.FC<StockChartProps> = ({
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {chartData.length > 0 && `Latest: ${chartData[chartData.length - 1]?.timestamp}`}
             </p>
-            <div className="flex items-center space-x-1 mt-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-xs text-green-600 dark:text-green-400">Live</span>
-            </div>
           </div>
         </div>
       </div>

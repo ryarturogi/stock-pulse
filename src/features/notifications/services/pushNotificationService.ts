@@ -8,8 +8,6 @@
 
 'use client';
 
-import type { WatchedStock, PriceAlertNotification } from '@/core/types';
-
 /**
  * Device type detection for mobile-specific handling
  */

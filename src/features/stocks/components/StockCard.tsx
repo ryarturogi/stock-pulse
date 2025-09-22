@@ -34,7 +34,7 @@ export const StockCard: React.FC<StockCardProps> = ({
     symbol,
     name,
     currentPrice,
-    changePercent,
+    percentChange,
     alertPrice,
     isLoading,
     lastUpdated,
@@ -92,8 +92,8 @@ export const StockCard: React.FC<StockCardProps> = ({
     }
   };
 
-  // Use changePercent if available, otherwise fall back to stock.changePercent
-  const displayChangePercent = changePercent ?? stock.changePercent;
+  // Use percentChange if available, otherwise fall back to stock.percentChange
+  const displayChangePercent = percentChange ?? stock.percentChange;
 
   // Determine alert status and colors
   const isAboveAlert = currentPrice && currentPrice >= alertPrice;
@@ -318,17 +318,11 @@ export const StockCard: React.FC<StockCardProps> = ({
           {/* Last Updated with real-time indicator */}
           {lastUpdated && (
             <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center text-gray-400 dark:text-gray-500">
+              <div className={`flex items-center ${wasRecentlyUpdated ? 'text-green-500' : 'text-gray-400 dark:text-gray-500'}`}>
                 <Clock className={`mr-1 w-3 h-3 ${wasRecentlyUpdated ? 'text-green-500' : ''}`} />
                 <span className="hidden sm:inline">{new Date(lastUpdated).toLocaleTimeString()}</span>
                 <span className="sm:hidden">{new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
-              {wasRecentlyUpdated && (
-                <div className="flex items-center">
-                  <span className="text-xs text-green-500 mr-1">LIVE</span>
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                </div>
-              )}
             </div>
           )}
         </div>
