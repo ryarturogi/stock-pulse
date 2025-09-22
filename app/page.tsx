@@ -14,8 +14,9 @@ import {
   Plus
 } from 'lucide-react';
 
+import { DEFAULT_STOCK_OPTIONS } from '@/core/constants/constants';
 import { 
-  DEFAULT_STOCK_OPTIONS
+  StockOption
 } from '@/core/types';
 import { 
   StockForm, 
@@ -32,9 +33,6 @@ import {
   useNotifications, 
   useSearch 
 } from '@/shared/hooks';
-
-// Use default stock options from types
-const availableStocks = DEFAULT_STOCK_OPTIONS;
 
 
 export default function HomePage() {
@@ -58,6 +56,7 @@ export default function HomePage() {
   } = useStockStore();
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [availableStocks, setAvailableStocks] = useState<StockOption[]>(DEFAULT_STOCK_OPTIONS);
   
   // Custom hooks
   const { isOpen: isSidebarOpen, open: openSidebar, close: closeSidebar } = useSidebar();
@@ -81,6 +80,21 @@ export default function HomePage() {
   // Use ref to track connection state and prevent multiple calls
   const isConnectedRef = useRef(false);
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load available stocks on mount
+  useEffect(() => {
+    const loadAvailableStocks = async () => {
+      try {
+        const stocks = await stockService.getAvailableStocksLegacy();
+        setAvailableStocks(stocks);
+      } catch (error) {
+        console.error('Failed to load available stocks:', error);
+        // Keep default stocks as fallback
+      }
+    };
+
+    loadAvailableStocks();
+  }, []);
 
   // Connect WebSocket when stocks are added (periodic refresh as fallback)
   useEffect(() => {
@@ -129,11 +143,25 @@ export default function HomePage() {
   /**
    * Handle adding a new stock to watchlist
    */
-  const handleAddStock = async (symbol: string, alertPrice: number) => {
+  const handleAddStock = async (symbol: string, alertPrice: number, stockName?: string) => {
+    // Try to find the stock in availableStocks first, then use provided name or fallback
     const stock = availableStocks.find(s => s.symbol === symbol);
-    if (!stock) {
-      console.error('Stock not found:', symbol);
-      return;
+    let finalStockName = stockName || stock?.name || symbol;
+
+    // If stock is not in the limited availableStocks array and no name provided,
+    // try to fetch the stock quote to get the company name
+    if (!stock && !stockName) {
+      try {
+        console.log(`📊 Fetching stock information for ${symbol}...`);
+        const quoteData = await stockService.fetchStockQuote(symbol);
+        if (quoteData && quoteData.symbol) {
+          // Use the symbol as name for now, since Finnhub quote doesn't include company name
+          finalStockName = symbol;
+        }
+      } catch (error) {
+        console.warn(`Could not fetch stock info for ${symbol}, using symbol as name:`, error);
+        finalStockName = symbol;
+      }
     }
 
     try {
@@ -155,7 +183,7 @@ export default function HomePage() {
       }
 
       // Add stock to store (this will persist to localStorage)
-      addStock(symbol, stock.name, alertPrice);
+      addStock(symbol, finalStockName, alertPrice);
       
       // Close sidebar on mobile/tablet after adding stock
       closeSidebar();

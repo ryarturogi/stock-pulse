@@ -12,10 +12,8 @@ import React, { useState, useEffect } from 'react';
 
 import { TrendingUp, TrendingDown, Clock, X, Edit2, Check, X as XIcon } from 'lucide-react';
 
-import { 
-  StockCardProps, 
-  STOCK_COLORS
-} from '@/core/types';
+import { STOCK_COLORS } from '@/core/constants/constants';
+import { StockCardProps } from '@/core/types';
 import { useStockStore } from '@/features/stocks/stores/stockStore';
 // import { stockService } from '@/services/stockService';
 

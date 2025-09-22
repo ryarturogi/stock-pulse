@@ -11,11 +11,8 @@ import type {
   BackgroundSyncData,
   WatchedStock
 } from '@/core/types';
-import { 
-  isWatchedStock,
-  STORAGE_KEYS,
-  PWA_CONFIG
-} from '@/core/types';
+import { isWatchedStock, PWA_CONFIG } from '@/core/types';
+import { STORAGE_KEYS } from '@/core/constants/constants';
 
 /**
  * PWA service class for managing background functionality

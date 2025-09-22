@@ -22,7 +22,8 @@ import {
   Legend,
 } from 'recharts';
 
-import { StockChartProps, ChartDataPoint, STOCK_COLORS } from '@/core/types';
+import { STOCK_COLORS } from '@/core/constants/constants';
+import { StockChartProps, ChartDataPoint } from '@/core/types';
 
 /**
  * Stock Chart Component
