@@ -18,6 +18,9 @@ interface StockSearchProps {
   onSelectStock: (_symbol: string, _alertPrice: number, _stockName?: string) => void;
   watchedStocks?: { symbol: string }[];
   className?: string;
+  'data-intro'?: string;
+  'data-title'?: string;
+  'data-step'?: string;
 }
 
 /**
@@ -29,6 +32,7 @@ export const StockSearch: React.FC<StockSearchProps> = ({
   onSelectStock,
   watchedStocks = [],
   className = '',
+  ...props
 }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<StockOption[]>([]);
@@ -147,7 +151,7 @@ export const StockSearch: React.FC<StockSearchProps> = ({
   };
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative ${className}`} {...props}>
       {/* Search Input */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

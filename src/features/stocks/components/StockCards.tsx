@@ -22,16 +22,24 @@ import { StockCard } from './StockCard';
  * Displays a grid of stock cards with responsive layout.
  * Shows empty state when no stocks are being watched.
  */
-export const StockCards: React.FC<StockCardsProps> = ({
+export const StockCards: React.FC<StockCardsProps & { 
+  'data-intro'?: string;
+  'data-title'?: string;
+  'data-step'?: string;
+  'data-desktop-step'?: string;
+  'data-mobile-step'?: string;
+}> = ({
   stocks,
   onRemoveStock,
   className = '',
+  ...props
 }) => {
   // Empty state when no stocks
   if (stocks.length === 0) {
     return (
       <div
         className={`p-8 text-center bg-white rounded-lg shadow-sm dark:bg-gray-800 ${className}`}
+        {...props}
       >
         <TrendingUp className='mx-auto mb-4 w-16 h-16 text-gray-400' />
         <h3
@@ -49,6 +57,7 @@ export const StockCards: React.FC<StockCardsProps> = ({
   return (
     <div
       className={`grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 ${className}`}
+      {...props}
     >
       {stocks.map(stock => (
         <StockCard 

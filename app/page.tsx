@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   TrendingUp,
-  Plus
+  Plus,
+  HelpCircle
 } from 'lucide-react';
 
 import { DEFAULT_STOCK_OPTIONS } from '@/core/constants/constants';
@@ -30,7 +31,13 @@ import {
 import { 
   useSidebar, 
   useTheme, 
-  useSearch 
+  useSearch,
+  useTour,
+  shouldShowTour,
+  markTourAsCompleted,
+  resetTour,
+  useResponsive,
+  getTourSteps
 } from '@/shared/hooks';
 import { useNotificationPermission } from '@/features/notifications';
 
@@ -61,6 +68,19 @@ export default function HomePage() {
   // Custom hooks
   const { isOpen: isSidebarOpen, open: openSidebar, close: closeSidebar } = useSidebar();
   const { isDarkMode, toggle: toggleTheme } = useTheme();
+  const { isMobile, isTablet } = useResponsive();
+  const { startTour } = useTour();
+  
+  // Determine if we're on mobile/tablet for tour purposes (matches Tailwind lg breakpoint)
+  const isMobileOrTablet = isMobile || isTablet;
+
+  // Handle restart tour
+  const handleRestartTour = useCallback(async () => {
+    resetTour();
+    const steps = getTourSteps(isMobileOrTablet);
+    await startTour(steps); // Pass the appropriate steps for the device type
+    markTourAsCompleted(isMobileOrTablet);
+  }, [startTour, isMobileOrTablet]);
   const { 
     permission: notificationPermission, 
     isEnabled: notificationsEnabled, 
@@ -95,6 +115,20 @@ export default function HomePage() {
 
     loadAvailableStocks();
   }, []);
+
+  // Tour initialization
+  useEffect(() => {
+    // Start tour for new users after a short delay to ensure DOM is ready
+    const timer = setTimeout(async () => {
+      if (shouldShowTour(isMobileOrTablet)) {
+        const steps = getTourSteps(isMobileOrTablet);
+        await startTour(steps); // Pass the appropriate steps for the device type
+        markTourAsCompleted(isMobileOrTablet);
+      }
+    }, 1500); // Increased delay to ensure responsive hook is ready
+
+    return () => clearTimeout(timer);
+  }, [isMobileOrTablet]); // Removed startTour from dependencies to prevent re-runs
 
   // Connect WebSocket when stocks are added (periodic refresh as fallback)
   useEffect(() => {
@@ -297,13 +331,20 @@ export default function HomePage() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div 
+      className="min-h-screen bg-gray-50 dark:bg-gray-900"
+      data-intro="Welcome to your real-time stock tracking dashboard! This tour will show you how to get the most out of StockPulse. We'll walk you through adding stocks, setting up alerts, and monitoring your watchlist."
+      data-title="👋 Welcome to StockPulse!"
+      data-desktop-step="1"
+      data-mobile-step="1"
+    >
       <div className="flex flex-col lg:flex-row">
         {/* Slide Out Sidebar - Stock Form */}
         <SlideOutSidebar
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
           className="lg:w-80"
+          data-tour="sidebar"
         >
           <StockForm
             availableStocks={availableStocks}
@@ -323,7 +364,12 @@ export default function HomePage() {
                   {/* Left Section - Search & Data Controls */}
                   <div className="flex-1 max-w-3xl">
                     <div className="flex items-center space-x-4">
-                      <div className="relative flex-1 max-w-md">
+                      <div 
+                        className="relative flex-1 max-w-md"
+                        data-intro="Use this search bar to filter your watched stocks by symbol or company name. This helps you quickly find specific stocks in your portfolio."
+                        data-title="🔍 Filter Your Stocks"
+                        data-desktop-step="5"
+                      >
                         <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500 dark:text-gray-400" />
                         <input 
                           type="text" 
@@ -370,6 +416,9 @@ export default function HomePage() {
                       onClick={handleManualRefresh}
                       className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                       title="Refresh stock data"
+                      data-intro="Toggle Live Data to automatically refresh stock prices. You can also manually refresh anytime with this button. Choose your refresh interval (15s, 30s, 1min, 5min) to control how often prices update."
+                      data-title="🔄 Live Data & Refresh"
+                      data-desktop-step="6"
                     >
                       <RefreshCw className="text-gray-500 dark:text-gray-400 w-5 h-5" />
                     </button>
@@ -380,6 +429,9 @@ export default function HomePage() {
                         onClick={requestNotificationPermission}
                         className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
                         title="Enable webpush notifications for price alerts"
+                        data-intro="Enable browser notifications to receive real-time alerts when your stocks hit target prices. Click this button to grant notification permissions and stay updated on your investments."
+                        data-title="📱 Enable Notifications"
+                        data-desktop-step="7"
                       >
                         <Bell className="w-4 h-4" />
                         <span>Enable Alerts</span>
@@ -395,6 +447,9 @@ export default function HomePage() {
                             : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30'
                         }`}
                         title={notificationsEnabled ? 'Disable webpush notifications' : 'Enable webpush notifications'}
+                        data-intro="Enable browser notifications to receive real-time alerts when your stocks hit target prices. Click this button to grant notification permissions and stay updated on your investments."
+                        data-title="📱 Enable Notifications"
+                        data-desktop-step="7"
                       >
                         {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
                         <span>{notificationsEnabled ? 'Alerts ON' : 'Alerts OFF'}</span>
@@ -402,17 +457,34 @@ export default function HomePage() {
                     )}
                     
                     {notificationPermission === 'denied' && (
-                      <div className="flex items-center space-x-2 px-3 py-2 text-sm bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg">
+                      <div 
+                        className="flex items-center space-x-2 px-3 py-2 text-sm bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg" 
+                        data-intro="Enable browser notifications to receive real-time alerts when your stocks hit target prices. Click this button to grant notification permissions and stay updated on your investments."
+                        data-title="📱 Enable Notifications"
+                        data-desktop-step="7"
+                      >
                         <BellOff className="w-4 h-4" />
                         <span>Alerts Disabled</span>
                       </div>
                     )}
+
+                    {/* Help - Restart Tour */}
+                    <button
+                      onClick={handleRestartTour}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      title="Restart guided tour"
+                    >
+                      <HelpCircle className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                    </button>
 
                     {/* Theme Toggle */}
                     <button
                       onClick={toggleTheme}
                       className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                       title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                      data-intro="Toggle between light and dark mode to customize your viewing experience. Perfect for day trading or late-night market monitoring!"
+                      data-title="🎨 Customize Your Experience"
+                      data-desktop-step="8"
                     >
                       <Moon className="w-5 h-5 text-gray-500 dark:text-yellow-500" />
                     </button>
@@ -431,6 +503,9 @@ export default function HomePage() {
                     onClick={openSidebar}
                     className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     title="Open sidebar"
+                    data-intro="Click the Plus (+) button to open the stock form sidebar where you can add stocks to your watchlist. This is where you'll manage your stock portfolio and set up price alerts."
+                    data-title="➕ Add Your First Stock"
+                    data-mobile-step="2"
                   >
                     <Plus className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                   </button>
@@ -442,6 +517,15 @@ export default function HomePage() {
                 </div>
 
                 <div className="flex items-center space-x-2">
+                  {/* Help - Restart Tour */}
+                  <button
+                    onClick={handleRestartTour}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    title="Restart guided tour"
+                  >
+                    <HelpCircle className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  </button>
+
                   {/* Theme Toggle */}
                   <button
                     onClick={toggleTheme}
@@ -456,6 +540,9 @@ export default function HomePage() {
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     title="Toggle menu"
+                    data-intro="Tap here to access Live Data controls, refresh intervals, and notification settings. This menu keeps your mobile interface clean while giving you full control."
+                    data-title="☰ Mobile Menu"
+                    data-mobile-step="4"
                   >
                     {isMobileMenuOpen ? (
                       <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
@@ -605,13 +692,37 @@ export default function HomePage() {
                   stocks={filteredWatchedStocks}
                   onRemoveStock={handleRemoveStock}
                   className="mb-8"
+                  data-intro="Your added stocks will appear here as interactive cards showing real-time prices, changes, and performance indicators. Cards show green for gains, red for losses, and include percentage changes and absolute price movements."
+                  data-title="📊 Your Dashboard"
+                  data-desktop-step="9"
+                  data-mobile-step="5"
                 />
 
                 {/* Stock Price Chart */}
                 <StockChart
                   stocks={filteredWatchedStocks}
                   height={320}
+                  data-intro="The interactive chart below shows price trends for all your watched stocks. Perfect for tracking performance over time! Hover over the chart to see detailed price information and compare multiple stocks."
+                  data-title="📈 Price Chart"
+                  data-desktop-step="10"
+                  data-mobile-step="6"
                 />
+
+                {/* Tour Conclusion - Hidden element for final step */}
+                <div
+                  className="sr-only"
+                  data-intro="Congratulations! You now know how to use StockPulse effectively. Quick tips: Use the search bar to filter your stocks, remove stocks by clicking the X on their cards, enable notifications for the best experience, and check back regularly for real-time updates. Happy investing! 📈"
+                  data-title="🎉 You're All Set!"
+                  data-desktop-step="11"
+                ></div>
+
+                {/* Mobile Tour Conclusion - Hidden element for final step */}
+                <div
+                  className="sr-only"
+                  data-intro="Great! You're ready to use StockPulse on mobile. Mobile tips: Use the drawer for adding stocks quickly, access the mobile menu for settings, enable notifications for mobile alerts, and works great in landscape mode too! Happy mobile trading! 📱📈"
+                  data-title="🎉 Mobile Ready!"
+                  data-mobile-step="7"
+                ></div>
           </main>
         </div>
       </div>

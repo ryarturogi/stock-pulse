@@ -5,12 +5,13 @@ Enterprise-grade Next.js 15 + React 19 + TypeScript stock market tracking applic
 ## 📊 Project Status
 
 ✅ **Complete Implementation** - Full stock tracking application with real-time data
+🎯 **User Experience** - Interactive guided tour system for seamless onboarding
 📦 **TypeScript Utilities** - Comprehensive type system for enhanced developer experience  
 🚀 **Production Ready** - Full Vercel deployment with automated CI/CD pipeline
 🧪 **Testing Framework** - Complete testing setup with Jest and Playwright
 📖 **Documentation** - Comprehensive guides and compliance documentation
 
-**Status**: Ready for production deployment and demo
+**Status**: Ready for production deployment and demo with complete user onboarding
 
 ## 🚀 Features
 
@@ -20,6 +21,7 @@ Enterprise-grade Next.js 15 + React 19 + TypeScript stock market tracking applic
 - **Real-time Stock Tracking** - Live market data with secure API polling and WebSocket fallback
 - **WebPush Notifications** - Price alerts using Web Notifications API with Service Worker
 - **Progressive Web App** - Offline functionality and app-like experience
+- **Guided User Tour** - Interactive onboarding with Shepherd.js for new users
 - **Production Ready** - Secure API handling, rate limiting, and Vercel deployment
 - **Developer Experience** - Cursor IDE and Claude Code rules for enhanced productivity
 
@@ -34,6 +36,7 @@ Enterprise-grade Next.js 15 + React 19 + TypeScript stock market tracking applic
 
 ### Development & Testing
 - **Testing**: Jest + React Testing Library 16 + Playwright
+- **User Experience**: Shepherd.js guided tours for onboarding
 - **Linting**: ESLint 9 (Flat Config) + Prettier 3.3
 - **Git Hooks**: Husky + lint-staged
 - **Package Manager**: pnpm 8+
@@ -194,13 +197,18 @@ stock-pulse/
 │   │       │   ├── notificationService.ts
 │   │       │   └── index.ts
 │   │       └── index.ts         # Feature exports
-│   └── shared/                  # Shared modules
-│       ├── components/          # Shared components
-│       │   └── ui/              # Base UI components
-│       │       ├── Button.tsx
-│       │       └── index.ts
-│       ├── hooks/               # Shared custom hooks
-│       └── utils/               # Shared utility functions
+│   ├── shared/                  # Shared modules
+│   │   ├── components/          # Shared components
+│   │   │   └── ui/              # Base UI components
+│   │   │       ├── Button.tsx
+│   │   │       └── index.ts
+│   │   ├── hooks/               # Shared custom hooks
+│   │   │   ├── useTour.ts       # Guided tour functionality
+│   │   │   ├── useTourConfig.ts # Tour step configurations
+│   │   │   └── index.ts
+│   │   └── utils/               # Shared utility functions
+│   └── styles/                  # Global styles and themes
+│       └── shepherd.css         # Tour component styling
 ├── public/                      # Static assets
 │   ├── manifest.json           # PWA manifest
 │   ├── sw.js                   # Service worker (next-pwa)
@@ -378,6 +386,26 @@ See [Vercel Deployment Guide](./docs/VERCEL-DEPLOYMENT.md) for detailed instruct
 - **App-like Experience** - Install on mobile/desktop
 - **Background Sync** - Sync data when connection is restored
 
+## 🎯 User Experience Features
+
+### Interactive Guided Tour
+- **Auto-start for New Users** - Comprehensive 9-step onboarding tour using Shepherd.js
+- **Smart Navigation** - Context-aware tour that opens/closes UI elements as needed
+- **Mobile Optimized** - Responsive tour steps with touch-friendly interactions
+- **Dark Mode Compatible** - Tour styling adapts to user's theme preference
+- **Manual Restart** - Help button (?) in header allows users to replay the tour anytime
+
+### Tour Coverage
+1. **Welcome & Introduction** - Overview of StockPulse functionality
+2. **Add Stock Button** - How to open the stock form sidebar
+3. **Stock Search** - Using the search functionality to find any stock
+4. **Price Alerts** - Setting up custom price alert thresholds
+5. **Notifications** - Enabling browser notifications for alerts
+6. **Live Data Controls** - Configuring real-time data refresh settings
+7. **Theme Customization** - Switching between light and dark modes
+8. **Dashboard Overview** - Understanding stock cards and performance indicators
+9. **Chart Interaction** - Using the interactive price chart for analysis
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -458,6 +486,7 @@ claude.rules/bootstrap-dev-env.prompt   # Full project setup template
 - [🏗️ Enterprise Architecture](./src/) - Feature-based module organization
 - [🎯 Component Templates](./claude.rules/) - Standardized development prompts
 - [⚙️ IDE Configuration](./.cursorrules) - Cursor IDE optimization rules
+- [🎪 Tour Integration](./TOUR_INTEGRATION.md) - Complete guided tour implementation guide
 
 ### API Documentation
 - [🏥 Health Check](./app/api/health/route.ts) - Application health monitoring
@@ -487,6 +516,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 #### User Interface
 - **Responsive Design** - Left sidebar form, main dashboard with search functionality
 - **Dark/Light Mode** - Theme toggle with system preference detection
+- **Guided Tour System** - Interactive onboarding with Shepherd.js for new user education
 - **Stock Cards** - Real-time price display with change indicators and trend visualization
 - **Interactive Charts** - Recharts integration with multiple time ranges (1H, 1D, 1W, 1M)
 - **Search & Filter** - Real-time search across watched stocks by symbol or name
@@ -554,6 +584,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Tailwind CSS 3.4** - Utility-first styling with custom configuration
 - **Zustand 5.0** - State management with persistence middleware
 - **Recharts** - Chart visualization with responsive design
+- **Shepherd.js 14.5** - Interactive guided tours for user onboarding
 - **Lucide React** - Modern icon system with tree shaking
 
 #### Browser Support
@@ -576,11 +607,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 2. **Test the Application**
    - Open http://localhost:3000
+   - **Experience the guided tour** - Automatically starts for new users
    - Add a stock (e.g., AAPL) with a price alert (e.g., $150)
    - Enable notifications when prompted
    - Watch real-time price updates in the dashboard
    - Toggle between dark/light modes
    - Search for stocks in the search bar
+   - **Restart the tour anytime** - Click the help (?) button in the header
 
 3. **Production Deployment**
    ```bash
