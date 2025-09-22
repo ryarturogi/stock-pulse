@@ -7,10 +7,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ApiError } from '@/core/types';
+import { ApiError, PushSubscriptionData } from '@/core/types';
 
 // In-memory storage for subscriptions (in production, use a database)
-const subscriptions: Map<string, any> = new Map();
+const subscriptions: Map<string, PushSubscriptionData> = new Map();
 
 /**
  * POST /api/push/subscribe
@@ -77,7 +77,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
 export async function GET(): Promise<NextResponse<{ 
   success: boolean; 
   subscriptions: number; 
-  details: any[] 
+  details: Array<{
+    id: string;
+    endpoint: string;
+    createdAt: number;
+    lastUsed: number;
+  }>
 } | ApiError>> {
   try {
     const subscriptionDetails = Array.from(subscriptions.entries()).map(([id, data]) => ({

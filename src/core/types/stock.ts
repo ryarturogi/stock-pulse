@@ -149,7 +149,7 @@ export interface TradeData {
  */
 export interface StockFormProps extends ComponentProps {
   availableStocks: StockOption[];
-  onAddStock: (symbol: string, alertPrice: number, stockName?: string) => void;
+  onAddStock: (_symbol: string, _alertPrice: number, _stockName?: string) => void;
   watchedStocks?: WatchedStock[];
   isLoading?: boolean;
 }
@@ -159,7 +159,7 @@ export interface StockFormProps extends ComponentProps {
  */
 export interface StockCardProps extends ComponentProps {
   stock: WatchedStock;
-  onRemove?: ((symbol: string) => void) | undefined;
+  onRemove?: ((_symbol: string) => void) | undefined;
 }
 
 /**
@@ -167,7 +167,7 @@ export interface StockCardProps extends ComponentProps {
  */
 export interface StockCardsProps extends ComponentProps {
   stocks: WatchedStock[];
-  onRemoveStock?: (symbol: string) => void;
+  onRemoveStock?: (_symbol: string) => void;
 }
 
 /**
@@ -220,14 +220,14 @@ export interface StockStoreState {
   error: string | null;
   
   // Actions
-  addStock: (symbol: string, name: string, alertPrice: number) => void;
-  removeStock: (symbol: string) => void;
-  updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => void;
-  updateAlertPrice: (symbol: string, newAlertPrice: number) => void;
-  setWebSocketStatus: (status: WebSocketStatus) => void;
-  setWebSocketConnection: (connection: EventSource | null) => void;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
+  addStock: (_symbol: string, _name: string, _alertPrice: number) => void;
+  removeStock: (_symbol: string) => void;
+  updateStockPrice: (_symbol: string, _quote: FinnhubStockQuote) => void;
+  updateAlertPrice: (_symbol: string, _newAlertPrice: number) => void;
+  setWebSocketStatus: (_status: WebSocketStatus) => void;
+  setWebSocketConnection: (_connection: EventSource | null) => void;
+  setLoading: (_loading: boolean) => void;
+  setError: (_error: string | null) => void;
   clearError: () => void;
   
   
@@ -239,10 +239,10 @@ export interface StockStoreState {
   // Periodic refresh actions
   startPeriodicRefresh: () => void;
   stopPeriodicRefresh: () => void;
-  setRefreshTimeInterval: (interval: RefreshInterval) => void;
+  setRefreshTimeInterval: (_interval: RefreshInterval) => void;
   
   // Live data toggle actions
-  setLiveDataEnabled: (enabled: boolean) => void;
+  setLiveDataEnabled: (_enabled: boolean) => void;
 }
 
 // ============================================================================

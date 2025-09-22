@@ -7,19 +7,19 @@
  * Contains the full complex WebSocket logic with all error handling, retries, and fallbacks.
  */
 
-import { FinnhubStockQuote, WebSocketStatus } from '@/core/types';
+import { FinnhubStockQuote, WebSocketStatus, WatchedStock } from '@/core/types';
 
 export interface StockWebSocketCallbacks {
-  onStatusChange: (status: WebSocketStatus) => void;
-  onConnectionChange: (connection: EventSource | null) => void;
-  onConnectingChange: (isConnecting: boolean) => void;
-  onErrorChange: (error: string | null) => void;
-  onUpdateConnectionAttempts: (attempts: number) => void;
-  onUpdateLastConnectionAttempt: (timestamp: number) => void;
+  onStatusChange: (_status: WebSocketStatus) => void;
+  onConnectionChange: (_connection: EventSource | null) => void;
+  onConnectingChange: (_isConnecting: boolean) => void;
+  onErrorChange: (_error: string | null) => void;
+  onUpdateConnectionAttempts: (_attempts: number) => void;
+  onUpdateLastConnectionAttempt: (_timestamp: number) => void;
   onDisableLiveData: () => void;
   onStartPeriodicRefresh: () => void;
-  onUpdateStockPrice: (symbol: string, quote: FinnhubStockQuote) => void;
-  getWatchedStocks: () => { symbol: string }[];
+  onUpdateStockPrice: (_symbol: string, _quote: FinnhubStockQuote) => void;
+  getWatchedStocks: () => WatchedStock[];
   getState: () => {
     isLiveDataEnabled: boolean;
     webSocketStatus: WebSocketStatus;
@@ -27,7 +27,7 @@ export interface StockWebSocketCallbacks {
     isConnecting: boolean;
     connectionAttempts: number;
     lastConnectionAttempt?: number;
-    watchedStocks: { symbol: string }[];
+    watchedStocks: WatchedStock[];
   };
 }
 
@@ -195,10 +195,10 @@ export class StockWebSocketService {
               
               // Update stock price in store
               const currentState = this.callbacks.getState();
-              const stock = currentState.watchedStocks.find((s: any) => s.symbol === symbol);
+              const stock = currentState.watchedStocks.find((s: WatchedStock) => s.symbol === symbol);
               if (stock) {
                 // Calculate change if we have previous data
-                const previousPrice = (stock as any).previousClose || (stock as any).currentPrice || price;
+                const previousPrice = stock.previousClose || stock.currentPrice || price;
                 const change = price - previousPrice;
                 const percentChange = previousPrice > 0 ? (change / previousPrice) * 100 : 0;
                 
@@ -207,10 +207,10 @@ export class StockWebSocketService {
                   current: price,
                   change: change,
                   percentChange: percentChange,
-                  high: Math.max((stock as any).high || price, price),
-                  low: Math.min((stock as any).low || price, price),
-                  open: (stock as any).open || price,
-                  previousClose: (stock as any).previousClose || price,
+                  high: Math.max(stock.high || price, price),
+                  low: Math.min(stock.low || price, price),
+                  open: stock.open || price,
+                  previousClose: stock.previousClose || price,
                   timestamp: trade.timestamp || Date.now()
                 });
               }

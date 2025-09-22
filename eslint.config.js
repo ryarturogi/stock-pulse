@@ -57,6 +57,7 @@ export default [
         URLSearchParams: 'readonly',
         Response: 'readonly',
         Request: 'readonly',
+        RequestInit: 'readonly',
         Headers: 'readonly',
         ReadableStream: 'readonly',
         TextEncoder: 'readonly',
@@ -68,9 +69,13 @@ export default [
         
         // DOM types
         HTMLElement: 'readonly',
+        HTMLDivElement: 'readonly',
         HTMLButtonElement: 'readonly',
         HTMLSelectElement: 'readonly',
         HTMLInputElement: 'readonly',
+        Node: 'readonly',
+        IntersectionObserver: 'readonly',
+        IntersectionObserverEntry: 'readonly',
         KeyboardEvent: 'readonly',
         MouseEvent: 'readonly',
         Event: 'readonly',
@@ -164,6 +169,7 @@ export default [
           varsIgnorePattern: '^_',
           args: 'after-used',
           ignoreRestSiblings: true,
+          destructuredArrayIgnorePattern: '^_',
         },
       ],
       '@typescript-eslint/explicit-function-return-type': 'off',
@@ -278,7 +284,7 @@ export default [
       'no-unreachable': 'error',
       'no-constant-condition': 'error',
       'no-empty': 'warn',
-      'no-unused-vars': 'warn', // Changed from error to warn
+      'no-unused-vars': 'off', // Disabled in favor of @typescript-eslint/no-unused-vars
       'no-extra-boolean-cast': 'error',
       'no-extra-semi': 'error',
       'no-func-assign': 'error',

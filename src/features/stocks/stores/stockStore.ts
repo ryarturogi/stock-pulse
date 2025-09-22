@@ -51,7 +51,7 @@ export const useStockStore = create<StockStoreState>()(
       refreshTimeInterval: '30s', // Default to 30 seconds for timely updates
       isLiveDataEnabled: true, // Default to live data enabled
       connectionAttempts: 0, // Track connection attempts for exponential backoff
-      lastConnectionAttempt: 0, // Track last connection attempt timestamp
+      // lastConnectionAttempt is optional and will be set when needed
 
       // Stock management actions
       addStock: (symbol: string, name: string, alertPrice: number) => {
@@ -228,15 +228,29 @@ export const useStockStore = create<StockStoreState>()(
             getWatchedStocks: () => get().watchedStocks,
             getState: () => {
               const state = get();
-              return {
+              const result: {
+                isLiveDataEnabled: boolean;
+                webSocketStatus: WebSocketStatus;
+                webSocketConnection: EventSource | null;
+                isConnecting: boolean;
+                connectionAttempts: number;
+                lastConnectionAttempt?: number;
+                watchedStocks: WatchedStock[];
+              } = {
                 isLiveDataEnabled: state.isLiveDataEnabled,
                 webSocketStatus: state.webSocketStatus,
                 webSocketConnection: state.webSocketConnection,
                 isConnecting: state.isConnecting,
                 connectionAttempts: state.connectionAttempts,
-                lastConnectionAttempt: state.lastConnectionAttempt,
                 watchedStocks: state.watchedStocks
               };
+              
+              // Only include lastConnectionAttempt if it has a value
+              if (state.lastConnectionAttempt !== undefined) {
+                result.lastConnectionAttempt = state.lastConnectionAttempt;
+              }
+              
+              return result;
             }
           });
         }
@@ -281,7 +295,6 @@ export const useStockStore = create<StockStoreState>()(
             connectionAttempts: 0,
             isConnecting: false,
             error: null,
-            lastConnectionAttempt: 0,
             isLiveDataEnabled: true
           });
           
@@ -424,7 +437,7 @@ export const useStockStore = create<StockStoreState>()(
         set({ webSocketStatus: status });
       },
 
-      setWebSocketConnection: (connection: any) => {
+      setWebSocketConnection: (connection: EventSource | null) => {
         set({ webSocketConnection: connection });
       },
 
@@ -450,7 +463,9 @@ export const useStockStore = create<StockStoreState>()(
           // Server-side rendering - use in-memory storage
           return {
             getItem: () => null,
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
             setItem: () => {},
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
             removeItem: () => {},
           };
         }
@@ -463,22 +478,25 @@ export const useStockStore = create<StockStoreState>()(
           console.warn('localStorage not available, using in-memory storage:', error);
           return {
             getItem: () => null,
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
             setItem: () => {},
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
             removeItem: () => {},
           };
         }
       }),
       version: 1, // Current version of the persisted state
-      migrate: (persistedState: any, version: number) => {
+      migrate: (persistedState: unknown, version: number) => {
         try {
           // Handle migration from older versions
           if (version === 0) {
             // If no version exists, this is a fresh install or old format
             // Return default state structure
+            const state = persistedState as Record<string, unknown> | null;
             return {
-              watchedStocks: persistedState?.watchedStocks || [],
-              refreshTimeInterval: persistedState?.refreshTimeInterval || '30s',
-              isLiveDataEnabled: persistedState?.isLiveDataEnabled ?? true,
+              watchedStocks: state?.watchedStocks || [],
+              refreshTimeInterval: state?.refreshTimeInterval || '30s',
+              isLiveDataEnabled: state?.isLiveDataEnabled ?? true,
             };
           }
           

@@ -11,7 +11,7 @@ import { useState, useMemo, useCallback } from 'react';
 
 export interface SearchState<T> {
   query: string;
-  setQuery: (query: string) => void;
+  setQuery: (_query: string) => void;
   clearQuery: () => void;
   filteredItems: T[];
   isSearching: boolean;
@@ -33,7 +33,7 @@ export interface SearchState<T> {
  */
 export const useSearch = <T>(
   items: T[],
-  filterFn: (item: T, query: string) => boolean,
+  filterFn: (_item: T, _query: string) => boolean,
   initialQuery: string = ''
 ): SearchState<T> => {
   const [query, setQuery] = useState(initialQuery);

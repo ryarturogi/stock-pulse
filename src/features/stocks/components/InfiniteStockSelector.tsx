@@ -8,6 +8,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+
 import { ChevronDown, Search, X, Loader2, AlertCircle } from 'lucide-react';
 
 import { StockOption } from '@/core/types';
@@ -309,6 +310,15 @@ export const InfiniteStockSelector: React.FC<InfiniteStockSelectorProps> = ({
             <div 
               className="cursor-pointer p-1"
               onClick={openDropdown}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openDropdown();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label="Open stock selector"
             >
               <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
                 isOpen ? 'transform rotate-180' : ''

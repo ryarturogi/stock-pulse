@@ -28,7 +28,7 @@ const DEFAULT_SYMBOLS: FinnhubSymbol[] = DEFAULT_STOCK_OPTIONS.map(stock => ({
   type: 'Common Stock'
 }));
 
-async function fetchWithRetry(url: string, options: Record<string, any>, maxRetries = 2): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2): Promise<Response> {
   let lastError: Error = new Error('Unknown error');
   
   for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {

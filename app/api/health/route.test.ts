@@ -230,6 +230,7 @@ describe('/api/health', () => {
 
     it('should handle external API timeout', async () => {
       // Mock fetch to never resolve (simulating timeout)
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       (fetch as jest.Mock).mockImplementation(() => new Promise(() => {}));
       
       // Mock AbortController to simulate timeout

@@ -155,7 +155,7 @@ export interface FormValidationOptions {
   minLength?: number;
   maxLength?: number;
   pattern?: RegExp;
-  customValidator?: (value: unknown) => ValidationResult;
+  customValidator?: (_value: unknown) => ValidationResult;
 }
 
 /**

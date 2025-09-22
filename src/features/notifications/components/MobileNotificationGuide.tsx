@@ -46,7 +46,7 @@ export function MobileNotificationGuide({
     const isIOS = /iphone|ipad|ipod/i.test(userAgent) && /safari/i.test(userAgent) && !/chrome/i.test(userAgent);
     const isAndroid = /android/i.test(userAgent) && /chrome/i.test(userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                        (window.navigator as any).standalone === true;
+                        (window.navigator as { standalone?: boolean }).standalone === true;
 
     let browserType = 'unknown';
     if (isIOS) browserType = 'iOS Safari';

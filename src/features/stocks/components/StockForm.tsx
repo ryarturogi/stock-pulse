@@ -81,7 +81,7 @@ export const StockForm: React.FC<StockFormProps> = ({
     } else {
       setAlertPrice('');
     }
-  }, [selectedStock, fetchCurrentPrice]);
+  }, [selectedStock, fetchCurrentPrice, setAlertPrice]);
 
 
   /**

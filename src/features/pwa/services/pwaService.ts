@@ -6,13 +6,14 @@
  * local storage, and offline functionality following the React Developer test requirements.
  */
 
-import type { 
-  LocalStorageData,
-  BackgroundSyncData,
-  WatchedStock
-} from '@/core/types';
-import { isWatchedStock, PWA_CONFIG } from '@/core/types';
 import { STORAGE_KEYS } from '@/core/constants/constants';
+import {
+  type LocalStorageData,
+  type BackgroundSyncData,
+  type WatchedStock,
+  isWatchedStock,
+  PWA_CONFIG
+} from '@/core/types';
 
 /**
  * PWA service class for managing background functionality
@@ -21,7 +22,7 @@ export class PWAService {
   private static instance: PWAService;
   private isOnline: boolean = typeof window !== 'undefined' ? navigator.onLine : true;
   private backgroundSyncInterval: NodeJS.Timeout | null = null;
-  private storageListeners: Map<string, (data: any) => void> = new Map();
+  private storageListeners: Map<string, (data: unknown) => void> = new Map();
 
   private constructor() {
     // Only setup on client side
@@ -200,7 +201,7 @@ export class PWAService {
     try {
       let used = 0;
       for (const key in localStorage) {
-        if (localStorage.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
           used += localStorage[key].length;
         }
       }
@@ -221,7 +222,7 @@ export class PWAService {
    */
   public isPWAInstalled(): boolean {
     return window.matchMedia('(display-mode: standalone)').matches ||
-           (window.navigator as any).standalone === true;
+           (window.navigator as { standalone?: boolean }).standalone === true;
   }
 
   /**
@@ -366,7 +367,7 @@ export class PWAService {
   /**
    * Add storage listener
    */
-  public addStorageListener(key: string, listener: (data: any) => void): void {
+  public addStorageListener(key: string, listener: (_data: unknown) => void): void {
     this.storageListeners.set(key, listener);
   }
 
@@ -380,11 +381,11 @@ export class PWAService {
   /**
    * Notify storage listeners
    */
-  private notifyStorageListeners(event: string, data: any): void {
+  private notifyStorageListeners(event: string, _data: unknown): void {
     this.storageListeners.forEach((listener, key) => {
       if (key === event) {
         try {
-          listener(data);
+          listener(_data);
         } catch (error) {
           console.error('Error in storage listener:', error);
         }

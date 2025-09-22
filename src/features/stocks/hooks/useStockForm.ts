@@ -21,11 +21,11 @@ export interface StockFormState {
     stock?: string;
     price?: string;
   };
-  setSelectedStock: (stock: string) => void;
-  setAlertPrice: (price: string) => void;
+  setSelectedStock: (_stock: string) => void;
+  setAlertPrice: (_price: string) => void;
   validateForm: () => boolean;
   resetForm: () => void;
-  fetchCurrentPrice: (symbol: string) => Promise<void>;
+  fetchCurrentPrice: (_symbol: string) => Promise<void>;
 }
 
 /**

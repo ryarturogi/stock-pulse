@@ -207,3 +207,44 @@ export interface Notification {
   read: boolean;
   actionUrl?: string;
 }
+
+/**
+ * Push notification subscription data structure
+ */
+export interface PushSubscriptionData {
+  subscription: PushSubscription;
+  userId?: string;
+  userAgent?: string;
+  deviceType?: string;
+  browserType?: string;
+  subscribedAt?: number;
+  lastUsed: number;
+  timestamp?: number;
+  createdAt: number;
+}
+
+/**
+ * Push notification payload structure
+ */
+export interface PushNotificationPayload {
+  title: string;
+  body: string;
+  icon?: string;
+  badge?: string;
+  data?: Record<string, unknown>;
+  tag?: string;
+  requireInteraction?: boolean;
+  actions?: Array<{
+    action: string;
+    title: string;
+    icon?: string;
+  }>;
+}
+
+/**
+ * Push notification request structure
+ */
+export interface PushNotificationRequest {
+  notification: PushNotificationPayload;
+  targetSubscriptionId?: string;
+}

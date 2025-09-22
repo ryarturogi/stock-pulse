@@ -98,7 +98,7 @@ export class PushNotificationService {
       
       // Check if running as PWA (standalone mode)
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                          (window.navigator as any).standalone === true;
+                          (window.navigator as { standalone?: boolean }).standalone === true;
       
       if (!isStandalone) {
         console.warn('iOS Safari requires PWA mode for push notifications');
@@ -188,7 +188,7 @@ export class PushNotificationService {
       // For iOS Safari, ensure we're in PWA mode
       if (this.browserType === 'ios-safari') {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                            (window.navigator as any).standalone === true;
+                            (window.navigator as { standalone?: boolean }).standalone === true;
         
         if (!isStandalone) {
           console.warn('iOS Safari requires PWA mode for push notifications');
@@ -355,7 +355,7 @@ export class PushNotificationService {
   } {
     const isStandalone = typeof window !== 'undefined' && (
       window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true
+      (window.navigator as { standalone?: boolean }).standalone === true
     );
 
     return {

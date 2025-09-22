@@ -6,11 +6,9 @@
  * and price alerts following the React Developer test requirements.
  */
 
-import type { 
-  PriceAlertNotification,
-  WatchedStock
-} from '@/core/types';
 import { 
+  type PriceAlertNotification,
+  type WatchedStock,
   isWatchedStock
 } from '@/core/types';
 

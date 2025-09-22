@@ -121,12 +121,7 @@ export const StockChart: React.FC<StockChartProps> = ({
 
       return dataPoint;
     });
-  }, [
-    stocksWithData, 
-    stocksWithData.map(s => s.priceHistory?.length || 0).join(','), 
-    stocksWithData.map(s => s.lastUpdated || 0).join(','),
-    stocksWithData.map(s => s.currentPrice || 0).join(',') // Track current price changes
-  ]);
+  }, [stocksWithData]);
 
 
 

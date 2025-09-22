@@ -8,15 +8,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ApiError } from '@/core/types';
+import { ApiError, PushSubscriptionData, PushNotificationRequest, PushNotificationPayload } from '@/core/types';
 
 // In-memory storage for subscriptions (in production, use a database)
-const subscriptions: Map<string, any> = new Map();
+const subscriptions: Map<string, PushSubscriptionData> = new Map();
 
 /**
  * Send push notification using fetch API (no VAPID)
  */
-async function sendPushNotification(subscription: any, payload: string): Promise<boolean> {
+async function sendPushNotification(subscription: PushSubscription, payload: string): Promise<boolean> {
   try {
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<{
   message: string 
 } | ApiError>> {
   try {
-    const body = await request.json();
+    const body = await request.json() as PushNotificationRequest;
     const { notification, targetSubscriptionId } = body;
 
     // Validate notification data
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<{
     const errors: string[] = [];
 
     // Prepare notification payload
-    const payload = JSON.stringify({
+    const payloadData: PushNotificationPayload = {
       title: notification.title,
       body: notification.body,
       icon: notification.icon || '/icons/icon-192x192.svg',
@@ -83,11 +83,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<{
           icon: '/icons/action-close.svg'
         }
       ],
-    });
+    };
+    const payload = JSON.stringify(payloadData);
 
     // Send to specific subscription or all subscriptions
     const subscriptionsToNotify = targetSubscriptionId 
-      ? [subscriptions.get(targetSubscriptionId)].filter(Boolean)
+      ? [subscriptions.get(targetSubscriptionId)].filter((sub): sub is PushSubscriptionData => sub !== undefined)
       : Array.from(subscriptions.values());
 
     for (const subscriptionData of subscriptionsToNotify) {
@@ -159,7 +160,7 @@ export async function GET(): Promise<NextResponse<{
   message: string 
 } | ApiError>> {
   try {
-    const testNotification = {
+    const testNotification: PushNotificationPayload = {
       title: 'StockPulse Test',
       body: 'This is a test push notification',
       icon: '/icons/icon-192x192.svg',

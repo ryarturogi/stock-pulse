@@ -7,10 +7,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ApiError } from '@/core/types';
+import { ApiError, PushSubscriptionData } from '@/core/types';
 
 // In-memory storage for subscriptions (in production, use a database)
-const subscriptions: Map<string, any> = new Map();
+const subscriptions: Map<string, PushSubscriptionData> = new Map();
 
 /**
  * POST /api/push/unsubscribe

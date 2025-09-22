@@ -15,7 +15,7 @@ import { StockOption } from '@/core/types';
 import { stockService } from '@/features/stocks/services';
 
 interface StockSearchProps {
-  onSelectStock: (symbol: string, alertPrice: number, stockName?: string) => void;
+  onSelectStock: (_symbol: string, _alertPrice: number, _stockName?: string) => void;
   watchedStocks?: { symbol: string }[];
   className?: string;
 }
@@ -198,6 +198,15 @@ export const StockSearch: React.FC<StockSearchProps> = ({
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
               onClick={() => handleSelectStock(stock)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelectStock(stock);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Select ${stock.symbol} - ${stock.name}`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
@@ -239,6 +248,15 @@ export const StockSearch: React.FC<StockSearchProps> = ({
             setIsExpanded(false);
             setSelectedIndex(-1);
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setIsExpanded(false);
+              setSelectedIndex(-1);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close search results"
         />
       )}
     </div>

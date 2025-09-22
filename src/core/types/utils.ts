@@ -66,7 +66,7 @@ export type AtLeastOne<T> = {
  */
 export type ExactlyOne<T> = {
   [K in keyof T]: Pick<T, K> & {
-    [P in Exclude<keyof T, K>]?: never;
+    [_P in Exclude<keyof T, K>]?: never;
   };
 }[keyof T];
 
@@ -77,8 +77,8 @@ export type ExactlyOne<T> = {
 /**
  * Extracts return type from async function
  */
-export type AsyncReturnType<T extends (...args: any) => Promise<any>> = T extends (
-  ...args: any
+export type AsyncReturnType<T extends (..._args: unknown[]) => Promise<unknown>> = T extends (
+  ..._args: unknown[]
 ) => Promise<infer R>
   ? R
   : never;
@@ -86,32 +86,32 @@ export type AsyncReturnType<T extends (...args: any) => Promise<any>> = T extend
 /**
  * Creates a type-safe event handler
  */
-export type EventHandler<T = Event> = (event: T) => void;
+export type EventHandler<T = Event> = (_event: T) => void;
 
 /**
  * Creates a type-safe async event handler
  */
-export type AsyncEventHandler<T = Event> = (event: T) => Promise<void>;
+export type AsyncEventHandler<T = Event> = (_event: T) => Promise<void>;
 
 /**
  * Extracts parameters from a function type
  */
-export type Parameters<T extends (...args: any) => any> = T extends (
-  ...args: infer P
-) => any
+export type Parameters<T extends (..._args: unknown[]) => unknown> = T extends (
+  ..._args: infer P
+) => unknown
   ? P
   : never;
 
 /**
  * Creates a function type with specific parameters and return type
  */
-export type Fn<P extends readonly unknown[] = [], R = void> = (...args: P) => R;
+export type Fn<P extends readonly unknown[] = [], R = void> = (..._args: P) => R;
 
 /**
  * Creates an async function type with specific parameters and return type
  */
 export type AsyncFn<P extends readonly unknown[] = [], R = void> = (
-  ...args: P
+  ..._args: P
 ) => Promise<R>;
 
 // ============================================================================
@@ -187,7 +187,7 @@ export type FieldState<T = string> = {
 /**
  * Form state for all fields
  */
-export type FormState<T extends Record<string, any>> = {
+export type FormState<T extends Record<string, unknown>> = {
   [K in keyof T]: FieldState<T[K]>;
 };
 
@@ -202,7 +202,7 @@ export type ValidationResult = {
 /**
  * Form submit handler
  */
-export type FormSubmitHandler<T> = (values: T) => Promise<void> | void;
+export type FormSubmitHandler<T> = (_values: T) => Promise<void> | void;
 
 // ============================================================================
 // COMPONENT UTILITY TYPES
@@ -279,14 +279,14 @@ export type AsyncState<T = unknown, E = Error> = {
 /**
  * Action creator type
  */
-export type ActionCreator<T = any> = (...args: any[]) => T;
+export type ActionCreator<T = unknown> = (..._args: unknown[]) => T;
 
 /**
  * Store state type
  */
 export type StoreState<T> = T & {
   reset: () => void;
-  setState: (partial: Partial<T>) => void;
+  setState: (_partial: Partial<T>) => void;
 };
 
 // ============================================================================
