@@ -89,6 +89,12 @@ StockPulse Specific Patterns:
 - Use REFRESH_INTERVALS for connection timing
 - Use getNotificationService() for push notifications
 - Follow feature-based structure: features/stocks/, features/notifications/, features/pwa/
+- Use InfiniteStockSelector for stock selection with infinite loading
+- Use StockSearch for comprehensive stock search functionality
+- Implement keyboard navigation and accessibility in all selectors
+- Use intersection observer for infinite loading patterns
+- Implement proper loading states with skeleton components
+- Use debounced search with 300ms delay for API calls
 
 Testing Requirements:
 - Use jest.config.cjs configuration

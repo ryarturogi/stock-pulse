@@ -56,6 +56,8 @@ file-structure:
   app-directory: "app/"
   core-types: "src/core/types/"
   core-constants: "src/core/constants/"
+  core-middleware: "src/core/middleware/"
+  core-utils: "src/core/utils/"
   features: "src/features/"
   shared-components: "src/shared/components/"
   shared-hooks: "src/shared/hooks/"
@@ -67,10 +69,13 @@ file-structure:
 architecture:
   pattern: "feature-based"
   state: "zustand-with-persistence"
-  api: "finnhub-integration"
+  api: "finnhub-integration-with-middleware"
   websocket: "eventsource-proxy"
   pwa: "next-pwa-workbox"
   testing: "jest-rtl-playwright"
+  middleware: "api-middleware-with-cors-rate-limiting"
+  components: "enhanced-ui-with-infinite-loading"
+  services: "request-deduplication-and-caching"
 
 # Development Prompts
 prompts:
@@ -105,6 +110,9 @@ prompts:
   - "Use NodeJS.Timeout | number | null for timer references."
   - "Use ApiResponse<T> from @/core/types for consistent API responses."
   - "Follow TypeScript strict mode with noImplicitOverride: true."
+  - "Use ApiHandler and MiddlewareConfig from @/core/middleware for API routes."
+  - "Use validation utilities from @/core/utils/validation for input validation."
+  - "Use pagination utilities from @/core/utils/pagination for list endpoints."
   
   # Component Guidelines
   - "Prefer small, focused, single-responsibility components."
@@ -120,6 +128,14 @@ prompts:
   - "Use localStorage persistence with fallback for SSR compatibility."
   - "Use WebSocket connections with exponential backoff reconnection."
   - "Prefer local state (useState) for simple component state."
+  
+  # New Component Patterns (Post-Refactor)
+  - "Use InfiniteStockSelector for stock selection with infinite loading."
+  - "Use StockSearch for comprehensive stock search functionality."
+  - "Implement keyboard navigation and accessibility in all selectors."
+  - "Use intersection observer for infinite loading patterns."
+  - "Implement proper loading states with skeleton components."
+  - "Use debounced search with 300ms delay for API calls."
   
   # Performance
   - "Use Next.js Image component for all images."
@@ -150,13 +166,19 @@ prompts:
   - "Use Content Security Policy headers."
   
   # StockPulse API Routes (Finnhub Integration)
-  - "Follow existing patterns from /api/quote and /api/health routes."
+  - "Follow existing patterns from /api/quote, /api/stock-symbols, and /api/symbol-search routes."
+  - "Use withApiMiddleware() for all API routes with appropriate configuration."
+  - "Use withReadOnlyMiddleware() for GET-only endpoints."
+  - "Use withValidatedMiddleware() for POST/PUT endpoints with validation."
+  - "Use withRateLimitedMiddleware() for public endpoints."
   - "Use AbortSignal.timeout(10000) for external API calls."
-  - "Handle Finnhub API rate limiting gracefully."
+  - "Handle Finnhub API rate limiting gracefully with retry logic."
   - "Use proper CORS headers for WebSocket proxy routes."
   - "Validate stock symbols with regex patterns."
   - "Use ApiResponse<T> from @/core/types for consistent responses."
   - "Support stock symbol validation and sanitization."
+  - "Implement fallback mechanisms for API failures."
+  - "Use pagination utilities for list endpoints."
   
   # Deployment (Vercel)
   - "Configure proper caching strategies."
@@ -180,6 +202,9 @@ imports:
     - "next/*"
     - "external-libraries"
     - "@/core/types" (ALWAYS FIRST - contains all type definitions)
+    - "@/core/middleware" (for API middleware)
+    - "@/core/utils" (for shared utilities)
+    - "@/core/constants" (for constants)
     - "@/features/*"
     - "@/shared/*"
     - "./relative-imports"
@@ -195,6 +220,10 @@ stockpulse-patterns:
   error-handling: "ErrorBoundary wrapper with graceful fallbacks"
   loading-states: "Skeleton components for better UX"
   real-time: "WebSocket for live data, periodic refresh as fallback"
+  api-middleware: "export const GET = withReadOnlyMiddleware(async (req) => { ... });"
+  infinite-loading: "useIntersectionObserver with loadMore trigger"
+  stock-search: "debounced search with 300ms delay and API fallback"
+  request-deduplication: "Map-based cache with 2-second timeout"
 
 # Environment Variables (StockPulse)
 env-vars:
@@ -221,3 +250,9 @@ recent-fixes:
   - "Improved loading states with skeleton components"
   - "Fixed Jest configuration for ES modules compatibility"
   - "Added proper TypeScript override modifiers"
+  - "Added comprehensive API middleware with CORS and rate limiting"
+  - "Implemented infinite loading stock selector with search"
+  - "Enhanced stock service with batch processing and caching"
+  - "Added new API endpoints for stock symbols and search"
+  - "Improved type system with better validation and type guards"
+  - "Added shared utilities for API responses and pagination"

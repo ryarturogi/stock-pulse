@@ -26,8 +26,11 @@ Deliverables:
 Template Structure:
 
 ```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import { ApiResponse, isString, isNumber } from '@/core/types';
+import { NextRequest } from 'next/server';
+import { withReadOnlyMiddleware, withValidatedMiddleware, withRateLimitedMiddleware } from '@/core/middleware/api';
+import { createSuccessResponse, createErrorResponse, handleApiError, validateRequiredParam } from '@/core/utils/apiResponse';
+import { parsePaginationParams, paginateArray } from '@/core/utils/pagination';
+import { isString, isNumber } from '@/core/types';
 
 // Define request/response types using utility types
 interface GetRequestParams {
@@ -52,23 +55,15 @@ interface RouteResponseData {
  * @param request - The incoming request
  * @returns Response with data or error
  */
-export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<RouteResponseData> | ApiError>> {
+export const GET = withReadOnlyMiddleware(async (request: NextRequest) => {
   try {
     // Extract query parameters with type validation
     const { searchParams } = new URL(request.url);
     
-    // Validate input using type guards
+    // Validate required parameters
     const param = searchParams.get('param');
-    if (!isDefined(param) || !isString(param)) {
-      return NextResponse.json<ApiError>(
-        {
-          success: false,
-          error: 'Invalid or missing parameter',
-          timestamp: new Date().toISOString(),
-        },
-        { status: 400 }
-      );
-    }
+    const paramError = validateRequiredParam(param, 'param');
+    if (paramError) return paramError;
     
     // Process request
     // TODO: Add business logic
@@ -77,79 +72,37 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       // TODO: Add response data
     };
     
-    return NextResponse.json<ApiResponse<RouteResponseData>>(
-      {
-        success: true,
-        data: responseData,
-        timestamp: new Date().toISOString(),
-      },
-      { status: 200 }
-    );
+    return createSuccessResponse(responseData, 'Data retrieved successfully');
   } catch (error) {
-    console.error('GET /<route>:', error);
-    return NextResponse.json<ApiError>(
-      {
-        success: false,
-        error: 'Internal server error',
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'API endpoint name');
   }
-}
+});
 
 /**
  * Handle POST requests
  * @param request - The incoming request
  * @returns Response with created data or error
  */
-export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<RouteResponseData> | ApiError>> {
-  try {
-    // Parse request body with type validation
-    const body = await request.json() as unknown;
-    
-    // Validate input using type guards and utility types
-    if (!isDefined(body) || typeof body !== 'object') {
-      return NextResponse.json<ApiError>(
-        {
-          success: false,
-          error: 'Invalid request body',
-          timestamp: new Date().toISOString(),
-        },
-        { status: 400 }
-      );
+export const POST = withValidatedMiddleware(
+  async (request: NextRequest) => {
+    try {
+      // Parse request body with type validation
+      const body = await request.json() as PostRequestBody;
+      
+      // Process request
+      // TODO: Add business logic
+      
+      const responseData: RouteResponseData = {
+        // TODO: Add response data
+      };
+      
+      return createSuccessResponse(responseData, 'Created successfully');
+    } catch (error) {
+      return handleApiError(error, 'API endpoint name');
     }
-    
-    // TODO: Add more specific validation for PostRequestBody
-    
-    // Process request
-    // TODO: Add business logic
-    
-    const responseData: RouteResponseData = {
-      // TODO: Add response data
-    };
-    
-    return NextResponse.json<ApiResponse<RouteResponseData>>(
-      {
-        success: true,
-        data: responseData,
-        message: 'Created successfully',
-        timestamp: new Date().toISOString(),
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error('POST /<route>:', error);
-    return NextResponse.json<ApiError>(
-      {
-        success: false,
-        error: 'Internal server error',
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  ['requiredField1', 'requiredField2'] // Required fields for validation
+);
 ```
 
 Security Considerations:
@@ -168,13 +121,18 @@ Error Handling:
 - Handle edge cases and validation failures
 
 StockPulse Specific Requirements:
-- Use ApiResponse<T> from '@/core/types' for consistent API responses
+- Use withApiMiddleware() wrappers for all API routes
+- Use createSuccessResponse() and createErrorResponse() for consistent responses
+- Use handleApiError() for centralized error handling
+- Use validateRequiredParam() for parameter validation
+- Use parsePaginationParams() and paginateArray() for list endpoints
 - Use type guards (isString, isNumber, isFinnhubStockQuote, etc.) for input validation
-- Handle Finnhub API integration patterns
+- Handle Finnhub API integration patterns with retry logic
 - Use AbortSignal.timeout() for external API calls (10s timeout)
-- Follow existing error handling patterns from /api/quote and /api/health
+- Follow existing patterns from /api/quote, /api/stock-symbols, and /api/symbol-search
 - Support stock symbol validation with regex patterns
 - Handle rate limiting gracefully for Finnhub API
+- Implement fallback mechanisms for API failures
 - Use proper CORS headers for WebSocket proxy routes
 
 Available Types from @/core/types:
