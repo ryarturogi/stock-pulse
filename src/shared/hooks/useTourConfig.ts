@@ -101,7 +101,7 @@ export const getDesktopTourSteps = (): TourStep[] => [
         <p class="text-sm opacity-75">Cards show green for gains, red for losses, and include percentage changes and absolute price movements.</p>
       </div>
     `,
-    position: 'auto',
+    position: 'bottom',
     highlightClass: 'tour-highlight-dashboard',
   },
   {
@@ -133,7 +133,7 @@ export const getDesktopTourSteps = (): TourStep[] => [
         <p class="font-medium">Happy investing! 📈</p>
       </div>
     `,
-    position: 'auto',
+    position: 'bottom',
     highlightClass: 'tour-highlight-final',
     tooltipClass: 'tour-tooltip-final',
   },
@@ -225,7 +225,7 @@ export const getMobileTourSteps = (): TourStep[] => [
         <p class="font-medium">Happy mobile trading! 📱📈</p>
       </div>
     `,
-    position: 'auto',
+    position: 'bottom',
     highlightClass: 'tour-highlight-final',
     tooltipClass: 'tour-tooltip-final',
   },

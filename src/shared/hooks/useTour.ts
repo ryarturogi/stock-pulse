@@ -6,7 +6,7 @@ export interface TourStep {
   element: string;
   intro: string;
   title?: string;
-  position?: 'top' | 'bottom' | 'left' | 'right' | 'bottom-left-aligned' | 'bottom-middle-aligned' | 'bottom-right-aligned' | 'auto';
+  position?: 'top' | 'bottom' | 'left' | 'right' | 'bottom-left-aligned' | 'bottom-middle-aligned' | 'bottom-right-aligned';
   highlightClass?: string;
   tooltipClass?: string;
 }
@@ -55,7 +55,7 @@ export const useTour = () => {
             element: step.element,
             intro: step.intro,
             title: step.title || '',
-            position: step.position || 'auto',
+            position: step.position || 'bottom',
             highlightClass: step.highlightClass || '',
             tooltipClass: step.tooltipClass || '',
           })),
