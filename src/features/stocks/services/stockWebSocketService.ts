@@ -90,12 +90,12 @@ export class StockWebSocketService {
     }
 
     // If we've had too many connection attempts, disable WebSocket temporarily
-    const maxConnectionAttempts = 5;
+    const maxConnectionAttempts = 10; // Increased from 5 to 10
     if (state.connectionAttempts >= maxConnectionAttempts) {
-      console.log('🚫 EMERGENCY: Too many connection attempts, disabling WebSocket and using API only');
+      console.log('🚫 Too many connection attempts, switching to API-only mode');
       this.callbacks.onStatusChange('error');
       this.callbacks.onConnectingChange(false);
-      this.callbacks.onErrorChange('WebSocket disabled due to repeated failures - using API fallback');
+      this.callbacks.onErrorChange('Real-time connection unavailable - using periodic updates');
       this.callbacks.onConnectionChange(null);
       this.callbacks.onDisableLiveData(); // Disable live data to prevent further attempts
       return;
@@ -246,15 +246,19 @@ export class StockWebSocketService {
           return;
         }
         
+        // Don't show error messages for temporary connection issues
+        // Just log them and continue with periodic refresh
+        console.log('⚠️ WebSocket connection issue, continuing with periodic refresh');
+        
         // Check EventSource readyState for more specific error info
         const readyStateText = eventSource.readyState === 0 ? 'CONNECTING' : 
                               eventSource.readyState === 1 ? 'OPEN' : 'CLOSED';
         console.log(`EventSource readyState: ${readyStateText} (${eventSource.readyState})`);
         
-        // Determine error message based on likely causes
-        let errorMessage = `WebSocket proxy connection failed (${readyStateText})`;
+        // Determine error message based on likely causes - use user-friendly messages
+        let errorMessage = 'Connection temporarily unavailable';
         if (readyStateText === 'CLOSED') {
-          errorMessage = 'WebSocket proxy disconnected - likely rate limited or cooldown active';
+          errorMessage = 'Real-time connection paused - using periodic updates';
         }
         
         this.callbacks.onStatusChange('error');
@@ -272,12 +276,12 @@ export class StockWebSocketService {
         const reconnectState = this.callbacks.getState();
         
         // Increase backoff for repeated failures and limit max attempts
-        const maxReconnectAttempts = 3; // Reduced from 5 to prevent excessive retries
+        const maxReconnectAttempts = 5; // Increased back to 5 for better reliability
         if (reconnectState.connectionAttempts >= maxReconnectAttempts) {
           console.log('🚫 Max WebSocket reconnection attempts reached, switching to API-only mode');
           this.callbacks.onStatusChange('error');
           this.callbacks.onConnectingChange(false);
-          this.callbacks.onErrorChange('WebSocket unavailable - using API polling instead');
+          this.callbacks.onErrorChange('Real-time connection unavailable - using periodic updates');
           this.callbacks.onDisableLiveData(); // Disable to prevent further connection attempts
           return;
         }
