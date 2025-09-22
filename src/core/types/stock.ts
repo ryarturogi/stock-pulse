@@ -149,7 +149,7 @@ export interface TradeData {
  */
 export interface StockFormProps extends ComponentProps {
   availableStocks: StockOption[];
-  onAddStock: (symbol: string, alertPrice: number) => void;
+  onAddStock: (symbol: string, alertPrice: number, stockName?: string) => void;
   watchedStocks?: WatchedStock[];
   isLoading?: boolean;
 }
@@ -213,6 +213,7 @@ export interface StockStoreState {
   
   // Connection management
   connectionAttempts: number;
+  lastConnectionAttempt?: number;
   
   // UI state
   isLoading: boolean;
@@ -233,6 +234,7 @@ export interface StockStoreState {
   // WebSocket actions
   connectWebSocket: () => void;
   disconnectWebSocket: () => void;
+  resetWebSocketState: () => void;
   
   // Periodic refresh actions
   startPeriodicRefresh: () => void;
@@ -346,14 +348,33 @@ export type MarketStatus = 'open' | 'closed' | 'pre-market' | 'after-hours';
  * Type guard for FinnhubStockQuote
  */
 export const isFinnhubStockQuote = (value: unknown): value is FinnhubStockQuote => {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as FinnhubStockQuote).symbol === 'string' &&
-    typeof (value as FinnhubStockQuote).current === 'number' &&
-    typeof (value as FinnhubStockQuote).change === 'number' &&
-    typeof (value as FinnhubStockQuote).percentChange === 'number'
-  );
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  
+  const quote = value as FinnhubStockQuote;
+  
+  // Check required fields exist and have valid values
+  const hasSymbol = typeof quote.symbol === 'string' && quote.symbol.length > 0;
+  const hasCurrent = typeof quote.current === 'number' && !isNaN(quote.current) && quote.current >= 0;
+  const hasChange = typeof quote.change === 'number' && !isNaN(quote.change);
+  const hasPercentChange = typeof quote.percentChange === 'number' && !isNaN(quote.percentChange);
+  
+  // For debugging: log validation details
+  if (!hasSymbol || !hasCurrent || !hasChange || !hasPercentChange) {
+    console.debug('Quote validation failed:', {
+      hasSymbol,
+      hasCurrent,
+      hasChange,
+      hasPercentChange,
+      symbol: quote.symbol,
+      current: quote.current,
+      change: quote.change,
+      percentChange: quote.percentChange
+    });
+  }
+  
+  return hasSymbol && hasCurrent && hasChange && hasPercentChange;
 };
 
 /**
@@ -387,33 +408,7 @@ export const isTradeData = (value: unknown): value is TradeData => {
 // CONSTANTS
 // ============================================================================
 
-/**
- * Default stock options for the test
- */
-export const DEFAULT_STOCK_OPTIONS: StockOption[] = [
-  { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ' },
-  { symbol: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ' },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.', exchange: 'NASDAQ' },
-  { symbol: 'TSLA', name: 'Tesla Inc.', exchange: 'NASDAQ' },
-  { symbol: 'META', name: 'Meta Platforms Inc.', exchange: 'NASDAQ' },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ' },
-  { symbol: 'NFLX', name: 'Netflix Inc.', exchange: 'NASDAQ' },
-];
-
-/**
- * Stock color mapping for charts
- */
-export const STOCK_COLORS: StockColorMap = {
-  AAPL: '#2563eb',  // blue-600 (Apple brand blue)
-  GOOGL: '#ea4335', // Google brand red
-  MSFT: '#16a34a',  // green-600
-  AMZN: '#ff9900',  // Amazon orange
-  TSLA: '#dc2626',  // red-600
-  META: '#1877f2',  // Meta brand blue
-  NVDA: '#76b900',  // NVIDIA green
-  NFLX: '#e50914',  // Netflix red
-};
+// DEFAULT_STOCK_OPTIONS and STOCK_COLORS moved to @/core/constants
 
 /**
  * WebSocket configuration
@@ -425,14 +420,7 @@ export const WEBSOCKET_CONFIG = {
   SUBSCRIPTION_LIMIT: 50,
 } as const;
 
-/**
- * Local storage keys
- */
-export const STORAGE_KEYS = {
-  WATCHED_STOCKS: 'stockpulse_watched_stocks',
-  LAST_SYNC: 'stockpulse_last_sync',
-  VERSION: 'stockpulse_version',
-} as const;
+// STORAGE_KEYS moved to @/core/constants
 
 /**
  * PWA configuration

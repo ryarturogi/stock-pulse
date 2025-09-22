@@ -123,16 +123,7 @@ export interface NewsArticle {
   imageUrl?: string;
 }
 
-/**
- * API response wrapper (uses utility type from utils.ts)
- * @deprecated Use ApiResponse from utils.ts instead
- */
-export interface LegacyApiResponse<T> {
-  data: T;
-  success: boolean;
-  message?: string;
-  error?: string;
-}
+// LegacyApiResponse removed - use ApiResponse from @/core/types/utils instead
 
 /**
  * Pagination structure

@@ -42,15 +42,20 @@ export const ROUTES = {
 } as const;
 
 /**
- * Local storage keys
+ * Local storage keys (consolidated from multiple files)
  */
 export const STORAGE_KEYS = {
   USER_PREFERENCES: 'stockpulse_user_preferences',
   PORTFOLIO_DATA: 'stockpulse_portfolio_data',
-  WATCHLIST_DATA: 'stockpulse_watchlist_data',
+  WATCHLIST_DATA: 'stockpulse_watchlist_data', 
+  WATCHED_STOCKS: 'stockpulse_watched_stocks',
   THEME: 'stockpulse_theme',
   AUTH_TOKEN: 'stockpulse_auth_token',
   REFRESH_TOKEN: 'stockpulse_refresh_token',
+  LAST_SYNC: 'stockpulse_last_sync',
+  VERSION: 'stockpulse_version',
+  NOTIFICATIONS: 'stockpulse_notifications',
+  SIDEBAR_STATE: 'stockpulse_sidebar_state',
 } as const;
 
 /**
@@ -138,19 +143,40 @@ export const EXCHANGES = {
 } as const;
 
 /**
- * Common stock symbols for quick access
+ * Default stock options (consolidated from multiple files)
+ */
+export const DEFAULT_STOCK_OPTIONS = [
+  { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ' },
+  { symbol: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ' },
+  { symbol: 'AMZN', name: 'Amazon.com Inc.', exchange: 'NASDAQ' },
+  { symbol: 'TSLA', name: 'Tesla Inc.', exchange: 'NASDAQ' },
+  { symbol: 'META', name: 'Meta Platforms Inc.', exchange: 'NASDAQ' },
+  { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ' },
+  { symbol: 'NFLX', name: 'Netflix Inc.', exchange: 'NASDAQ' },
+];
+
+/**
+ * Stock color mapping for charts
+ */
+export const STOCK_COLORS: Record<string, string> = {
+  AAPL: '#2563eb',  // blue-600 (Apple brand blue)
+  GOOGL: '#ea4335', // Google brand red
+  MSFT: '#16a34a',  // green-600
+  AMZN: '#ff9900',  // Amazon orange
+  TSLA: '#dc2626',  // red-600
+  META: '#1877f2',  // Meta brand blue
+  NVDA: '#76b900',  // NVIDIA green
+  NFLX: '#e50914',  // Netflix red
+};
+
+/**
+ * Extended popular stocks for search/display
  */
 export const POPULAR_STOCKS = [
-  { symbol: 'AAPL', name: 'Apple Inc.' },
-  { symbol: 'MSFT', name: 'Microsoft Corporation' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.' },
-  { symbol: 'TSLA', name: 'Tesla Inc.' },
-  { symbol: 'META', name: 'Meta Platforms Inc.' },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation' },
-  { symbol: 'NFLX', name: 'Netflix Inc.' },
-  { symbol: 'AMD', name: 'Advanced Micro Devices' },
-  { symbol: 'CRM', name: 'Salesforce Inc.' },
+  ...DEFAULT_STOCK_OPTIONS,
+  { symbol: 'AMD', name: 'Advanced Micro Devices', exchange: 'NASDAQ' },
+  { symbol: 'CRM', name: 'Salesforce Inc.', exchange: 'NYSE' },
 ] as const;
 
 /**
