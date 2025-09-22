@@ -9,8 +9,10 @@
 import { 
   type PriceAlertNotification,
   type WatchedStock,
+  type NotificationPermissionType,
   isWatchedStock
 } from '@/core/types';
+import { useNotificationStore } from '../stores/notificationStore';
 
 /**
  * Notification service class for managing price alerts
@@ -18,13 +20,11 @@ import {
 export class NotificationService {
   private static instance: NotificationService;
   private isSupported: boolean = false;
-  private permission: NotificationPermission = 'default';
   private serviceWorkerRegistration: ServiceWorkerRegistration | null = null;
   private alertHistory: Map<string, number> = new Map(); // Track last alert time per stock
 
   private constructor() {
     this.checkSupport();
-    this.requestPermission();
   }
 
   /**
@@ -48,24 +48,33 @@ export class NotificationService {
   /**
    * Request notification permission
    */
-  public async requestPermission(): Promise<NotificationPermission> {
+  public async requestPermission(): Promise<NotificationPermissionType> {
     if (!this.isSupported) {
       console.warn('Notifications not supported');
       return 'denied';
     }
 
     try {
-      this.permission = await Notification.requestPermission();
-      console.log('Notification permission:', this.permission);
+      const permission = await Notification.requestPermission() as NotificationPermissionType;
+      console.log('Notification permission:', permission);
       
-      if (this.permission === 'granted') {
+      // Update the store with the new permission
+      const store = useNotificationStore.getState();
+      store.setPermission(permission);
+      
+      if (permission === 'granted') {
         await this.registerServiceWorker();
+        store.setEnabled(true);
+      } else if (permission === 'denied') {
+        store.setEnabled(false);
       }
       
-      return this.permission;
+      return permission;
     } catch (error) {
       console.error('Failed to request notification permission:', error);
-      this.permission = 'denied';
+      const store = useNotificationStore.getState();
+      store.setPermission('denied');
+      store.setEnabled(false);
       return 'denied';
     }
   }
@@ -137,7 +146,16 @@ export class NotificationService {
    * Check if notifications are enabled
    */
   public isEnabled(): boolean {
-    return this.isSupported && this.permission === 'granted';
+    const store = useNotificationStore.getState();
+    return this.isSupported && store.permission === 'granted' && store.isEnabled;
+  }
+
+  /**
+   * Get current permission status
+   */
+  public getPermissionStatus(): NotificationPermissionType {
+    const store = useNotificationStore.getState();
+    return store.permission;
   }
 
   /**
@@ -174,6 +192,16 @@ export class NotificationService {
     this.showNotification(notification).catch(error => {
       console.error('Failed to show price alert notification:', error);
     });
+    
+    // Add notification to store history
+    const store = useNotificationStore.getState();
+    store.addNotification({
+      type: 'info',
+      title: notification.title,
+      message: notification.body,
+      actionUrl: `/stock/${stock.symbol}`,
+    });
+    
     this.alertHistory.set(stock.symbol, now);
   }
 
@@ -330,17 +358,11 @@ export class NotificationService {
   }
 
   /**
-   * Get notification permission status
-   */
-  public getPermissionStatus(): NotificationPermission {
-    return this.permission;
-  }
-
-  /**
    * Check if we can request permission
    */
   public canRequestPermission(): boolean {
-    return this.isSupported && this.permission === 'default';
+    const store = useNotificationStore.getState();
+    return this.isSupported && store.permission === 'default';
   }
 
   /**
