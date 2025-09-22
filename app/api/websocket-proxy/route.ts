@@ -1,8 +1,17 @@
 import { NextRequest } from 'next/server';
 
 // Global connection pool to prevent duplicate connections
-const activeConnections = new Map<string, any>();
+const activeConnections = new Map<string, { webSocket: WebSocket | null; symbols: string[] }>();
 const connectionCooldowns = new Map<string, number>();
+const circuitBreaker = new Map<string, { failures: number; lastFailure: number; state: 'closed' | 'open' | 'half-open' }>();
+
+// Emergency rate limiting - much more aggressive
+const globalRateLimit = { 
+  lastAttempt: 0, 
+  attempts: 0,
+  blocked: false,
+  blockUntil: 0
+};
 
 export async function GET(request: NextRequest) {
   console.log('🔌 WebSocket proxy endpoint called');
@@ -15,18 +24,127 @@ export async function GET(request: NextRequest) {
   // Create a connection key based on symbols to prevent duplicates
   const connectionKey = symbols || 'default';
   
+  // EMERGENCY: Ultra-aggressive rate limiting
+  const now = Date.now();
+  
+  // If we're in a global block period, reject all connections
+  if (globalRateLimit.blocked && now < globalRateLimit.blockUntil) {
+    const remainingTime = Math.ceil((globalRateLimit.blockUntil - now) / 1000);
+    console.log(`🚫 EMERGENCY BLOCK: All connections blocked for ${remainingTime}s`);
+    return new Response(JSON.stringify({
+      type: 'error',
+      message: `Emergency rate limit block active. Try again in ${remainingTime} seconds.`,
+      code: 'EMERGENCY_BLOCK',
+      remainingTime: remainingTime
+    }), { 
+      status: 429,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
+  }
+  
+  // Reset block if time has passed
+  if (globalRateLimit.blocked && now >= globalRateLimit.blockUntil) {
+    globalRateLimit.blocked = false;
+    globalRateLimit.attempts = 0;
+    console.log('🔄 Emergency block period ended, resetting rate limiter');
+  }
+  
+  // Reset attempt counter if more than 5 minutes have passed since last attempt
+  if (now - globalRateLimit.lastAttempt > 5 * 60 * 1000) {
+    globalRateLimit.attempts = 0;
+    console.log('🔄 Resetting rate limit counter due to time gap');
+  }
+  
+  // Track attempts and block if too many
+  globalRateLimit.attempts++;
+  globalRateLimit.lastAttempt = now;
+  
+  // If more than 10 attempts in the last 5 minutes, block for 2 minutes
+  if (globalRateLimit.attempts > 10) {
+    globalRateLimit.blocked = true;
+    globalRateLimit.blockUntil = now + (2 * 60 * 1000); // 2 minutes
+    console.log('🚫 EMERGENCY: Too many attempts, blocking all connections for 2 minutes');
+    return new Response(JSON.stringify({
+      type: 'error',
+      message: 'Too many connection attempts. Blocked for 2 minutes.',
+      code: 'EMERGENCY_BLOCK',
+      remainingTime: 120
+    }), { 
+      status: 429,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
+  }
+  
   // Check if we already have an active connection for these symbols
   if (activeConnections.has(connectionKey)) {
     console.log('⚠️ Duplicate connection attempt blocked for symbols:', symbols);
-    return new Response('Connection already exists for these symbols', { status: 409 });
+    return new Response(JSON.stringify({
+      type: 'error',
+      message: 'Connection already exists for these symbols',
+      code: 'DUPLICATE_CONNECTION',
+      symbols: symbols
+    }), { 
+      status: 409,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
   }
   
+  // Check circuit breaker state
+  const breaker = circuitBreaker.get(connectionKey);
+  if (breaker && breaker.state === 'open') {
+    const timeSinceLastFailure = Date.now() - breaker.lastFailure;
+    const resetTimeout = 30 * 60 * 1000; // 30 minutes - much more aggressive
+    
+    if (timeSinceLastFailure < resetTimeout) {
+      const remainingTime = Math.ceil((resetTimeout - timeSinceLastFailure) / 1000);
+      console.log(`🚫 Circuit breaker open for symbols: ${symbols}. ${remainingTime}s remaining.`);
+      return new Response(JSON.stringify({
+        type: 'error',
+        message: `Circuit breaker open due to repeated failures. Try again in ${remainingTime} seconds.`,
+        code: 'CIRCUIT_BREAKER_OPEN',
+        remainingTime: remainingTime,
+        symbols: symbols
+      }), { 
+        status: 503,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
+    } else {
+      // Reset circuit breaker to half-open
+      breaker.state = 'half-open';
+      breaker.failures = 0;
+    }
+  }
+
   // Check cooldown period to prevent rapid reconnections
   const cooldownTime = connectionCooldowns.get(connectionKey);
   if (cooldownTime && Date.now() < cooldownTime) {
     const remainingTime = Math.ceil((cooldownTime - Date.now()) / 1000);
-    console.log(`⏰ Connection cooldown active for symbols: ${symbols}. ${remainingTime}s remaining.`);
-    return new Response(`Connection cooldown active. Try again in ${remainingTime} seconds.`, { status: 429 });
+    console.log(`⏰ EMERGENCY: Connection cooldown active for symbols: ${symbols}. ${remainingTime}s remaining.`);
+    return new Response(JSON.stringify({
+      type: 'error',
+      message: `Connection cooldown active. Try again in ${remainingTime} seconds.`,
+      code: 'COOLDOWN_ACTIVE',
+      remainingTime: remainingTime,
+      symbols: symbols
+    }), { 
+      status: 429,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
   }
   
   const apiKey = process.env.FINNHUB_API_KEY;
@@ -49,7 +167,7 @@ export async function GET(request: NextRequest) {
       const encoder = new TextEncoder();
       
       // Send initial connection message
-      const sendEvent = (data: any) => {
+      const sendEvent = (data: Record<string, unknown>) => {
         try {
           const eventData = `data: ${JSON.stringify(data)}\n\n`;
           controller.enqueue(encoder.encode(eventData));
@@ -80,6 +198,14 @@ export async function GET(request: NextRequest) {
           webSocket.onopen = () => {
             console.log('✅ Connected to Finnhub WebSocket');
             reconnectAttempts = 0; // Reset attempts on successful connection
+            
+            // Reset circuit breaker on successful connection
+            const breaker = circuitBreaker.get(connectionKey);
+            if (breaker) {
+              breaker.failures = 0;
+              breaker.state = 'closed';
+              circuitBreaker.set(connectionKey, breaker);
+            }
             
             // Subscribe to all symbols with rate limiting
             symbolList.forEach((symbol, index) => {
@@ -127,25 +253,56 @@ export async function GET(request: NextRequest) {
 
           webSocket.onerror = (error) => {
             console.error('❌ Finnhub WebSocket error:', error);
+            
+            // Track circuit breaker failures
+            const breaker = circuitBreaker.get(connectionKey) || { failures: 0, lastFailure: 0, state: 'closed' as const };
+            breaker.failures++;
+            breaker.lastFailure = Date.now();
+            
+            // Check if this is a rate limiting error (429)
+            if (error && typeof error === 'object' && 'message' in error && 
+                typeof error.message === 'string' && error.message.includes('429')) {
+              console.log('🚫 Rate limited by Finnhub API, setting longer cooldown');
+              // Set reasonable cooldown for rate limiting
+              const cooldownMs = 30000; // 30 seconds for rate limiting
+              connectionCooldowns.set(connectionKey, Date.now() + cooldownMs);
+              
+              // Open circuit breaker after 3 failures
+              if (breaker.failures >= 3) {
+                breaker.state = 'open';
+                console.log(`🚫 Circuit breaker opened for symbols: ${symbols} after ${breaker.failures} failures`);
+              }
+            }
+            
+            circuitBreaker.set(connectionKey, breaker);
           };
 
           webSocket.onclose = (event) => {
             console.log('❌ Finnhub WebSocket closed:', event.code, event.reason);
             
+            // Check for rate limiting (429) or other permanent errors
+            const isRateLimited = event.code === 1002 || event.code === 1006 || event.reason?.includes('429');
+            const isPermanentError = event.code === 1002 || event.code === 1003 || event.code === 1007;
+            
             // Don't reconnect if we've exceeded max attempts or if it's likely rate limited
-            if (reconnectAttempts >= maxReconnectAttempts || event.code === 1002 || event.code === 1006) {
-              console.log(`❌ Max reconnection attempts reached (${reconnectAttempts}/${maxReconnectAttempts}) or rate limited (code: ${event.code}). Stopping reconnection.`);
+            if (reconnectAttempts >= maxReconnectAttempts || isPermanentError) {
+              console.log(`❌ Max reconnection attempts reached (${reconnectAttempts}/${maxReconnectAttempts}) or permanent error (code: ${event.code}). Stopping reconnection.`);
               // Remove from active connections and set cooldown
               activeConnections.delete(connectionKey);
-              // Set 10 minute cooldown for rate limited connections
-              connectionCooldowns.set(connectionKey, Date.now() + 600000);
+              // Set longer cooldown for rate limiting, shorter for other errors
+              const isDevelopment = process.env.NODE_ENV === 'development';
+              const cooldownMs = isRateLimited 
+                ? (isDevelopment ? 30000 : 60000) // 30s dev, 1min prod for rate limits
+                : (isDevelopment ? 10000 : 30000); // 10s dev, 30s prod for other errors
+              connectionCooldowns.set(connectionKey, Date.now() + cooldownMs);
               return;
             }
             
             reconnectAttempts++;
             
-            // Longer exponential backoff for rate limiting: 5s, 15s, 45s, 90s, 180s
-            const backoffDelay = Math.min(Math.pow(3, reconnectAttempts) * 5000, 300000); // Cap at 5 minutes
+            // Longer exponential backoff for rate limiting: 10s, 30s, 90s, 180s, 300s
+            const baseDelay = isRateLimited ? 10000 : 5000;
+            const backoffDelay = Math.min(Math.pow(3, reconnectAttempts) * baseDelay, 300000); // Cap at 5 minutes
             
             if (reconnectTimeout) {
               clearTimeout(reconnectTimeout);
@@ -171,8 +328,12 @@ export async function GET(request: NextRequest) {
       // Clean up on close
       const cleanup = () => {
         console.log(`🧹 Cleaning up connection for symbols: ${symbols}`);
-        if (webSocket) {
-          webSocket.close();
+        if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+          try {
+            webSocket.close();
+          } catch {
+            console.log('⚠️ WebSocket already closed during cleanup');
+          }
         }
         if (reconnectTimeout) {
           clearTimeout(reconnectTimeout);

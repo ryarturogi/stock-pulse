@@ -1,0 +1,115 @@
+# Create API Middleware Prompt
+# ===========================
+# 
+# Use this prompt when creating new API middleware or enhancing existing middleware
+# for the StockPulse application.
+
+## Context
+StockPulse uses a comprehensive API middleware system located in `src/core/middleware/api.ts`
+that provides CORS, rate limiting, validation, logging, and error handling.
+
+## Requirements
+
+### 1. Import the Middleware
+```typescript
+import { withApiMiddleware, withReadOnlyMiddleware, withValidatedMiddleware, withRateLimitedMiddleware } from '@/core/middleware/api';
+```
+
+### 2. Choose the Right Middleware Wrapper
+- **withReadOnlyMiddleware()** - For GET-only endpoints (most common)
+- **withValidatedMiddleware()** - For POST/PUT endpoints with validation
+- **withRateLimitedMiddleware()** - For public endpoints that need rate limiting
+- **withApiMiddleware()** - For custom configuration
+
+### 3. API Route Structure
+```typescript
+import { NextRequest } from 'next/server';
+import { withReadOnlyMiddleware } from '@/core/middleware/api';
+import { createSuccessResponse, createErrorResponse, handleApiError } from '@/core/utils/apiResponse';
+
+export const GET = withReadOnlyMiddleware(async (req: NextRequest) => {
+  try {
+    // Your API logic here
+    const data = await fetchData();
+    return createSuccessResponse(data, 'Success message');
+  } catch (error) {
+    return handleApiError(error, 'API endpoint name');
+  }
+});
+```
+
+### 4. Validation for POST/PUT Endpoints
+```typescript
+import { withValidatedMiddleware } from '@/core/middleware/api';
+
+export const POST = withValidatedMiddleware(
+  async (req: NextRequest) => {
+    // Your API logic here
+  },
+  ['requiredField1', 'requiredField2'] // Required fields
+);
+```
+
+### 5. Rate Limiting for Public Endpoints
+```typescript
+import { withRateLimitedMiddleware } from '@/core/middleware/api';
+
+export const GET = withRateLimitedMiddleware(
+  async (req: NextRequest) => {
+    // Your API logic here
+  },
+  60, // requests per minute
+  60000 // window in milliseconds
+);
+```
+
+## Best Practices
+
+1. **Always use middleware wrappers** - Don't create raw API handlers
+2. **Use proper error handling** - Use `handleApiError()` for consistent error responses
+3. **Use response utilities** - Use `createSuccessResponse()` and `createErrorResponse()`
+4. **Validate inputs** - Use validation utilities from `@/core/utils/validation`
+5. **Handle timeouts** - Use `AbortSignal.timeout(10000)` for external API calls
+6. **Implement fallbacks** - Always have fallback mechanisms for external API failures
+7. **Use pagination** - Use pagination utilities for list endpoints
+8. **Log appropriately** - Middleware handles logging automatically
+
+## Common Patterns
+
+### Stock Symbol Validation
+```typescript
+import { validateRequiredParam } from '@/core/utils/apiResponse';
+
+const symbol = searchParams.get('symbol');
+const paramError = validateRequiredParam(symbol, 'symbol');
+if (paramError) return paramError;
+```
+
+### External API Calls with Retry
+```typescript
+const response = await fetch(url, {
+  signal: AbortSignal.timeout(10000),
+  headers: { 'X-Finnhub-Token': apiKey }
+});
+```
+
+### Pagination Support
+```typescript
+import { parsePaginationParams, paginateArray } from '@/core/utils/pagination';
+
+const { page, limit } = parsePaginationParams(searchParams);
+const { paginatedItems, pagination } = paginateArray(data, page, limit);
+```
+
+## Error Handling
+- Use `handleApiError()` for consistent error responses
+- Provide meaningful error messages
+- Include appropriate HTTP status codes
+- Log errors for debugging
+
+## Testing
+- Test middleware functionality
+- Test error scenarios
+- Test rate limiting
+- Test validation
+- Test CORS headers

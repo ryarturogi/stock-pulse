@@ -7,3 +7,6 @@
 
 // Services
 export * from './services';
+
+// Components
+export { default as MobileNotificationGuide } from './components/MobileNotificationGuide';

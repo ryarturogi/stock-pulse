@@ -74,7 +74,7 @@ const nextConfig = {
     dangerouslyAllowSVG: false,
   },
   eslint: {
-    dirs: ['app', 'components', 'lib', 'hooks'],
+    dirs: ['app', 'src', 'components', 'lib', 'hooks'],
   },
   typescript: {
     tsconfigPath: './tsconfig.json',

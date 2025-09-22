@@ -20,7 +20,8 @@
       "Bash(find:*)",
       "Bash(curl:*)",
       "Bash(pnpm list:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(npx jest:*)"
     ],
     "deny": []
   }

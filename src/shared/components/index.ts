@@ -6,3 +6,5 @@
  */
 
 export * from './ui';
+export { ErrorBoundary } from './ErrorBoundary';
+export { ErrorBoundaryWrapper } from './ErrorBoundaryWrapper';

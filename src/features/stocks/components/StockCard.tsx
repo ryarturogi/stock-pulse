@@ -9,11 +9,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
 import { TrendingUp, TrendingDown, Clock, X, Edit2, Check, X as XIcon } from 'lucide-react';
-import { 
-  StockCardProps, 
-  STOCK_COLORS
-} from '@/core/types';
+
+import { STOCK_COLORS } from '@/core/constants/constants';
+import { StockCardProps } from '@/core/types';
 import { useStockStore } from '@/features/stocks/stores/stockStore';
 // import { stockService } from '@/services/stockService';
 
@@ -32,7 +32,7 @@ export const StockCard: React.FC<StockCardProps> = ({
     symbol,
     name,
     currentPrice,
-    changePercent,
+    percentChange,
     alertPrice,
     isLoading,
     lastUpdated,
@@ -90,8 +90,8 @@ export const StockCard: React.FC<StockCardProps> = ({
     }
   };
 
-  // Use changePercent if available, otherwise fall back to stock.changePercent
-  const displayChangePercent = changePercent ?? stock.changePercent;
+  // Use percentChange if available, otherwise fall back to stock.percentChange
+  const displayChangePercent = percentChange ?? stock.percentChange;
 
   // Determine alert status and colors
   const isAboveAlert = currentPrice && currentPrice >= alertPrice;
@@ -114,13 +114,29 @@ export const StockCard: React.FC<StockCardProps> = ({
     ? (displayChangePercent >= 0 ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400')
     : 'bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400';
   
-  // Get border color based on alert status
+  // Get border color based on alert status  
   const getBorderColor = () => {
-    if (isLoading) return 'border-gray-300';
-    if (isAboveAlert) return 'border-green-500';
-    if (isBelowAlert) return 'border-red-500';
-    return 'border-gray-300';
+    if (isLoading) return 'border-blue-300 dark:border-blue-600';
+    if (isAboveAlert) return 'border-green-500 dark:border-green-400';
+    if (isBelowAlert) return 'border-red-500 dark:border-red-400';
+    return 'border-gray-300 dark:border-gray-600';
   };
+
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
+    <div className="animate-pulse">
+      <div className="flex items-center justify-between mb-3">
+        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12" />
+      </div>
+      <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-20 mb-2" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-3" />
+      <div className="flex justify-between items-center">
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+      </div>
+    </div>
+  );
 
   // Get alert badge
   const getAlertBadge = () => {
@@ -188,18 +204,17 @@ export const StockCard: React.FC<StockCardProps> = ({
       </div>
 
       {/* Price Information */}
-      <div className="space-y-1 lg:space-y-2">
-        {/* Current Price */}
-        <p className={`text-xl lg:text-2xl font-bold text-gray-900 dark:text-white 
+      {isLoading ? (
+        <LoadingSkeleton />
+      ) : (
+        <div className="space-y-1 lg:space-y-2">
+          {/* Current Price */}
+          <p className={`text-xl lg:text-2xl font-bold text-gray-900 dark:text-white 
           ${wasJustUpdated ? 'text-blue-600 transition-colors duration-300' : ''}`}>
-          {isLoading ? (
-            <span className="text-gray-500 dark:text-gray-400">Loading...</span>
-          ) : (
             <span className={wasJustUpdated ? 'animate-pulse' : ''}>
               {formattedPrice}
             </span>
-          )}
-        </p>
+          </p>
 
         {/* Change Amount and Percentage - Finnhub Style */}
         <div className="flex items-center space-x-2">
@@ -301,27 +316,22 @@ export const StockCard: React.FC<StockCardProps> = ({
           {/* Last Updated with real-time indicator */}
           {lastUpdated && (
             <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center text-gray-400 dark:text-gray-500">
+              <div className={`flex items-center ${wasRecentlyUpdated ? 'text-green-500' : 'text-gray-400 dark:text-gray-500'}`}>
                 <Clock className={`mr-1 w-3 h-3 ${wasRecentlyUpdated ? 'text-green-500' : ''}`} />
                 <span className="hidden sm:inline">{new Date(lastUpdated).toLocaleTimeString()}</span>
                 <span className="sm:hidden">{new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
-              {wasRecentlyUpdated && (
-                <div className="flex items-center">
-                  <span className="text-xs text-green-500 mr-1">LIVE</span>
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                </div>
-              )}
             </div>
           )}
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Loading Indicator */}
       {isLoading && (
         <div className="mt-4">
           <div className="w-full h-1 bg-gray-200 rounded-full">
-            <div className="h-1 bg-blue-600 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+            <div className="h-1 bg-blue-600 rounded-full animate-pulse" style={{ width: '60%' }} />
           </div>
         </div>
       )}

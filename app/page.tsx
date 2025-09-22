@@ -1,5 +1,7 @@
 'use client';
 
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+
 import { 
   Search, 
   Moon, 
@@ -11,10 +13,10 @@ import {
   TrendingUp,
   Plus
 } from 'lucide-react';
-import React, { useEffect, useState, useCallback, useRef } from 'react';
 
+import { DEFAULT_STOCK_OPTIONS } from '@/core/constants/constants';
 import { 
-  DEFAULT_STOCK_OPTIONS
+  StockOption
 } from '@/core/types';
 import { 
   StockForm, 
@@ -32,9 +34,6 @@ import {
   useSearch 
 } from '@/shared/hooks';
 
-// Use default stock options from types
-const availableStocks = DEFAULT_STOCK_OPTIONS;
-
 
 export default function HomePage() {
   // Use Zustand store for persistence
@@ -45,6 +44,7 @@ export default function HomePage() {
     updateStockPrice, 
     connectWebSocket, 
     disconnectWebSocket, 
+    startPeriodicRefresh,
     stopPeriodicRefresh,
     clearError, 
     error,
@@ -56,6 +56,7 @@ export default function HomePage() {
   } = useStockStore();
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [availableStocks, setAvailableStocks] = useState<StockOption[]>(DEFAULT_STOCK_OPTIONS);
   
   // Custom hooks
   const { isOpen: isSidebarOpen, open: openSidebar, close: closeSidebar } = useSidebar();
@@ -78,18 +79,48 @@ export default function HomePage() {
 
   // Use ref to track connection state and prevent multiple calls
   const isConnectedRef = useRef(false);
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load available stocks on mount
+  useEffect(() => {
+    const loadAvailableStocks = async () => {
+      try {
+        const stocks = await stockService.getAvailableStocksLegacy();
+        setAvailableStocks(stocks);
+      } catch (error) {
+        console.error('Failed to load available stocks:', error);
+        // Keep default stocks as fallback
+      }
+    };
+
+    loadAvailableStocks();
+  }, []);
 
   // Connect WebSocket when stocks are added (periodic refresh as fallback)
   useEffect(() => {
-    if (watchedStocks.length > 0) {
-      // Only connect if not already connected
-      if (!isConnectedRef.current) {
+    // Clear any pending connection timeout
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current);
+      connectionTimeoutRef.current = null;
+    }
+
+    if (watchedStocks.length > 0 && isLiveDataEnabled) {
+      // Start periodic refresh immediately when stocks are available and live data is enabled
+      console.log('📊 Starting periodic refresh for stock updates...');
+      startPeriodicRefresh();
+      
+      // Only connect if not already connected or connecting
+      if (!isConnectedRef.current && webSocketStatus !== 'connecting' && webSocketStatus !== 'connected') {
         console.log('🔌 Initializing WebSocket connection for real-time data...');
-        connectWebSocket();
         isConnectedRef.current = true;
+        
+        // Add a short delay to prevent race conditions
+        connectionTimeoutRef.current = setTimeout(() => {
+          connectWebSocket();
+        }, 2000); // 2 seconds - reasonable delay for UI to settle
       }
     } else {
-      // If no stocks, disconnect and stop refresh
+      // If no stocks or live data disabled, disconnect and stop refresh
       if (isConnectedRef.current) {
         console.log('🔌 Cleaning up WebSocket connection...');
         disconnectWebSocket();
@@ -100,20 +131,37 @@ export default function HomePage() {
     
     // Cleanup on unmount
     return () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
       disconnectWebSocket();
       stopPeriodicRefresh();
       isConnectedRef.current = false;
     };
-  }, [watchedStocks.length, connectWebSocket, disconnectWebSocket, stopPeriodicRefresh]); // Only depend on watchedStocks.length
+  }, [watchedStocks.length, isLiveDataEnabled, webSocketStatus, connectWebSocket, disconnectWebSocket, startPeriodicRefresh, stopPeriodicRefresh]);
 
   /**
    * Handle adding a new stock to watchlist
    */
-  const handleAddStock = async (symbol: string, alertPrice: number) => {
+  const handleAddStock = async (symbol: string, alertPrice: number, stockName?: string) => {
+    // Try to find the stock in availableStocks first, then use provided name or fallback
     const stock = availableStocks.find(s => s.symbol === symbol);
-    if (!stock) {
-      console.error('Stock not found:', symbol);
-      return;
+    let finalStockName = stockName || stock?.name || symbol;
+
+    // If stock is not in the limited availableStocks array and no name provided,
+    // try to fetch the stock quote to get the company name
+    if (!stock && !stockName) {
+      try {
+        console.log(`📊 Fetching stock information for ${symbol}...`);
+        const quoteData = await stockService.fetchStockQuote(symbol);
+        if (quoteData && quoteData.symbol) {
+          // Use the symbol as name for now, since Finnhub quote doesn't include company name
+          finalStockName = symbol;
+        }
+      } catch (error) {
+        console.warn(`Could not fetch stock info for ${symbol}, using symbol as name:`, error);
+        finalStockName = symbol;
+      }
     }
 
     try {
@@ -135,7 +183,7 @@ export default function HomePage() {
       }
 
       // Add stock to store (this will persist to localStorage)
-      addStock(symbol, stock.name, alertPrice);
+      addStock(symbol, finalStockName, alertPrice);
       
       // Close sidebar on mobile/tablet after adding stock
       closeSidebar();
@@ -200,7 +248,7 @@ export default function HomePage() {
     lastManualRefreshRef.current = now;
     console.log('🔄 Manual refresh triggered...');
     
-    // Refresh all watched stocks with real API data
+    // Refresh all watched stocks with real API data (with better error isolation)
     const refreshPromises = watchedStocks.map(async (stock) => {
       try {
         const quoteData = await stockService.fetchStockQuote(stock.symbol);
@@ -218,14 +266,30 @@ export default function HomePage() {
             previousClose: quoteData.previousClose,
             timestamp: Date.now()
           });
+          return { symbol: stock.symbol, success: true };
+        } else {
+          console.warn(`No quote data for ${stock.symbol}`);
+          return { symbol: stock.symbol, success: false, error: 'No quote data' };
         }
       } catch (error) {
         console.error(`Failed to refresh ${stock.symbol}:`, error);
+        return { symbol: stock.symbol, success: false, error: error instanceof Error ? error.message : 'Unknown error' };
       }
     });
     
     try {
-      await Promise.all(refreshPromises);
+      const results = await Promise.allSettled(refreshPromises);
+      const successful = results.filter((result, index) => {
+        if (result.status === 'fulfilled' && result.value.success) {
+          return true;
+        }
+        if (result.status === 'rejected') {
+          console.error(`Refresh failed for ${watchedStocks[index].symbol}:`, result.reason);
+        }
+        return false;
+      });
+      
+      console.log(`📊 Manual refresh completed: ${successful.length}/${watchedStocks.length} stocks updated`);
     } catch (error) {
       console.error('Failed to refresh stocks:', error);
     }
@@ -256,66 +320,48 @@ export default function HomePage() {
             <div className="hidden lg:block">
               <div className="px-6 py-4">
                 <div className="flex items-center justify-between">
-                  {/* Left Section - Search */}
-                  <div className="flex-1 max-w-md">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500 dark:text-gray-400" />
-                      <input 
-                        type="text" 
-                        placeholder="Search stocks..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                      />
+                  {/* Left Section - Search & Data Controls */}
+                  <div className="flex-1 max-w-3xl">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        <input 
+                          type="text" 
+                          placeholder="Search stocks..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        />
+                      </div>
+                      
+                      {/* Live Data Toggle */}
+                      {watchedStocks.length > 0 && (
+                        <div className="flex items-center space-x-2">
+                          <label htmlFor="live-data-toggle" className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              id="live-data-toggle"
+                              type="checkbox"
+                              checked={isLiveDataEnabled}
+                              onChange={(e) => setLiveDataEnabled(e.target.checked)}
+                              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                            />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Live Data
+                            </span>
+                          </label>
+                        </div>
+                      )}
+                      
+                      {/* Refresh Interval */}
+                      {watchedStocks.length > 0 && isLiveDataEnabled && (
+                        <RefreshIntervalSelector
+                          currentInterval={refreshTimeInterval}
+                          onIntervalChange={setRefreshTimeInterval}
+                        />
+                      )}
                     </div>
                   </div>
 
-                  {/* Center Section - Status & Controls */}
-                  <div className="flex items-center space-x-6">
-                    {/* WebSocket Status */}
-                    {watchedStocks.length > 0 && (
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          webSocketStatus === 'connected' ? 'bg-green-500' :
-                          webSocketStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                          webSocketStatus === 'error' ? 'bg-blue-500' :
-                          'bg-gray-400'
-                        }`} />
-                        <span className="text-sm text-gray-600 dark:text-gray-300">
-                          {webSocketStatus === 'connected' ? 'Live' :
-                           webSocketStatus === 'connecting' ? 'Connecting...' :
-                           webSocketStatus === 'error' ? 'API Mode' :
-                           'Offline'}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Live Data Toggle */}
-                    {watchedStocks.length > 0 && (
-                      <div className="flex items-center space-x-2">
-                        <label htmlFor="live-data-toggle" className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            id="live-data-toggle"
-                            type="checkbox"
-                            checked={isLiveDataEnabled}
-                            onChange={(e) => setLiveDataEnabled(e.target.checked)}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                          />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Live Data
-                          </span>
-                        </label>
-                      </div>
-                    )}
-
-                    {/* Refresh Interval */}
-                    {watchedStocks.length > 0 && isLiveDataEnabled && (
-                      <RefreshIntervalSelector
-                        currentInterval={refreshTimeInterval}
-                        onIntervalChange={setRefreshTimeInterval}
-                      />
-                    )}
-                  </div>
 
                   {/* Right Section - Actions */}
                   <div className="flex items-center space-x-3">
@@ -393,24 +439,6 @@ export default function HomePage() {
                     <TrendingUp className="w-4 h-4 text-white" />
                   </div>
                   <span className="text-lg font-semibold text-gray-900 dark:text-white">StockPulse</span>
-                  
-                  {/* Mobile Status Indicator */}
-                  {watchedStocks.length > 0 && (
-                    <div className="flex items-center space-x-1">
-                      <div className={`w-2 h-2 rounded-full ${
-                        webSocketStatus === 'connected' ? 'bg-green-500' :
-                        webSocketStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                        webSocketStatus === 'error' ? 'bg-blue-500' :
-                        'bg-gray-400'
-                      }`} />
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {webSocketStatus === 'connected' ? 'Live' :
-                         webSocketStatus === 'connecting' ? 'Connecting' :
-                         webSocketStatus === 'error' ? 'API Mode' :
-                         'Offline'}
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -469,7 +497,7 @@ export default function HomePage() {
                             onChange={(e) => setLiveDataEnabled(e.target.checked)}
                             className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600" />
                         </label>
                       </div>
                     )}

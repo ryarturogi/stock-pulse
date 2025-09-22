@@ -1,15 +1,20 @@
-Goal: Create a Next.js 15 page component named <PageName> following App Router conventions.
+Goal: Create a Next.js 15 page component named <PageName> for the StockPulse application following App Router conventions.
+
+Project Context:
+- StockPulse: Real-time stock tracking PWA with Finnhub API integration
+- Current pages: Main dashboard (app/page.tsx) with stock watchlist and charts
+- Features: WebSocket live data, stock management, price alerts, PWA functionality
 
 Constraints:
 - Use Next.js 15 App Router structure (app/*)
 - Implement as Server Component by default (use 'use client' only when needed)
-- Add TypeScript strict typing for props and params
-- Include proper SEO metadata
-- Add loading and error boundary support
-- Follow accessibility best practices
-- Use Tailwind CSS for styling
-- Implement responsive design
-- Add proper TypeScript interfaces
+- Add TypeScript strict typing with noImplicitOverride: true
+- Include proper SEO metadata for stock tracking context
+- Add loading and error boundary support with ErrorBoundary integration
+- Follow accessibility best practices for financial data display
+- Use Tailwind CSS with dark mode support
+- Implement responsive design for mobile/desktop stock tracking
+- Add proper TypeScript interfaces using @/core/types
 
 Deliverables:
 - app/<page-path>/page.tsx
@@ -20,8 +25,9 @@ Deliverables:
 Template Structure:
 
 ```typescript
+// No React import needed with React 19 JSX transform
 import { Metadata } from 'next';
-import { AsyncState, ApiResponse, isDefined } from '@/types';
+import { ComponentProps, ApiResponse, isString } from '@/core/types';
 
 // Types for page props using utility types
 interface <PageName>Props {
@@ -116,6 +122,7 @@ Error Component (app/<page-path>/error.tsx):
 ```typescript
 'use client';
 
+// No React import needed with React 19 JSX transform
 import { useEffect } from 'react';
 
 interface ErrorProps {
@@ -177,21 +184,30 @@ Accessibility Requirements:
 - Use sufficient color contrast
 - Implement focus management
 
-TypeScript Utils Requirements:
-- Use AsyncState<T> for data fetching state management
-- Use ApiResponse<T> for API call return types
-- Use type guards (isDefined, isString, etc.) for parameter validation
+StockPulse TypeScript Requirements:
+- Use ComponentProps from @/core/types for page component props
+- Use ApiResponse<T> for API call return types (stock data)
+- Use type guards (isString, isNumber, isFinnhubStockQuote) for validation
 - Use Metadata type from Next.js for SEO metadata
-- Use ComponentProps and utility types for component properties
-- Use DeepPartial<T> for partial state updates
-- Use proper typing for params and searchParams
-- Validate all dynamic route parameters with type guards
+- Use StockOption, WatchedStock for stock-related data
+- Use WebSocketStatus for connection state display
+- Validate stock symbols and financial data with type guards
+- Use ErrorBoundary for error handling integration
+
+StockPulse Specific Patterns:
+- Integrate with useStockStore() for stock state management
+- Use stockService for API calls with request deduplication
+- Support real-time data display with WebSocket status
+- Include price alert functionality where relevant
+- Support dark/light theme switching with Tailwind
+- Display financial data with proper formatting
+- Handle loading states for stock data fetching
 
 Testing Requirements:
-- Test server-side rendering with proper TypeScript types
-- Test client-side interactions with typed event handlers
-- Test loading and error states using AsyncState<T>
-- Test responsive design with proper component props
-- Test accessibility compliance with typed ARIA attributes
-- Test SEO metadata generation with Metadata type
-- Validate TypeScript utility type usage in page components
+- Use jest.config.cjs configuration (not .ts)
+- Test server-side rendering without React imports
+- Test stock data display and formatting
+- Test responsive design for mobile stock tracking
+- Test accessibility for financial data screen readers
+- Test error states with ErrorBoundary integration
+- Test dark mode compatibility with stock data

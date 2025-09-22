@@ -6,11 +6,9 @@
  * and price alerts following the React Developer test requirements.
  */
 
-import type { 
-  PriceAlertNotification,
-  WatchedStock
-} from '@/core/types';
 import { 
+  type PriceAlertNotification,
+  type WatchedStock,
   isWatchedStock
 } from '@/core/types';
 
@@ -83,11 +81,7 @@ export class NotificationService {
         return;
       }
 
-      // Skip service worker registration in development to avoid precache errors
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Service worker registration skipped in development mode');
-        return;
-      }
+      // Service worker registration now works in both development and production
 
       this.serviceWorkerRegistration = await navigator.serviceWorker.register('/sw.js');
       console.log('Service worker registered for notifications');
@@ -251,7 +245,7 @@ export class NotificationService {
     const notification: PriceAlertNotification = {
       title: 'Stock Tracker',
       body: isConnected ? 'Real-time connection restored' : 'Connection lost - using cached data',
-      icon: '/icons/icon-192x192.png',
+      icon: '/icons/icon-192x192.svg',
         data: {
           symbol: 'CONNECTION',
           currentPrice: 0,
@@ -274,7 +268,7 @@ export class NotificationService {
     const notification: PriceAlertNotification = {
       title: 'Stock Tracker Error',
       body: message,
-      icon: '/icons/icon-192x192.png',
+      icon: '/icons/icon-192x192.svg',
         data: {
           symbol: 'ERROR',
           currentPrice: 0,
@@ -297,7 +291,7 @@ export class NotificationService {
     const notification: PriceAlertNotification = {
       title: 'Stock Tracker',
       body: message,
-      icon: '/icons/icon-192x192.png',
+      icon: '/icons/icon-192x192.svg',
         data: {
           symbol: 'SUCCESS',
           currentPrice: 0,

@@ -8,6 +8,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+
+import { validateStockForm } from '@/core/utils/validation';
 import { stockService } from '@/features/stocks/services/stockService';
 
 export interface StockFormState {
@@ -19,11 +21,11 @@ export interface StockFormState {
     stock?: string;
     price?: string;
   };
-  setSelectedStock: (stock: string) => void;
-  setAlertPrice: (price: string) => void;
+  setSelectedStock: (_stock: string) => void;
+  setAlertPrice: (_price: string) => void;
   validateForm: () => boolean;
   resetForm: () => void;
-  fetchCurrentPrice: (symbol: string) => Promise<void>;
+  fetchCurrentPrice: (_symbol: string) => Promise<void>;
 }
 
 /**
@@ -85,25 +87,24 @@ export const useStockForm = (): StockFormState => {
 
   // Validate form inputs
   const validateForm = useCallback((): boolean => {
+    const validation = validateStockForm({
+      symbol: selectedStock,
+      alertPrice: alertPrice,
+    });
+
     const newErrors: typeof errors = {};
-
-    // Validate stock selection
-    if (!selectedStock.trim()) {
-      newErrors.stock = 'Please select a stock';
-    }
-
-    // Validate alert price
-    if (!alertPrice.trim()) {
-      newErrors.price = 'Please enter an alert price';
-    } else {
-      const price = parseFloat(alertPrice);
-      if (isNaN(price) || price <= 0 || price > 999999.99) {
-        newErrors.price = 'Please enter a valid price (0.01 - 999,999.99)';
+    
+    if (!validation.isValid) {
+      if (validation.errors.symbol) {
+        newErrors.stock = validation.errors.symbol;
+      }
+      if (validation.errors.alertPrice) {
+        newErrors.price = validation.errors.alertPrice;
       }
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return validation.isValid;
   }, [selectedStock, alertPrice]);
 
   // Reset form

@@ -1,7 +1,9 @@
-import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 
+import type { Metadata } from 'next';
+
 import './globals.css';
+import { ErrorBoundaryWrapper } from '../src/shared/components/ErrorBoundaryWrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -51,7 +53,9 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <div id='app'>
-          {children}
+          <ErrorBoundaryWrapper>
+            {children}
+          </ErrorBoundaryWrapper>
         </div>
       </body>
     </html>
