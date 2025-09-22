@@ -227,7 +227,6 @@ export const useNotificationStore = create<NotificationStoreState>()(
           if (version === 0) {
             // If no version exists, this is a fresh install or old format
             // Try to migrate from old localStorage format
-            const state = persistedState as Record<string, unknown> | null;
             
             // Check for old notification preference
             let isEnabled = true;
