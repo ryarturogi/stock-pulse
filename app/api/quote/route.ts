@@ -1,31 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+
+import { 
+  createSuccessResponse, 
+  createErrorResponse, 
+  handleApiError, 
+  validateApiKey, 
+  validateRequiredParam 
+} from '@/core/utils/apiResponse';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get('symbol');
     
-    if (!symbol) {
-      return NextResponse.json(
-        { error: 'Symbol parameter is required' },
-        { status: 400 }
-      );
-    }
+    // Validate required parameters
+    const paramError = validateRequiredParam(symbol, 'symbol');
+    if (paramError) return paramError;
 
+    // Validate API key
     const apiKey = process.env.FINNHUB_API_KEY;
-    
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Finnhub API key not configured' },
-        { status: 500 }
-      );
-    }
+    const keyError = validateApiKey(apiKey, 'Finnhub');
+    if (keyError) return keyError;
 
     const response = await fetch(
       `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`,
       {
         headers: {
-          'X-Finnhub-Token': apiKey,
+          'X-Finnhub-Token': apiKey!,
         },
       }
     );
@@ -36,23 +37,36 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
     
-    return NextResponse.json({
-      symbol,
+    // Debug logging (can be removed in production)
+    console.debug('Finnhub response for', symbol, ':', data);
+    
+    // Check if we have valid data from Finnhub
+    if (data.c === null || data.c === undefined) {
+      return createErrorResponse(
+        'No valid quote data available for this symbol',
+        404,
+        'Symbol not found or market data unavailable'
+      );
+    }
+    
+    const quoteData = {
+      symbol: symbol!,
       current: data.c,
-      change: data.d,
-      percentChange: data.dp,
-      high: data.h,
-      low: data.l,
-      open: data.o,
-      previousClose: data.pc,
+      change: data.d || 0,
+      percentChange: data.dp || 0,
+      high: data.h || data.c,
+      low: data.l || data.c,
+      open: data.o || data.c,
+      previousClose: data.pc || data.c,
       timestamp: Date.now()
-    });
+    };
+    
+    return createSuccessResponse(
+      quoteData,
+      `Quote data retrieved for ${symbol}`
+    );
     
   } catch (error) {
-    console.error('Stock quote API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch stock quote' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'quote API');
   }
 }
