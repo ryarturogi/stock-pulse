@@ -311,38 +311,72 @@ export const {
 } = useNotificationStore.getState();
 
 // Export convenience hooks for specific state slices
-export const useNotificationPermission = () => useNotificationStore((state) => ({
-  permission: state.permission,
-  isEnabled: state.isEnabled,
-  setPermission: state.setPermission,
-  setEnabled: state.setEnabled,
-  toggleNotifications: state.toggleNotifications,
-  requestPermission: state.requestPermission,
-}));
+export const useNotificationPermission = () => {
+  const permission = useNotificationStore((state) => state.permission);
+  const isEnabled = useNotificationStore((state) => state.isEnabled);
+  const setPermission = useNotificationStore((state) => state.setPermission);
+  const setEnabled = useNotificationStore((state) => state.setEnabled);
+  const toggleNotifications = useNotificationStore((state) => state.toggleNotifications);
+  const requestPermission = useNotificationStore((state) => state.requestPermission);
 
-export const useNotificationHistory = () => useNotificationStore((state) => ({
-  notifications: state.notifications,
-  unreadCount: state.unreadCount,
-  addNotification: state.addNotification,
-  markAsRead: state.markAsRead,
-  markAllAsRead: state.markAllAsRead,
-  removeNotification: state.removeNotification,
-  clearNotifications: state.clearNotifications,
-}));
+  return {
+    permission,
+    isEnabled,
+    setPermission,
+    setEnabled,
+    toggleNotifications,
+    requestPermission,
+  };
+};
 
-export const useNotificationSettings = () => useNotificationStore((state) => ({
-  showDesktopNotifications: state.showDesktopNotifications,
-  showPushNotifications: state.showPushNotifications,
-  soundEnabled: state.soundEnabled,
-  setShowDesktopNotifications: state.setShowDesktopNotifications,
-  setShowPushNotifications: state.setShowPushNotifications,
-  setSoundEnabled: state.setSoundEnabled,
-}));
+export const useNotificationHistory = () => {
+  const notifications = useNotificationStore((state) => state.notifications);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const addNotification = useNotificationStore((state) => state.addNotification);
+  const markAsRead = useNotificationStore((state) => state.markAsRead);
+  const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
+  const removeNotification = useNotificationStore((state) => state.removeNotification);
+  const clearNotifications = useNotificationStore((state) => state.clearNotifications);
 
-export const usePushSubscription = () => useNotificationStore((state) => ({
-  pushSubscription: state.pushSubscription,
-  setPushSubscription: state.setPushSubscription,
-  clearPushSubscription: state.clearPushSubscription,
-}));
+  return {
+    notifications,
+    unreadCount,
+    addNotification,
+    markAsRead,
+    markAllAsRead,
+    removeNotification,
+    clearNotifications,
+  };
+};
+
+export const useNotificationSettings = () => {
+  const showDesktopNotifications = useNotificationStore((state) => state.showDesktopNotifications);
+  const showPushNotifications = useNotificationStore((state) => state.showPushNotifications);
+  const soundEnabled = useNotificationStore((state) => state.soundEnabled);
+  const setShowDesktopNotifications = useNotificationStore((state) => state.setShowDesktopNotifications);
+  const setShowPushNotifications = useNotificationStore((state) => state.setShowPushNotifications);
+  const setSoundEnabled = useNotificationStore((state) => state.setSoundEnabled);
+
+  return {
+    showDesktopNotifications,
+    showPushNotifications,
+    soundEnabled,
+    setShowDesktopNotifications,
+    setShowPushNotifications,
+    setSoundEnabled,
+  };
+};
+
+export const usePushSubscription = () => {
+  const pushSubscription = useNotificationStore((state) => state.pushSubscription);
+  const setPushSubscription = useNotificationStore((state) => state.setPushSubscription);
+  const clearPushSubscription = useNotificationStore((state) => state.clearPushSubscription);
+
+  return {
+    pushSubscription,
+    setPushSubscription,
+    clearPushSubscription,
+  };
+};
 
 export default useNotificationStore;
