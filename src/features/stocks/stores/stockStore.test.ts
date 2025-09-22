@@ -7,7 +7,7 @@
 
 import { act } from '@testing-library/react';
 import { useStockStore } from './stockStore';
-import type { FinnhubStockQuote, WatchedStock } from '@/core/types';
+import type { FinnhubStockQuote } from '@/core/types';
 
 // Mock the notification service
 jest.mock('@/features/notifications', () => ({

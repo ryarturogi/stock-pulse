@@ -6,7 +6,7 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { useNotifications } from './useNotifications';
+import { useNotifications } from './useNotificationsCompat';
 
 // Mock the notification service
 const mockNotificationService = {
