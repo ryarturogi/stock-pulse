@@ -119,3 +119,6 @@ package-lock.json
 
 # Runtime configuration
 .env.*.local
+
+# Subscription storage data
+data/

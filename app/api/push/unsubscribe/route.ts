@@ -7,10 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ApiError, PushSubscriptionData } from '@/core/types';
-
-// In-memory storage for subscriptions (in production, use a database)
-const subscriptions: Map<string, PushSubscriptionData> = new Map();
+import { ApiError } from '@/core/types';
+import { getSubscriptionStorage } from '@/core/services/subscriptionStorage';
 
 /**
  * POST /api/push/unsubscribe
@@ -22,9 +20,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
     const body = await request.json();
     const { subscriptionId } = body;
 
+    const storage = getSubscriptionStorage();
+    await storage.initialize();
+
     // If subscriptionId is provided, remove specific subscription
     if (subscriptionId) {
-      const removed = subscriptions.delete(subscriptionId);
+      const removed = await storage.removeSubscription(subscriptionId);
       
       if (removed) {
         console.log(`✅ Push subscription removed: ${subscriptionId}`);
@@ -43,14 +44,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
 
     // If no specific subscriptionId, remove all subscriptions
     // (This is a simple approach - in production you'd want to identify the specific client)
-    const initialCount = subscriptions.size;
-    subscriptions.clear();
+    const removedCount = await storage.clearAllSubscriptions();
 
-    console.log(`✅ All push subscriptions removed: ${initialCount} subscriptions cleared`);
+    console.log(`✅ All push subscriptions removed: ${removedCount} subscriptions cleared`);
 
     return NextResponse.json({
       success: true,
-      message: `${initialCount} subscriptions removed successfully`,
+      message: `${removedCount} subscriptions removed successfully`,
     });
 
   } catch (error) {

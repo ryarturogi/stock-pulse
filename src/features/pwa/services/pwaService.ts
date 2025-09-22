@@ -275,8 +275,8 @@ export class PWAService {
   public showNotification(title: string, options?: NotificationOptions): void {
     if (Notification.permission === 'granted') {
       new Notification(title, {
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/icon-72x72.png',
+        icon: '/icons/icon-192x192.svg',
+        badge: '/icons/icon-72x72.svg',
         ...options,
       });
     }

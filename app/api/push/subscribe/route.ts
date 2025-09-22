@@ -8,9 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { ApiError, PushSubscriptionData } from '@/core/types';
-
-// In-memory storage for subscriptions (in production, use a database)
-const subscriptions: Map<string, PushSubscriptionData> = new Map();
+import { getSubscriptionStorage } from '@/core/services/subscriptionStorage';
 
 /**
  * POST /api/push/subscribe
@@ -36,8 +34,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
     // Create subscription ID (use endpoint as unique identifier)
     const subscriptionId = subscription.endpoint;
     
-    // Store subscription with device information
-    subscriptions.set(subscriptionId, {
+    // Get storage service and store subscription
+    const storage = getSubscriptionStorage();
+    await storage.initialize();
+    
+    const subscriptionData: PushSubscriptionData = {
       subscription,
       userAgent,
       deviceType: deviceType || 'unknown',
@@ -45,10 +46,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
       timestamp,
       createdAt: Date.now(),
       lastUsed: Date.now(),
-    });
+    };
 
+    await storage.storeSubscription(subscriptionId, subscriptionData);
+
+    const totalCount = await storage.getSubscriptionCount();
     console.log(`✅ Push subscription stored: ${subscriptionId} (${deviceType || 'unknown'})`);
-    console.log(`📊 Total subscriptions: ${subscriptions.size}`);
+    console.log(`📊 Total subscriptions: ${totalCount}`);
 
     return NextResponse.json({
       success: true,
@@ -82,20 +86,38 @@ export async function GET(): Promise<NextResponse<{
     endpoint: string;
     createdAt: number;
     lastUsed: number;
-  }>
+    deviceType: string;
+    browserType: string;
+  }>;
+  stats: {
+    total: number;
+    byDeviceType: Record<string, number>;
+    byBrowserType: Record<string, number>;
+    oldestSubscription?: number;
+    newestSubscription?: number;
+  };
 } | ApiError>> {
   try {
+    const storage = getSubscriptionStorage();
+    await storage.initialize();
+    
+    const subscriptions = await storage.getAllSubscriptions();
+    const stats = await storage.getSubscriptionStats();
+    
     const subscriptionDetails = Array.from(subscriptions.entries()).map(([id, data]) => ({
       id,
       endpoint: data.subscription.endpoint,
       createdAt: data.createdAt,
       lastUsed: data.lastUsed,
+      deviceType: data.deviceType || 'unknown',
+      browserType: data.browserType || 'unknown',
     }));
 
     return NextResponse.json({
       success: true,
       subscriptions: subscriptions.size,
       details: subscriptionDetails,
+      stats,
     });
 
   } catch (error) {

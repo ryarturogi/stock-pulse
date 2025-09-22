@@ -30,9 +30,20 @@ describe('/api/push/subscribe', () => {
       // No VAPID configuration needed
     };
 
-    // Clear in-memory subscriptions
-    const route = await import('./route');
-    route.subscriptions?.clear?.();
+    // Mock the subscription storage service
+    jest.doMock('@/core/services/subscriptionStorage', () => ({
+      getSubscriptionStorage: jest.fn(() => ({
+        initialize: jest.fn().mockResolvedValue(undefined),
+        storeSubscription: jest.fn().mockResolvedValue(undefined),
+        getSubscriptionCount: jest.fn().mockResolvedValue(0),
+        getAllSubscriptions: jest.fn().mockResolvedValue(new Map()),
+        getSubscriptionStats: jest.fn().mockResolvedValue({
+          total: 0,
+          byDeviceType: {},
+          byBrowserType: {},
+        }),
+      })),
+    }));
   });
 
   afterEach(() => {
@@ -223,6 +234,16 @@ describe('/api/push/subscribe', () => {
     });
 
     it('should store subscription with device metadata', async () => {
+      const mockStorage = {
+        initialize: jest.fn().mockResolvedValue(undefined),
+        storeSubscription: jest.fn().mockResolvedValue(undefined),
+        getSubscriptionCount: jest.fn().mockResolvedValue(1),
+      };
+
+      jest.doMock('@/core/services/subscriptionStorage', () => ({
+        getSubscriptionStorage: jest.fn(() => mockStorage),
+      }));
+
       const requestBody = {
         subscription: mockSubscription,
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -245,18 +266,30 @@ describe('/api/push/subscribe', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
 
-      // Verify subscription was stored with device info
-      const route = await import('./route');
-      const storedSubscriptions = Array.from(route.subscriptions.values());
-      expect(storedSubscriptions).toHaveLength(1);
-      
-      const storedSubscription = storedSubscriptions[0];
-      expect(storedSubscription.deviceType).toBe('desktop');
-      expect(storedSubscription.browserType).toBe('desktop-chrome');
-      expect(storedSubscription.userAgent).toBe(requestBody.userAgent);
+      // Verify storage methods were called
+      expect(mockStorage.initialize).toHaveBeenCalled();
+      expect(mockStorage.storeSubscription).toHaveBeenCalledWith(
+        mockSubscription.endpoint,
+        expect.objectContaining({
+          subscription: mockSubscription,
+          userAgent: requestBody.userAgent,
+          deviceType: 'desktop',
+          browserType: 'desktop-chrome',
+        })
+      );
     });
 
     it('should handle multiple subscriptions', async () => {
+      const mockStorage = {
+        initialize: jest.fn().mockResolvedValue(undefined),
+        storeSubscription: jest.fn().mockResolvedValue(undefined),
+        getSubscriptionCount: jest.fn().mockResolvedValue(2),
+      };
+
+      jest.doMock('@/core/services/subscriptionStorage', () => ({
+        getSubscriptionStorage: jest.fn(() => mockStorage),
+      }));
+
       const subscription1 = {
         ...mockSubscription,
         endpoint: 'https://fcm.googleapis.com/fcm/send/endpoint1'
@@ -299,9 +332,8 @@ describe('/api/push/subscribe', () => {
       const response2 = await POST(request2);
       expect(response2.status).toBe(200);
 
-      // Verify both subscriptions were stored
-      const route = await import('./route');
-      expect(route.subscriptions.size).toBe(2);
+      // Verify storage methods were called for both subscriptions
+      expect(mockStorage.storeSubscription).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -9,9 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { ApiError, PushSubscriptionData, PushNotificationRequest, PushNotificationPayload } from '@/core/types';
-
-// In-memory storage for subscriptions (in production, use a database)
-const subscriptions: Map<string, PushSubscriptionData> = new Map();
+import { getSubscriptionStorage } from '@/core/services/subscriptionStorage';
 
 /**
  * Send push notification using fetch API (no VAPID)
@@ -86,10 +84,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<{
     };
     const payload = JSON.stringify(payloadData);
 
+    // Get storage service and retrieve subscriptions
+    const storage = getSubscriptionStorage();
+    await storage.initialize();
+    
+    const allSubscriptions = await storage.getAllSubscriptions();
+    
     // Send to specific subscription or all subscriptions
     const subscriptionsToNotify = targetSubscriptionId 
-      ? [subscriptions.get(targetSubscriptionId)].filter((sub): sub is PushSubscriptionData => sub !== undefined)
-      : Array.from(subscriptions.values());
+      ? [allSubscriptions.get(targetSubscriptionId)].filter((sub): sub is PushSubscriptionData => sub !== undefined)
+      : Array.from(allSubscriptions.values());
 
     for (const subscriptionData of subscriptionsToNotify) {
       try {
@@ -113,11 +117,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<{
         
         // Remove invalid subscriptions
         if (errorMessage.includes('410') || errorMessage.includes('Gone')) {
-          const subscriptionId = Array.from(subscriptions.entries())
+          const subscriptionId = Array.from(allSubscriptions.entries())
             .find(([, data]) => data.subscription.endpoint === subscriptionData.subscription.endpoint)?.[0];
           
           if (subscriptionId) {
-            subscriptions.delete(subscriptionId);
+            await storage.removeSubscription(subscriptionId);
             console.log(`🗑️ Removed invalid subscription: ${subscriptionId}`);
           }
         }

@@ -7,6 +7,7 @@
 
 import { NotificationService, getNotificationService } from './notificationService';
 import type { WatchedStock } from '@/core/types';
+import { jest } from '@jest/globals';
 
 // Mock the global Notification API
 const mockNotification = {
@@ -194,14 +195,15 @@ describe('NotificationService', () => {
       expect(mockServiceWorker.register).toHaveBeenCalledWith('/sw.js');
     });
 
-    it('should skip service worker registration in development', async () => {
+    it('should register service worker in development mode', async () => {
       process.env.NODE_ENV = 'development';
       (NotificationService as any).instance = null;
       
       const devService = NotificationService.getInstance();
       await devService.requestPermission();
       
-      expect(console.log).toHaveBeenCalledWith('Service worker registration skipped in development mode');
+      expect(mockServiceWorker.register).toHaveBeenCalledWith('/sw.js');
+      expect(console.log).toHaveBeenCalledWith('Service worker registered for notifications');
     });
 
     it('should handle service worker registration errors', async () => {
@@ -479,7 +481,7 @@ describe('NotificationService', () => {
       expect(showNotificationSpy).toHaveBeenCalledWith({
         title: 'Stock Tracker',
         body: 'Real-time connection restored',
-        icon: '/icons/icon-192x192.png',
+        icon: '/icons/icon-192x192.svg',
         data: {
           symbol: 'CONNECTION',
           currentPrice: 0,
@@ -497,7 +499,7 @@ describe('NotificationService', () => {
       expect(showNotificationSpy).toHaveBeenCalledWith({
         title: 'Stock Tracker',
         body: 'Connection lost - using cached data',
-        icon: '/icons/icon-192x192.png',
+        icon: '/icons/icon-192x192.svg',
         data: {
           symbol: 'CONNECTION',
           currentPrice: 0,
@@ -515,7 +517,7 @@ describe('NotificationService', () => {
       expect(showNotificationSpy).toHaveBeenCalledWith({
         title: 'Stock Tracker Error',
         body: 'Test error message',
-        icon: '/icons/icon-192x192.png',
+        icon: '/icons/icon-192x192.svg',
         data: {
           symbol: 'ERROR',
           currentPrice: 0,
@@ -533,7 +535,7 @@ describe('NotificationService', () => {
       expect(showNotificationSpy).toHaveBeenCalledWith({
         title: 'Stock Tracker',
         body: 'Test success message',
-        icon: '/icons/icon-192x192.png',
+        icon: '/icons/icon-192x192.svg',
         data: {
           symbol: 'SUCCESS',
           currentPrice: 0,
