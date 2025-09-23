@@ -231,11 +231,14 @@ export class StockService {
         params.append('search', search);
       }
 
+      const url = `${this.baseUrl}/stock-symbols?${params}`;
+      console.log('🔍 [API] Fetching stock symbols from:', url);
+
       // Create abort controller for timeout (fallback for environments without AbortSignal.timeout)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const response = await fetch(`${this.baseUrl}/stock-symbols?${params}`, {
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -308,10 +311,17 @@ export class StockService {
       
     } catch (error) {
       console.error('❌ [API] Error fetching available stocks', { 
-        error,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
         url: `${this.baseUrl}/stock-symbols?${new URLSearchParams({ exchange, page: page.toString(), limit: limit.toString() })}`,
         options: { exchange, page, limit, search }
       });
+      
+      // Check if it's a network error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('🌐 [API] Network error - likely development server not running');
+      }
+      
       // Fallback to default options
       return {
         data: this.getDefaultStockOptions(),

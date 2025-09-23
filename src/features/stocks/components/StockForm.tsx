@@ -163,6 +163,10 @@ export const StockForm: React.FC<StockFormProps> = ({
               onSelectStock={handleSearchStockSelect}
               watchedStocks={watchedStocks}
               className="mb-4"
+              data-intro="Use the Stock Search to find any stock by symbol or company name. This gives you access to thousands of stocks beyond the popular ones. Try searching for 'AAPL', 'Tesla', or 'Microsoft' to see it in action."
+              data-title="🔍 Search for Stocks"
+              data-desktop-step="2"
+              data-mobile-step="2"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Search for any stock symbol or company name
@@ -195,6 +199,10 @@ export const StockForm: React.FC<StockFormProps> = ({
                 placeholder="Choose a stock..."
                 disabled={isLoading}
                 error={errors.stock || ''}
+                data-desktop-step="3"
+                data-mobile-step="3"
+                data-intro="Select a stock from the dropdown to add it to your watchlist. You can search for any stock by symbol or company name."
+                data-title="📋 Select Stock"
                 watchedStocks={watchedStocks}
               />
               {availableStocksToShow.length === 0 && !isLoadingStocks && (
@@ -221,6 +229,9 @@ export const StockForm: React.FC<StockFormProps> = ({
                   onChange={handlePriceChange}
                   className={`w-full px-3 py-2 pr-20 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 bg-white dark:text-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 ${errors.price ? 'border-red-300' : ''}`}
                   disabled={isLoading}
+                  data-intro="Set a price alert to get notified when a stock reaches your target price. The current price is automatically fetched to help you decide. You'll receive browser notifications when your alerts trigger (make sure to enable them!)."
+                  data-title="💰 Set Price Alerts"
+                  data-desktop-step="4"
                 />
                 {currentPrice && !alertPrice && (
                   <button
