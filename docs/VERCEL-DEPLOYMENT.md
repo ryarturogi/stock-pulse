@@ -39,19 +39,7 @@ vercel
 
 ## 🌍 Environment Configuration
 
-### Automated Setup (Recommended)
-
-Use our provided script to set up all environment variables:
-
-```bash
-# Make script executable
-chmod +x scripts/setup-vercel-env.sh
-
-# Run environment setup
-./scripts/setup-vercel-env.sh
-```
-
-### Manual Setup
+### Environment Variable Setup
 
 #### Required Environment Variables
 
@@ -154,8 +142,6 @@ No additional CI/CD setup required - Vercel handles everything!
 # Deploy to preview URL
 vercel
 
-# Or use our script
-./scripts/deploy-vercel.sh preview
 ```
 
 #### Production Deployment
@@ -163,8 +149,6 @@ vercel
 # Deploy to production
 vercel --prod
 
-# Or use our script  
-./scripts/deploy-vercel.sh production
 ```
 
 ## 🌐 Domain Configuration
