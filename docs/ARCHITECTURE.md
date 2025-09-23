@@ -27,21 +27,30 @@ stock-pulse/
 │   ├── loading.tsx              # Global loading states
 │   ├── error.tsx                # Global error boundaries
 │   └── globals.css              # Global Tailwind styles
-├── components/                   # Reusable UI components
-│   ├── ui/                      # shadcn/ui base components
-│   └── shared/                  # Custom shared components
-├── hooks/                       # Custom React hooks
-├── lib/                         # Core utilities and configurations
-├── services/                    # External API services and integrations
-├── stores/                      # Zustand state management
-├── types/                       # TypeScript utilities and definitions
-│   ├── index.ts                # Central type exports
-│   └── utils.ts                # Comprehensive utility types
-├── utils/                       # Pure utility functions
-├── scripts/                     # Build and deployment automation
-│   ├── create-pwa-icons.js     # PWA icon generation
-│   ├── setup-vercel-env.sh     # Environment setup
-│   └── deploy-vercel.sh        # Deployment automation
+├── src/                         # Enterprise source structure
+│   ├── core/                    # Core application modules
+│   │   ├── types/               # TypeScript type definitions
+│   │   │   ├── index.ts         # Central type exports
+│   │   │   ├── utils.ts         # Utility types
+│   │   │   └── stock.ts         # Stock-specific types
+│   │   ├── constants/           # Application constants
+│   │   └── utils/               # Core utility functions
+│   ├── features/                # Feature-based modules
+│   │   ├── stocks/              # Stock tracking feature
+│   │   │   ├── components/      # Stock-related components
+│   │   │   ├── services/        # Stock API services
+│   │   │   ├── stores/          # Stock state management
+│   │   │   └── hooks/           # Stock-specific hooks
+│   │   ├── notifications/       # Notification feature
+│   │   │   ├── components/      # Notification components
+│   │   │   ├── services/        # Notification services
+│   │   │   └── stores/          # Notification state
+│   │   └── pwa/                # PWA functionality
+│   └── shared/                  # Shared modules
+│       ├── components/          # Shared components
+│       │   └── ui/              # Base UI components
+│       ├── hooks/               # Shared custom hooks
+│       └── utils/               # Shared utility functions
 ├── docs/                        # Comprehensive documentation
 ├── claude.rules/               # Claude Code development prompts
 ├── vercel.json                 # Vercel deployment configuration

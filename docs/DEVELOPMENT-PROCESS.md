@@ -298,7 +298,6 @@ main                 # Production-ready code
 # Create enterprise-grade directory structure
 mkdir -p src/{core,features,shared}/{types,components,hooks,services,stores,utils}
 mkdir -p docs/{architecture,deployment,testing}
-mkdir -p scripts/{build,deploy,setup}
 mkdir -p tests/{unit,integration,e2e}
 ```
 
@@ -782,11 +781,10 @@ JWT_SECRET=your_jwt_secret_32chars_minimum
 vercel env add FINNHUB_API_KEY production
 vercel env add JWT_SECRET production
 
-# Automated environment setup script
-#!/bin/bash
-# scripts/setup-vercel-env.sh
-echo "Setting up Vercel environment variables..."
-vercel env add FINNHUB_API_KEY production --force
+# Manual environment setup
+vercel env add FINNHUB_API_KEY production
+vercel env add JWT_SECRET production
+vercel env add CRON_SECRET production
 ```
 
 ### Automated Deployment Process
@@ -807,21 +805,13 @@ echo "🏗️ Building application..."
 pnpm run build || exit 1
 ```
 
-#### 2. Deployment Automation
+#### 2. Deployment Process
 ```bash
-# scripts/deploy-vercel.sh - Production deployment
-if [ "$DEPLOYMENT_TYPE" = "production" ]; then
-  echo "⚠️ Deploying to PRODUCTION"
-  read -p "Are you sure? (y/N): " -n 1 -r
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    vercel --prod --yes
-    echo "✅ Production deployment successful!"
-  fi
-else
-  # Preview deployment
-  DEPLOYMENT_URL=$(vercel --yes 2>&1 | grep -o 'https://[^[:space:]]*\.vercel\.app')
-  echo "🌐 Preview URL: ${DEPLOYMENT_URL}"
-fi
+# Preview deployment
+vercel
+
+# Production deployment (requires confirmation)
+vercel --prod
 ```
 
 #### 3. Health Monitoring
