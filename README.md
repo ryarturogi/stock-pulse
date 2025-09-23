@@ -1,4 +1,4 @@
-# StockPulse
+# StockPulse - Real-time Stock Market Tracker
 
 Enterprise-grade Next.js 15 + React 19 + TypeScript stock market tracking application with comprehensive TypeScript utilities, Vercel deployment, and PWA capabilities.
 
@@ -21,7 +21,7 @@ Enterprise-grade Next.js 15 + React 19 + TypeScript stock market tracking applic
 - **Real-time Stock Tracking** - Live market data with secure API polling and WebSocket fallback
 - **WebPush Notifications** - Price alerts using Web Notifications API with Service Worker
 - **Progressive Web App** - Offline functionality and app-like experience
-- **Guided User Tour** - Interactive onboarding with Shepherd.js for new users
+- **Guided User Tour** - Interactive onboarding with Intro.js for new users
 - **Production Ready** - Secure API handling, rate limiting, and Vercel deployment
 - **Developer Experience** - Cursor IDE and Claude Code rules for enhanced productivity
 
@@ -62,7 +62,7 @@ Enterprise-grade Next.js 15 + React 19 + TypeScript stock market tracking applic
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/ryarturogi/stock-pulse/
    cd stock-pulse
    ```
 
@@ -132,11 +132,6 @@ NEXT_PUBLIC_FEATURE_ALERTS=true
 # 🔒 PRIVATE VARIABLES (Server-side only)
 # Stock API Keys
 FINNHUB_API_KEY=your_finnhub_api_key
-
-# Security
-JWT_SECRET=your_jwt_secret_32chars_minimum
-ENCRYPTION_KEY=your_encryption_key_32chars_minimum
-CRON_SECRET=your_cron_secret_for_vercel_jobs
 
 # Push Notifications (No VAPID required)
 # Push notifications work without additional configuration
@@ -351,8 +346,6 @@ pnpm run deploy:vercel
 ```bash
 # Add production environment variables
 vercel env add FINNHUB_API_KEY production
-vercel env add JWT_SECRET production
-vercel env add CRON_SECRET production
 
 # Pull environment variables locally
 vercel env pull .env.local
@@ -448,7 +441,6 @@ claude.rules/bootstrap-dev-env.prompt   # Full project setup template
 - **TypeScript 5.6** - Strict mode with comprehensive utility types
 - **ESLint 9** - Flat config with Next.js and TypeScript rules
 - **Prettier 3.3** - Consistent code formatting
-- **Husky + lint-staged** - Pre-commit hooks for quality gates
 - **Jest + RTL** - Unit testing with TypeScript support
 - **Playwright** - E2E testing with type-safe page objects
 - **Vercel Security** - Built-in security scanning and dependency updates
@@ -487,16 +479,6 @@ claude.rules/bootstrap-dev-env.prompt   # Full project setup template
 - [🏥 Health Check](./app/api/health/route.ts) - Application health monitoring
 - [⏰ Cron Jobs](./app/api/cron/) - Automated background tasks
 - API documentation will be generated with business logic implementation
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-- [GitHub Issues](https://github.com/your-username/stock-pulse/issues)
-- [Documentation](./docs/)
-- [Contributing Guide](CONTRIBUTING.md)
 
 ## 📈 Current Application State
 
