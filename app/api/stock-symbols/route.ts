@@ -10,6 +10,7 @@ import { NextRequest } from 'next/server';
 import { DEFAULT_STOCK_OPTIONS } from '@/core/constants/constants';
 import { createSuccessResponse, handleApiError } from '@/core/utils/apiResponse';
 import { paginateArray, parsePaginationParams } from '@/core/utils/pagination';
+import { withReadOnlyMiddleware } from '@/core/middleware/api';
 
 interface FinnhubSymbol {
   symbol: string;
@@ -105,7 +106,7 @@ function buildFallbackResponse(symbols: FinnhubSymbol[], page: number, limit: nu
   }, 'Fallback stock symbols loaded');
 }
 
-export async function GET(request: NextRequest) {
+async function getStockSymbols(request: NextRequest) {
   try {
     const apiKey = process.env.FINNHUB_API_KEY;
     
@@ -189,3 +190,5 @@ export async function GET(request: NextRequest) {
     return handleApiError(error, 'stock-symbols API');
   }
 }
+
+export const GET = withReadOnlyMiddleware(getStockSymbols);

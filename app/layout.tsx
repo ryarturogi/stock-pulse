@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 
 import './globals.css';
+import 'intro.js/introjs.css';
+import '../src/styles/intro.css';
 import { ErrorBoundaryWrapper } from '../src/shared/components/ErrorBoundaryWrapper';
 
 const inter = Inter({ subsets: ['latin'] });

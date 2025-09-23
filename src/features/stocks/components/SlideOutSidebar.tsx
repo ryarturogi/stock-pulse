@@ -17,6 +17,7 @@ interface SlideOutSidebarProps {
   onClose: () => void;
   children: React.ReactNode;
   className?: string;
+  'data-tour'?: string;
 }
 
 /**
@@ -33,6 +34,7 @@ export const SlideOutSidebar: React.FC<SlideOutSidebarProps> = ({
   onClose,
   children,
   className = '',
+  ...props
 }) => {
   // Handle escape key
   useEffect(() => {
@@ -84,6 +86,7 @@ export const SlideOutSidebar: React.FC<SlideOutSidebarProps> = ({
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           ${className}
         `}
+        {...props}
       >
         {/* Close button - only visible on mobile/tablet */}
         <div className="flex justify-end p-4 lg:hidden">
@@ -91,6 +94,7 @@ export const SlideOutSidebar: React.FC<SlideOutSidebarProps> = ({
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label="Close sidebar"
+            data-tour="close-sidebar"
           >
             <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>

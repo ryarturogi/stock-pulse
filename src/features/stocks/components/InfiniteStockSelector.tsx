@@ -22,6 +22,11 @@ interface InfiniteStockSelectorProps {
   error?: string;
   watchedStocks?: { symbol: string }[];
   className?: string;
+  'data-step'?: string;
+  'data-desktop-step'?: string;
+  'data-mobile-step'?: string;
+  'data-intro'?: string;
+  'data-title'?: string;
 }
 
 interface PaginationState {
@@ -43,6 +48,7 @@ export const InfiniteStockSelector: React.FC<InfiniteStockSelectorProps> = ({
   error = '',
   watchedStocks = [],
   className = '',
+  ...props
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [stocks, setStocks] = useState<StockOption[]>([]);
@@ -260,7 +266,7 @@ export const InfiniteStockSelector: React.FC<InfiniteStockSelectorProps> = ({
   };
 
   return (
-    <div ref={dropdownRef} className={`relative ${className}`}>
+    <div ref={dropdownRef} className={`relative ${className}`} {...props}>
       {/* Selector Container */}
       <div className={`relative w-full px-3 py-2 text-left bg-white dark:bg-gray-700 border rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-colors ${
         error 

@@ -31,10 +31,17 @@ import { StockChartProps, ChartDataPoint } from '@/core/types';
  * Displays a line chart of stock prices over time using Recharts.
  * Shows real-time data for all watched stocks.
  */
-export const StockChart: React.FC<StockChartProps> = ({
+export const StockChart: React.FC<StockChartProps & { 
+  'data-intro'?: string;
+  'data-title'?: string;
+  'data-step'?: string;
+  'data-desktop-step'?: string;
+  'data-mobile-step'?: string;
+}> = ({
   stocks,
   height = 320,
   className = '',
+  ...props
 }) => {
   // Use CSS classes for responsive behavior instead of JavaScript
   
@@ -154,7 +161,7 @@ export const StockChart: React.FC<StockChartProps> = ({
 
   if (stocksWithData.length === 0) {
     return (
-      <div className={`flex justify-center items-center bg-gray-50 rounded-lg h-${height} dark:bg-gray-800 ${className}`}>
+      <div className={`flex justify-center items-center bg-gray-50 rounded-lg px-4 py-8 h-${height} dark:bg-gray-800 ${className}`} {...props}>
         <div className="text-center">
           <Clock className="mx-auto mb-4 w-12 h-12 text-gray-400 dark:text-gray-500" />
           <p className="text-lg font-medium text-gray-500 dark:text-gray-400">
@@ -169,7 +176,7 @@ export const StockChart: React.FC<StockChartProps> = ({
   }
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700 ${className}`}>
+    <div className={`bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700 ${className}`} {...props}>
       <div className="p-3 border-b border-gray-200 lg:p-4 dark:border-gray-700">
         <div className="flex justify-between items-start">
           <div>
