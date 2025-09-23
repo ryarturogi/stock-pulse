@@ -6,12 +6,14 @@ import './globals.css';
 import 'intro.js/introjs.css';
 import '../src/styles/intro.css';
 import { ErrorBoundaryWrapper } from '../src/shared/components/ErrorBoundaryWrapper';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'StockPulse - Real-time Stock Market Tracker',
-  description: 'Track stocks, manage portfolios, and stay updated with real-time market data',
+  description:
+    'Track stocks, manage portfolios, and stay updated with real-time market data',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -48,16 +50,15 @@ export default function RootLayout({
         <meta name='msapplication-config' content='/browserconfig.xml' />
         <meta name='msapplication-TileColor' content='#000000' />
         <meta name='msapplication-tap-highlight' content='no' />
-        
+
         <link rel='apple-touch-icon' href='/icons/icon-192x192.svg' />
         <link rel='manifest' href='/manifest.json' />
         <link rel='shortcut icon' href='/favicon.ico' />
       </head>
       <body className={inter.className}>
         <div id='app'>
-          <ErrorBoundaryWrapper>
-            {children}
-          </ErrorBoundaryWrapper>
+          <ErrorBoundaryWrapper>{children}</ErrorBoundaryWrapper>
+          <Analytics />
         </div>
       </body>
     </html>

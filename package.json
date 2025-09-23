@@ -32,6 +32,7 @@
     "vercel:env": "vercel env pull .env.local"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.5.0",
     "autoprefixer": "^10.4.20",
     "intro.js": "^8.3.2",
     "lucide-react": "^0.544.0",
