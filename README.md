@@ -1,4 +1,4 @@
-# StockPulse
+# StockPulse - Real-time Stock Market Tracker
 
 Enterprise-grade Next.js 15 + React 19 + TypeScript stock market tracking application with comprehensive TypeScript utilities, Vercel deployment, and PWA capabilities.
 
