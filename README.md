@@ -208,15 +208,11 @@ stock-pulse/
 │   │   │   └── index.ts
 │   │   └── utils/               # Shared utility functions
 │   └── styles/                  # Global styles and themes
-│       └── shepherd.css         # Tour component styling
+│       └── intro.css            # Tour component styling
 ├── public/                      # Static assets
 │   ├── manifest.json           # PWA manifest
 │   ├── sw.js                   # Service worker (next-pwa)
 │   └── icons/                  # App icons
-├── scripts/                     # Build and deployment scripts
-│   ├── create-pwa-icons.js     # PWA icon generator
-│   ├── setup-vercel-env.sh     # Environment setup script
-│   └── deploy-vercel.sh        # Deployment script
 ├── docs/                        # Comprehensive documentation
 │   ├── ARCHITECTURE.md         # System architecture
 │   ├── VERCEL-DEPLOYMENT.md    # Deployment guide
@@ -345,8 +341,7 @@ npm install -g vercel
 vercel login
 vercel
 
-# Set up environment variables
-./scripts/setup-vercel-env.sh
+# Set up environment variables manually in Vercel dashboard
 
 # Deploy to production
 pnpm run deploy:vercel
@@ -389,7 +384,7 @@ See [Vercel Deployment Guide](./docs/VERCEL-DEPLOYMENT.md) for detailed instruct
 ## 🎯 User Experience Features
 
 ### Interactive Guided Tour
-- **Auto-start for New Users** - Comprehensive 9-step onboarding tour using Shepherd.js
+- **Auto-start for New Users** - Comprehensive 10-step onboarding tour using Intro.js
 - **Smart Navigation** - Context-aware tour that opens/closes UI elements as needed
 - **Mobile Optimized** - Responsive tour steps with touch-friendly interactions
 - **Dark Mode Compatible** - Tour styling adapts to user's theme preference
@@ -486,7 +481,7 @@ claude.rules/bootstrap-dev-env.prompt   # Full project setup template
 - [🏗️ Enterprise Architecture](./src/) - Feature-based module organization
 - [🎯 Component Templates](./claude.rules/) - Standardized development prompts
 - [⚙️ IDE Configuration](./.cursorrules) - Cursor IDE optimization rules
-- [🎪 Tour Integration](./TOUR_INTEGRATION.md) - Complete guided tour implementation guide
+- [🎪 Tour Integration](./TOUR_INTEGRATION.md) - Complete guided tour implementation with Intro.js
 
 ### API Documentation
 - [🏥 Health Check](./app/api/health/route.ts) - Application health monitoring
@@ -584,7 +579,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Tailwind CSS 3.4** - Utility-first styling with custom configuration
 - **Zustand 5.0** - State management with persistence middleware
 - **Recharts** - Chart visualization with responsive design
-- **Shepherd.js 14.5** - Interactive guided tours for user onboarding
+- **Intro.js 8.3** - Interactive guided tours for user onboarding
 - **Lucide React** - Modern icon system with tree shaking
 
 #### Browser Support

@@ -57,10 +57,6 @@ Repo Structure (Next.js 15 App Router)
 │  ├─ manifest.json
 │  ├─ sw.js
 │  └─ icons/
-├─ scripts/
-│  ├─ generate-vapid.js
-│  ├─ setup-vercel-env.sh
-│  └─ deploy-vercel.sh
 ├─ docs/
 │  ├─ ARCHITECTURE.md
 │  ├─ VERCEL-DEPLOYMENT.md

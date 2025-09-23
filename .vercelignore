@@ -51,8 +51,7 @@ README.md
 CONTRIBUTING.md
 CHANGELOG.md
 
-# Scripts not needed for deployment
-scripts/generate-vapid.js
+# Scripts directory was removed - no longer exists
 
 # Test files
 **/*.test.ts

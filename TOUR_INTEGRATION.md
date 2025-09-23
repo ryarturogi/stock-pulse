@@ -212,7 +212,7 @@ No additional environment variables required.
 ## Dependencies
 
 ### Added
-- `intro.js`: ^8.3.2 (guided tour functionality with better styling)
+- `intro.js`: ^8.3.2 (guided tour functionality with superior styling and user experience)
 
 ### Development
 - No additional dev dependencies
@@ -223,16 +223,17 @@ No additional environment variables required.
 
 ✅ **Integration Complete**: The tour is fully functional with Intro.js providing superior styling and user experience, ready for production use.
 
-## Why Intro.js Over Shepherd.js?
+## Why Intro.js Was Chosen
 
 ### Advantages of Intro.js:
 - **Better Styling**: More polished, professional appearance out of the box
-- **Smaller Bundle**: ~12KB vs ~15KB gzipped
-- **Simpler API**: Data attribute-driven configuration
-- **Better Mobile Support**: More responsive and touch-friendly
-- **Active Development**: More frequent updates and community support
+- **Smaller Bundle**: ~12KB gzipped - efficient and lightweight
+- **Simpler API**: Data attribute-driven configuration reduces code complexity
+- **Better Mobile Support**: More responsive and touch-friendly interactions
+- **Active Development**: Frequent updates and strong community support
 - **Progress Bar**: Built-in step progression indicator
 - **Better Animations**: Smoother transitions and highlighting effects
+- **Professional Theme**: Matches StockPulse design system perfectly
 
 ### Implementation Benefits:
 - **Cleaner Code**: No need to programmatically define steps
@@ -240,3 +241,4 @@ No additional environment variables required.
 - **Flexible**: Easy to reorder steps by changing data-step values
 - **SEO Friendly**: Tour content embedded in HTML
 - **Accessible**: Better screen reader support with native HTML content
+- **TypeScript Compatible**: Works seamlessly with TypeScript configuration
