@@ -15,6 +15,7 @@ import {
   isNumber
 } from '@/core/types';
 import { isValidSymbol, isValidAlertPrice } from '@/core/utils/validation';
+import { logger } from '@/core/utils/logger';
 
 /**
  * Stock API service class
@@ -25,6 +26,9 @@ export class StockService {
   // Request deduplication cache
   private requestCache = new Map<string, Promise<FinnhubStockQuote>>();
   private cacheTimeout = 2000; // 2 seconds cache for deduplication
+  // Performance optimization: request queue with priority
+  private requestQueue: Array<{ symbol: string; priority: number; resolve: (value: FinnhubStockQuote) => void; reject: (error: Error) => void }> = [];
+  private isProcessingQueue = false;
 
   private constructor() {
     this.baseUrl = '/api';
@@ -38,6 +42,44 @@ export class StockService {
       StockService.instance = new StockService();
     }
     return StockService.instance;
+  }
+
+  /**
+   * Process request queue with priority
+   */
+  private async processRequestQueue(): Promise<void> {
+    if (this.isProcessingQueue || this.requestQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    try {
+      // Sort by priority (higher priority first)
+      this.requestQueue.sort((a, b) => b.priority - a.priority);
+
+      // Process up to 3 requests concurrently
+      const concurrentLimit = 3;
+      const batch = this.requestQueue.splice(0, concurrentLimit);
+
+      const promises = batch.map(async ({ symbol, resolve, reject }) => {
+        try {
+          const result = await this._fetchStockQuoteInternal(symbol);
+          resolve(result);
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error('Unknown error'));
+        }
+      });
+
+      await Promise.allSettled(promises);
+
+      // Process next batch if queue has more items
+      if (this.requestQueue.length > 0) {
+        setTimeout(() => this.processRequestQueue(), 100);
+      }
+    } finally {
+      this.isProcessingQueue = false;
+    }
   }
 
   /**
@@ -112,8 +154,8 @@ export class StockService {
         throw new Error(data.error || 'Failed to fetch stock quote');
       }
 
-      // Debug logging (can be removed in production)
-      console.log(`✅ [API] Quote data received for ${symbol}`, { symbol, quote: quoteData });
+      // Debug logging (development only)
+      logger.api(`Quote data received for ${symbol}`, { symbol, quote: quoteData });
 
       // Validate the quote data with better error handling
       if (!isFinnhubStockQuote(quoteData)) {
@@ -165,8 +207,8 @@ export class StockService {
       return {};
     }
 
-    // Limit concurrent requests to avoid rate limiting
-    const BATCH_SIZE = 5;
+    // Dynamic batch size based on total requests to optimize performance
+    const BATCH_SIZE = Math.min(Math.max(3, Math.floor(symbols.length / 4)), 8);
     const results: Record<string, FinnhubStockQuote> = {};
 
     for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
@@ -190,9 +232,10 @@ export class StockService {
         }
       });
 
-      // Add delay between batches to respect rate limits
+      // Add dynamic delay between batches based on batch size and rate limits
       if (i + BATCH_SIZE < symbols.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        const delay = Math.min(50 + (batch.length * 10), 200); // Dynamic delay: 50-200ms
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
 
@@ -401,7 +444,7 @@ export class StockService {
    */
   private async searchStocksLocally(query: string): Promise<StockOption[]> {
     try {
-      const availableStocks = await this.getDefaultStockOptions();
+      const availableStocks = this.getDefaultStockOptions();
       const searchTerm = query.toLowerCase().trim();
 
       return availableStocks.filter(stock => 

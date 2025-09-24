@@ -5,6 +5,50 @@ if (!(global as any).IS_REACT_ACT_ENVIRONMENT) {
   (global as any).IS_REACT_ACT_ENVIRONMENT = true;
 }
 
+// Fix for React 19 + React Testing Library compatibility
+// The root issue is that jsdom doesn't set up DOM methods properly with React 19
+// We need to ensure all DOM manipulation methods are available
+
+// Store original methods
+const originalAppendChild = Node.prototype.appendChild;
+const originalRemoveChild = Node.prototype.removeChild;
+const originalInsertBefore = Node.prototype.insertBefore;
+
+// Force DOM methods on all DOM nodes
+if (typeof document !== 'undefined') {
+  // Patch document.body
+  if (document.body) {
+    document.body.appendChild = originalAppendChild.bind(document.body);
+    document.body.removeChild = originalRemoveChild.bind(document.body);
+    document.body.insertBefore = originalInsertBefore.bind(document.body);
+  }
+
+  // Patch document.documentElement
+  if (document.documentElement) {
+    document.documentElement.appendChild = originalAppendChild.bind(document.documentElement);
+    document.documentElement.removeChild = originalRemoveChild.bind(document.documentElement);
+    document.documentElement.insertBefore = originalInsertBefore.bind(document.documentElement);
+  }
+
+  // Patch document.createElement to ensure created elements have methods
+  const originalCreateElement = document.createElement.bind(document);
+  document.createElement = function(tagName: string, options?: ElementCreationOptions) {
+    const element = originalCreateElement(tagName, options);
+    
+    if (!element.appendChild) {
+      element.appendChild = originalAppendChild.bind(element);
+    }
+    if (!element.removeChild) {
+      element.removeChild = originalRemoveChild.bind(element);
+    }
+    if (!element.insertBefore) {
+      element.insertBefore = originalInsertBefore.bind(element);
+    }
+    
+    return element;
+  };
+}
+
 // Mock ResizeObserver
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),

@@ -33,6 +33,8 @@ export interface StockWebSocketCallbacks {
 
 export class StockWebSocketService {
   private callbacks: StockWebSocketCallbacks;
+  private connectionTimeout: NodeJS.Timeout | null = null;
+  private eventSource: EventSource | null = null;
 
   constructor(callbacks: StockWebSocketCallbacks) {
     this.callbacks = callbacks;
@@ -122,14 +124,14 @@ export class StockWebSocketService {
       const proxyUrl = `/api/websocket-proxy?symbols=${symbols}`;
       console.log('🔗 Proxy URL:', proxyUrl);
 
-      const eventSource = new EventSource(proxyUrl);
+      this.eventSource = new EventSource(proxyUrl);
       
       // Set connection timeout
-      const connectionTimeout = setTimeout(() => {
+      this.connectionTimeout = setTimeout(() => {
         const currentState = this.callbacks.getState();
         if (currentState.webSocketStatus === 'connecting') {
           console.log('⏰ WebSocket proxy connection timeout, switching to API mode...');
-          eventSource.close();
+          this.cleanup();
           this.callbacks.onStatusChange('error');
           this.callbacks.onConnectingChange(false);
           this.callbacks.onErrorChange('Connection timeout - using API fallback');
@@ -143,13 +145,16 @@ export class StockWebSocketService {
         }
       }, 60000); // 60 second timeout (increased for better reliability and rate limit handling)
 
-      eventSource.onopen = () => {
+      this.eventSource.onopen = () => {
         console.log('✅ Connected to secure WebSocket proxy');
-        clearTimeout(connectionTimeout);
+        if (this.connectionTimeout) {
+          clearTimeout(this.connectionTimeout);
+          this.connectionTimeout = null;
+        }
         this.callbacks.onStatusChange('connected');
         this.callbacks.onConnectingChange(false);
         this.callbacks.onErrorChange(null);
-        this.callbacks.onConnectionChange(eventSource);
+        this.callbacks.onConnectionChange(this.eventSource);
         this.callbacks.onUpdateConnectionAttempts(0); // Reset connection attempts on successful connection
         
         // WebSocket connected - real-time data is now available, but keep periodic refresh running
@@ -157,13 +162,17 @@ export class StockWebSocketService {
         console.log('🔌 WebSocket connected - real-time data active, periodic refresh continues for reliability');
       };
 
-      eventSource.onerror = (error) => {
+      this.eventSource.onerror = (error) => {
         console.error('❌ WebSocket proxy connection error:', error);
-        clearTimeout(connectionTimeout);
+        if (this.connectionTimeout) {
+          clearTimeout(this.connectionTimeout);
+          this.connectionTimeout = null;
+        }
         
         // Check if this is a connection error (409, 429, 503)
-        if (eventSource.readyState === EventSource.CLOSED) {
+        if (this.eventSource && this.eventSource.readyState === EventSource.CLOSED) {
           console.log('🔌 WebSocket connection closed, likely due to rate limiting or circuit breaker');
+          this.cleanup();
           this.callbacks.onStatusChange('error');
           this.callbacks.onConnectingChange(false);
           this.callbacks.onErrorChange('Connection blocked - using API fallback');
@@ -180,7 +189,7 @@ export class StockWebSocketService {
 
       // EventSource doesn't have onclose - using onerror for connection management instead
 
-      eventSource.onmessage = (event) => {
+      this.eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           console.log('📨 WebSocket proxy message received:', data);
@@ -229,7 +238,7 @@ export class StockWebSocketService {
       };
 
       // Additional error handler for connection issues
-      eventSource.addEventListener('error', (error) => {
+      this.eventSource.addEventListener('error', (error: Event) => {
         console.warn('⚠️ WebSocket proxy connection issue (likely rate limited or cooldown active)');
         if (error instanceof ErrorEvent && error.message) {
           console.info('Connection details:', {
@@ -237,7 +246,10 @@ export class StockWebSocketService {
             type: 'EventSource error'
           });
         }
-        clearTimeout(connectionTimeout);
+        if (this.connectionTimeout) {
+          clearTimeout(this.connectionTimeout);
+          this.connectionTimeout = null;
+        }
         
         // Check if this is just an initial connection error
         const currentState = this.callbacks.getState();
@@ -251,9 +263,12 @@ export class StockWebSocketService {
         console.log('⚠️ WebSocket connection issue, continuing with periodic refresh');
         
         // Check EventSource readyState for more specific error info
-        const readyStateText = eventSource.readyState === 0 ? 'CONNECTING' : 
-                              eventSource.readyState === 1 ? 'OPEN' : 'CLOSED';
-        console.log(`EventSource readyState: ${readyStateText} (${eventSource.readyState})`);
+        let readyStateText = 'UNKNOWN';
+        if (this.eventSource) {
+          readyStateText = this.eventSource.readyState === 0 ? 'CONNECTING' : 
+                          this.eventSource.readyState === 1 ? 'OPEN' : 'CLOSED';
+          console.log(`EventSource readyState: ${readyStateText} (${this.eventSource.readyState})`);
+        }
         
         // Determine error message based on likely causes - use user-friendly messages
         let errorMessage = 'Connection temporarily unavailable';
@@ -312,9 +327,26 @@ export class StockWebSocketService {
   }
 
   /**
+   * Clean up resources
+   */
+  private cleanup(): void {
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+    
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
+  }
+
+  /**
    * Disconnect WebSocket
    */
   disconnectWebSocket(): void {
+    this.cleanup();
+    
     const state = this.callbacks.getState();
     
     if (state.webSocketConnection) {

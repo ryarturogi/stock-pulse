@@ -406,6 +406,13 @@ export class NotificationService {
     this.alertHistory.clear();
     this.serviceWorkerRegistration = null;
   }
+
+  /**
+   * Reset singleton instance (for testing only)
+   */
+  public static resetInstance(): void {
+    NotificationService.instance = undefined as any;
+  }
 }
 
 /**
