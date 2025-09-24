@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { validateSearchQuery, sanitizeHtml } from '@/core/utils/validation';
 
 interface FinnhubSearchResult {
   description: string;
@@ -40,22 +41,45 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Validate search query using enhanced validation
+    const queryValidation = validateSearchQuery(query);
+    if (!queryValidation.isValid) {
+      return NextResponse.json(
+        { error: queryValidation.error },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize query to prevent XSS and injection attacks
+    const sanitizedQuery = sanitizeHtml(query.trim());
+
     const response = await fetch(
-      `https://finnhub.io/api/v1/search?q=${encodeURIComponent(query)}&token=${apiKey}`,
+      `https://finnhub.io/api/v1/search?q=${encodeURIComponent(sanitizedQuery)}&token=${apiKey}`,
       {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': 'StockPulse/1.0',
         },
         next: { revalidate: 300 }, // Cache for 5 minutes
+        signal: AbortSignal.timeout(10000), // 10 second timeout
       }
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Finnhub search API error:', response.status, errorText);
+      // Don't expose internal error details
+      const errorMessage = response.status === 401 
+        ? 'API authentication failed' 
+        : response.status === 429 
+        ? 'Rate limit exceeded' 
+        : 'External API error';
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Finnhub search API error:', response.status, errorMessage);
+      }
+      
       return NextResponse.json(
-        { error: `Finnhub API error: ${response.statusText}` },
+        { error: errorMessage },
         { status: response.status }
       );
     }

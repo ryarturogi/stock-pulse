@@ -5,13 +5,15 @@ const activeConnections = new Map<string, { webSocket: WebSocket | null; symbols
 const connectionCooldowns = new Map<string, number>();
 const circuitBreaker = new Map<string, { failures: number; lastFailure: number; state: 'closed' | 'open' | 'half-open' }>();
 
-// Emergency rate limiting - much more aggressive
-const globalRateLimit = { 
-  lastAttempt: 0, 
-  attempts: 0,
-  blocked: false,
-  blockUntil: 0
-};
+// Note: globalRateLimit removed in favor of user-specific rate limiting
+
+// Per-user rate limiting
+const userRateLimits = new Map<string, {
+  attempts: number;
+  lastAttempt: number;
+  blocked: boolean;
+  blockUntil: number;
+}>();
 
 export async function GET(request: NextRequest) {
   console.log('🔌 WebSocket proxy endpoint called');
@@ -24,17 +26,36 @@ export async function GET(request: NextRequest) {
   // Create a connection key based on symbols to prevent duplicates
   const connectionKey = symbols || 'default';
   
-  // EMERGENCY: Ultra-aggressive rate limiting
+  // Balanced rate limiting with user-specific limits
   const now = Date.now();
+  const userIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
   
-  // If we're in a global block period, reject all connections
-  if (globalRateLimit.blocked && now < globalRateLimit.blockUntil) {
-    const remainingTime = Math.ceil((globalRateLimit.blockUntil - now) / 1000);
-    console.log(`🚫 EMERGENCY BLOCK: All connections blocked for ${remainingTime}s`);
+  // Get or create user rate limit data
+  let userLimit = userRateLimits.get(userIP);
+  if (!userLimit) {
+    userLimit = {
+      attempts: 0,
+      lastAttempt: 0,
+      blocked: false,
+      blockUntil: 0
+    };
+    userRateLimits.set(userIP, userLimit);
+  }
+  
+  // Reset user rate limit if more than 5 minutes have passed
+  if (now - userLimit.lastAttempt > 5 * 60 * 1000) {
+    userLimit.attempts = 0;
+    userLimit.blocked = false;
+  }
+  
+  // Check if user is blocked
+  if (userLimit.blocked && now < userLimit.blockUntil) {
+    const remainingTime = Math.ceil((userLimit.blockUntil - now) / 1000);
+    console.log(`🚫 User rate limit: IP ${userIP} blocked for ${remainingTime}s`);
     return new Response(JSON.stringify({
       type: 'error',
-      message: `Emergency rate limit block active. Try again in ${remainingTime} seconds.`,
-      code: 'EMERGENCY_BLOCK',
+      message: `Rate limit exceeded. Try again in ${remainingTime} seconds.`,
+      code: 'USER_RATE_LIMITED',
       remainingTime: remainingTime
     }), { 
       status: 429,
@@ -45,33 +66,20 @@ export async function GET(request: NextRequest) {
     });
   }
   
-  // Reset block if time has passed
-  if (globalRateLimit.blocked && now >= globalRateLimit.blockUntil) {
-    globalRateLimit.blocked = false;
-    globalRateLimit.attempts = 0;
-    console.log('🔄 Emergency block period ended, resetting rate limiter');
-  }
+  // Track user attempts
+  userLimit.attempts++;
+  userLimit.lastAttempt = now;
   
-  // Reset attempt counter if more than 5 minutes have passed since last attempt
-  if (now - globalRateLimit.lastAttempt > 5 * 60 * 1000) {
-    globalRateLimit.attempts = 0;
-    console.log('🔄 Resetting rate limit counter due to time gap');
-  }
-  
-  // Track attempts and block if too many
-  globalRateLimit.attempts++;
-  globalRateLimit.lastAttempt = now;
-  
-  // If more than 20 attempts in the last 5 minutes, block for 1 minute (less aggressive)
-  if (globalRateLimit.attempts > 20) {
-    globalRateLimit.blocked = true;
-    globalRateLimit.blockUntil = now + (1 * 60 * 1000); // 1 minute
-    console.log('🚫 Rate limit: Too many attempts, blocking connections for 1 minute');
+  // Block user if more than 10 attempts in 5 minutes (reasonable limit)
+  if (userLimit.attempts > 10) {
+    userLimit.blocked = true;
+    userLimit.blockUntil = now + (2 * 60 * 1000); // 2 minutes
+    console.log(`🚫 User rate limit: IP ${userIP} blocked for 2 minutes`);
     return new Response(JSON.stringify({
       type: 'error',
-      message: 'Connection rate limited. Try again in 1 minute.',
-      code: 'RATE_LIMITED',
-      remainingTime: 60
+      message: 'Rate limit exceeded. Try again in 2 minutes.',
+      code: 'USER_RATE_LIMITED',
+      remainingTime: 120
     }), { 
       status: 429,
       headers: {

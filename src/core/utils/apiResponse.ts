@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 
 import type { ApiResponse } from '@/core/types/utils';
+import { ErrorHandler } from './errorHandler';
 
 /**
  * Create a successful API response
@@ -55,55 +56,11 @@ export function createErrorResponse(
  * Handle common API errors with standardized messages
  */
 export function handleApiError(error: unknown, context?: string): NextResponse<ApiResponse<never>> {
-  console.error(`API Error${context ? ` in ${context}` : ''}:`, error);
+  const appError = ErrorHandler.handleError(error, context);
   
-  if (error instanceof Error) {
-    // Handle specific error types
-    if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT')) {
-      return createErrorResponse(
-        'Request timeout - please try again',
-        408,
-        'The request took too long to complete'
-      );
-    }
-    
-    if (error.message.includes('rate limit') || error.message.includes('429')) {
-      return createErrorResponse(
-        'Rate limit exceeded - please try again later',
-        429,
-        'Too many requests'
-      );
-    }
-    
-    if (error.message.includes('unauthorized') || error.message.includes('401')) {
-      return createErrorResponse(
-        'Unauthorized access',
-        401,
-        'Invalid or missing authentication'
-      );
-    }
-    
-    if (error.message.includes('not found') || error.message.includes('404')) {
-      return createErrorResponse(
-        'Resource not found',
-        404,
-        'The requested resource could not be found'
-      );
-    }
-    
-    // Generic error with error message
-    return createErrorResponse(
-      error.message,
-      500,
-      'An error occurred while processing your request'
-    );
-  }
-  
-  // Unknown error type
-  return createErrorResponse(
-    'An unexpected error occurred',
-    500,
-    'Unknown error type'
+  return NextResponse.json(
+    ErrorHandler.getErrorResponse(appError),
+    { status: appError.statusCode }
   );
 }
 

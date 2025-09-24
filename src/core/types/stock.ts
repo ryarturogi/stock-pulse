@@ -93,7 +93,7 @@ export interface ChartDataPoint {
 /**
  * WebSocket connection status
  */
-export type WebSocketStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type WebSocketStatus = 'disconnected' | 'connecting' | 'connected' | 'error' | 'disconnecting' | 'reconnecting' | 'offline';
 
 /**
  * Refresh time intervals for live data
@@ -215,6 +215,7 @@ export interface StockStoreState {
   // Connection management
   connectionAttempts: number;
   lastConnectionAttempt?: number;
+  reconnectTimeout?: NodeJS.Timeout;
   
   // UI state
   isLoading: boolean;
@@ -236,6 +237,7 @@ export interface StockStoreState {
   connectWebSocket: () => void;
   disconnectWebSocket: () => void;
   resetWebSocketState: () => void;
+  clearReconnectTimeout: () => void;
   
   // Periodic refresh actions
   startPeriodicRefresh: () => void;
@@ -363,16 +365,18 @@ export const isFinnhubStockQuote = (value: unknown): value is FinnhubStockQuote 
   
   // For debugging: log validation details
   if (!hasSymbol || !hasCurrent || !hasChange || !hasPercentChange) {
-    console.debug('Quote validation failed:', {
-      hasSymbol,
-      hasCurrent,
-      hasChange,
-      hasPercentChange,
-      symbol: quote.symbol,
-      current: quote.current,
-      change: quote.change,
-      percentChange: quote.percentChange
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Quote validation failed:', {
+        hasSymbol,
+        hasCurrent,
+        hasChange,
+        hasPercentChange,
+        symbol: quote.symbol,
+        current: quote.current,
+        change: quote.change,
+        percentChange: quote.percentChange
+      });
+    }
   }
   
   return hasSymbol && hasCurrent && hasChange && hasPercentChange;
@@ -432,3 +436,63 @@ export const PWA_CONFIG = {
   SYNC_INTERVAL: 30000, // 30 seconds
   MAX_STORAGE_ITEMS: 100,
 } as const;
+
+// ============================================================================
+// PWA & BACKGROUND SYNC TYPES
+// ============================================================================
+
+/**
+ * Background sync data structure
+ */
+export interface BackgroundSyncData {
+  stocks: WatchedStock[];
+  lastUpdate: number;
+  connectionStatus: WebSocketStatus;
+}
+
+/**
+ * Enhanced push notification payload
+ */
+export interface PushNotificationPayload {
+  title: string;
+  body: string;
+  icon?: string;
+  badge?: string;
+  image?: string;
+  data?: Record<string, unknown>;
+  tag?: string;
+  requireInteraction?: boolean;
+  silent?: boolean;
+  actions?: Array<{
+    action: string;
+    title: string;
+    icon?: string;
+  }>;
+  timestamp?: number;
+  renotify?: boolean;
+  vibrate?: number[];
+}
+
+/**
+ * Push notification service configuration
+ */
+export interface PushServiceConfig {
+  retryAttempts: number;
+  retryDelay: number;
+  maxNotificationsPerDay: number;
+  enableBatching: boolean;
+  supportOfflineQueue: boolean;
+}
+
+/**
+ * Push notification error types
+ */
+export type PushNotificationError = 
+  | 'PERMISSION_DENIED'
+  | 'SERVICE_WORKER_FAILED'
+  | 'SUBSCRIPTION_FAILED' 
+  | 'NETWORK_ERROR'
+  | 'QUOTA_EXCEEDED'
+  | 'UNSUPPORTED_BROWSER'
+  | 'PWA_NOT_INSTALLED'
+  | 'UNKNOWN_ERROR';

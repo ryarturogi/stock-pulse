@@ -283,26 +283,67 @@ export class PWAService {
   }
 
   /**
-   * Perform background sync
+   * Perform background sync with offline handling
    */
   private async performBackgroundSync(): Promise<void> {
     try {
-      // Only sync if we're online and have data
-      if (!this.isOnline) return;
-
       const stocks = this.loadWatchedStocks();
       if (stocks.length === 0) return;
 
-      // Save sync data
+      // Save sync data regardless of online status for offline functionality
       const syncData: BackgroundSyncData = {
         stocks,
         lastUpdate: Date.now(),
-        connectionStatus: 'connected',
+        connectionStatus: this.isOnline ? 'connected' : 'disconnected',
       };
 
       this.saveBackgroundSyncData(syncData);
       
-      console.log('Background sync completed');
+      // If online, try to fetch fresh data
+      if (this.isOnline) {
+        try {
+          // Attempt to fetch fresh data for stocks
+          const { StockService } = await import('@/features/stocks/services/stockService');
+          const service = StockService.getInstance();
+          
+          // Fetch data for each stock with error handling
+          const updatePromises = stocks.map(async (stock) => {
+            try {
+              const quoteData = await service.fetchStockQuote(stock.symbol);
+              if (quoteData && quoteData.current) {
+                // Update stock with fresh data
+                const updatedStock = {
+                  ...stock,
+                  currentPrice: quoteData.current,
+                  priceHistory: [...(stock.priceHistory || []), {
+                    price: quoteData.current,
+                    timestamp: Date.now()
+                  }].slice(-50) // Keep last 50 price points
+                };
+                return updatedStock;
+              }
+            } catch (error) {
+              console.warn(`Failed to update ${stock.symbol} in background:`, error);
+            }
+            return stock; // Return original stock if update failed
+          });
+          
+          const updatedStocks = await Promise.allSettled(updatePromises);
+          const validStocks = updatedStocks
+            .filter((result): result is PromiseFulfilledResult<WatchedStock> => result.status === 'fulfilled')
+            .map(result => result.value);
+          
+          if (validStocks.length > 0) {
+            // Save updated stocks
+            this.saveWatchedStocks(validStocks);
+            console.log(`Background sync updated ${validStocks.length} stocks`);
+          }
+        } catch (error) {
+          console.warn('Background data fetch failed, using cached data:', error);
+        }
+      } else {
+        console.log('Background sync completed (offline mode)');
+      }
     } catch (error) {
       console.error('Background sync failed:', error);
     }
@@ -317,6 +358,15 @@ export class PWAService {
     
     // Trigger sync when coming back online
     this.performBackgroundSync();
+    
+    // Notify storage listeners about online status
+    this.storageListeners.forEach((listener) => {
+      try {
+        listener({ type: 'online', timestamp: Date.now() });
+      } catch (error) {
+        console.warn('Error notifying storage listener:', error);
+      }
+    });
   }
 
   /**
@@ -325,6 +375,18 @@ export class PWAService {
   private handleOffline(): void {
     console.log('App is offline');
     this.isOnline = false;
+    
+    // Save current state for offline access
+    this.performBackgroundSync();
+    
+    // Notify storage listeners about offline status
+    this.storageListeners.forEach((listener) => {
+      try {
+        listener({ type: 'offline', timestamp: Date.now() });
+      } catch (error) {
+        console.warn('Error notifying storage listener:', error);
+      }
+    });
   }
 
   /**
