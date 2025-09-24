@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createErrorResponse } from '@/core/utils/apiResponse';
 import { validateApiRequest } from '@/core/utils/validation';
 
-export type ApiHandler = (_req: NextRequest) => Promise<NextResponse>;
+export type ApiHandler = (req: NextRequest) => Promise<NextResponse>;
 
 export interface MiddlewareConfig {
   enableLogging?: boolean;

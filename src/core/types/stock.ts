@@ -13,7 +13,6 @@ import type { ComponentProps, ApiResponse } from './utils';
 
 // Global types for NodeJS
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
     interface Timeout {
       ref(): Timeout;
@@ -150,7 +149,7 @@ export interface TradeData {
  */
 export type StockFormProps = ComponentProps<{
   availableStocks: StockOption[];
-  onAddStock: (_symbol: string, _alertPrice: number, _stockName?: string) => void;
+  onAddStock: (symbol: string, alertPrice: number, stockName?: string) => void;
   watchedStocks?: WatchedStock[];
   isLoading?: boolean;
 }>;
@@ -160,7 +159,7 @@ export type StockFormProps = ComponentProps<{
  */
 export type StockCardProps = ComponentProps<{
   stock: WatchedStock;
-  onRemove?: ((_symbol: string) => void) | undefined;
+  onRemove?: ((symbol: string) => void) | undefined;
 }>;
 
 /**
@@ -168,7 +167,7 @@ export type StockCardProps = ComponentProps<{
  */
 export type StockCardsProps = ComponentProps<{
   stocks: WatchedStock[];
-  onRemoveStock?: (_symbol: string) => void;
+  onRemoveStock?: (symbol: string) => void;
 }>;
 
 /**
@@ -215,21 +214,21 @@ export interface StockStoreState {
   // Connection management
   connectionAttempts: number;
   lastConnectionAttempt?: number;
-  reconnectTimeout?: NodeJS.Timeout;
+  reconnectTimeout?: NodeJS.Timeout | null;
   
   // UI state
   isLoading: boolean;
   error: string | null;
   
   // Actions
-  addStock: (_symbol: string, _name: string, _alertPrice: number) => void;
-  removeStock: (_symbol: string) => void;
-  updateStockPrice: (_symbol: string, _quote: FinnhubStockQuote) => void;
-  updateAlertPrice: (_symbol: string, _newAlertPrice: number) => void;
-  setWebSocketStatus: (_status: WebSocketStatus) => void;
-  setWebSocketConnection: (_connection: EventSource | null) => void;
-  setLoading: (_loading: boolean) => void;
-  setError: (_error: string | null) => void;
+  addStock: (symbol: string, name: string, alertPrice: number) => void;
+  removeStock: (symbol: string) => void;
+  updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => void;
+  updateAlertPrice: (symbol: string, newAlertPrice: number) => void;
+  setWebSocketStatus: (status: WebSocketStatus) => void;
+  setWebSocketConnection: (connection: EventSource | null) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
   clearError: () => void;
   
   
@@ -242,10 +241,10 @@ export interface StockStoreState {
   // Periodic refresh actions
   startPeriodicRefresh: () => void;
   stopPeriodicRefresh: () => void;
-  setRefreshTimeInterval: (_interval: RefreshInterval) => void;
+  setRefreshTimeInterval: (interval: RefreshInterval) => void;
   
   // Live data toggle actions
-  setLiveDataEnabled: (_enabled: boolean) => void;
+  setLiveDataEnabled: (enabled: boolean) => void;
 }
 
 // ============================================================================
