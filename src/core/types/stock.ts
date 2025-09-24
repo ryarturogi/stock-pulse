@@ -13,7 +13,6 @@ import type { ComponentProps, ApiResponse } from './utils';
 
 // Global types for NodeJS
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
     interface Timeout {
       ref(): Timeout;
@@ -93,7 +92,7 @@ export interface ChartDataPoint {
 /**
  * WebSocket connection status
  */
-export type WebSocketStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type WebSocketStatus = 'disconnected' | 'connecting' | 'connected' | 'error' | 'disconnecting' | 'reconnecting' | 'offline';
 
 /**
  * Refresh time intervals for live data
@@ -150,7 +149,7 @@ export interface TradeData {
  */
 export type StockFormProps = ComponentProps<{
   availableStocks: StockOption[];
-  onAddStock: (_symbol: string, _alertPrice: number, _stockName?: string) => void;
+  onAddStock: (symbol: string, alertPrice: number, stockName?: string) => void;
   watchedStocks?: WatchedStock[];
   isLoading?: boolean;
 }>;
@@ -160,7 +159,7 @@ export type StockFormProps = ComponentProps<{
  */
 export type StockCardProps = ComponentProps<{
   stock: WatchedStock;
-  onRemove?: ((_symbol: string) => void) | undefined;
+  onRemove?: ((symbol: string) => void) | undefined;
 }>;
 
 /**
@@ -168,7 +167,7 @@ export type StockCardProps = ComponentProps<{
  */
 export type StockCardsProps = ComponentProps<{
   stocks: WatchedStock[];
-  onRemoveStock?: (_symbol: string) => void;
+  onRemoveStock?: (symbol: string) => void;
 }>;
 
 /**
@@ -215,20 +214,21 @@ export interface StockStoreState {
   // Connection management
   connectionAttempts: number;
   lastConnectionAttempt?: number;
+  reconnectTimeout?: NodeJS.Timeout | null;
   
   // UI state
   isLoading: boolean;
   error: string | null;
   
   // Actions
-  addStock: (_symbol: string, _name: string, _alertPrice: number) => void;
-  removeStock: (_symbol: string) => void;
-  updateStockPrice: (_symbol: string, _quote: FinnhubStockQuote) => void;
-  updateAlertPrice: (_symbol: string, _newAlertPrice: number) => void;
-  setWebSocketStatus: (_status: WebSocketStatus) => void;
-  setWebSocketConnection: (_connection: EventSource | null) => void;
-  setLoading: (_loading: boolean) => void;
-  setError: (_error: string | null) => void;
+  addStock: (symbol: string, name: string, alertPrice: number) => void;
+  removeStock: (symbol: string) => void;
+  updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => void;
+  updateAlertPrice: (symbol: string, newAlertPrice: number) => void;
+  setWebSocketStatus: (status: WebSocketStatus) => void;
+  setWebSocketConnection: (connection: EventSource | null) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
   clearError: () => void;
   
   
@@ -236,14 +236,15 @@ export interface StockStoreState {
   connectWebSocket: () => void;
   disconnectWebSocket: () => void;
   resetWebSocketState: () => void;
+  clearReconnectTimeout: () => void;
   
   // Periodic refresh actions
   startPeriodicRefresh: () => void;
   stopPeriodicRefresh: () => void;
-  setRefreshTimeInterval: (_interval: RefreshInterval) => void;
+  setRefreshTimeInterval: (interval: RefreshInterval) => void;
   
   // Live data toggle actions
-  setLiveDataEnabled: (_enabled: boolean) => void;
+  setLiveDataEnabled: (enabled: boolean) => void;
 }
 
 // ============================================================================
@@ -363,16 +364,18 @@ export const isFinnhubStockQuote = (value: unknown): value is FinnhubStockQuote 
   
   // For debugging: log validation details
   if (!hasSymbol || !hasCurrent || !hasChange || !hasPercentChange) {
-    console.debug('Quote validation failed:', {
-      hasSymbol,
-      hasCurrent,
-      hasChange,
-      hasPercentChange,
-      symbol: quote.symbol,
-      current: quote.current,
-      change: quote.change,
-      percentChange: quote.percentChange
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Quote validation failed:', {
+        hasSymbol,
+        hasCurrent,
+        hasChange,
+        hasPercentChange,
+        symbol: quote.symbol,
+        current: quote.current,
+        change: quote.change,
+        percentChange: quote.percentChange
+      });
+    }
   }
   
   return hasSymbol && hasCurrent && hasChange && hasPercentChange;
@@ -432,3 +435,63 @@ export const PWA_CONFIG = {
   SYNC_INTERVAL: 30000, // 30 seconds
   MAX_STORAGE_ITEMS: 100,
 } as const;
+
+// ============================================================================
+// PWA & BACKGROUND SYNC TYPES
+// ============================================================================
+
+/**
+ * Background sync data structure
+ */
+export interface BackgroundSyncData {
+  stocks: WatchedStock[];
+  lastUpdate: number;
+  connectionStatus: WebSocketStatus;
+}
+
+/**
+ * Enhanced push notification payload
+ */
+export interface PushNotificationPayload {
+  title: string;
+  body: string;
+  icon?: string;
+  badge?: string;
+  image?: string;
+  data?: Record<string, unknown>;
+  tag?: string;
+  requireInteraction?: boolean;
+  silent?: boolean;
+  actions?: Array<{
+    action: string;
+    title: string;
+    icon?: string;
+  }>;
+  timestamp?: number;
+  renotify?: boolean;
+  vibrate?: number[];
+}
+
+/**
+ * Push notification service configuration
+ */
+export interface PushServiceConfig {
+  retryAttempts: number;
+  retryDelay: number;
+  maxNotificationsPerDay: number;
+  enableBatching: boolean;
+  supportOfflineQueue: boolean;
+}
+
+/**
+ * Push notification error types
+ */
+export type PushNotificationError = 
+  | 'PERMISSION_DENIED'
+  | 'SERVICE_WORKER_FAILED'
+  | 'SUBSCRIPTION_FAILED' 
+  | 'NETWORK_ERROR'
+  | 'QUOTA_EXCEEDED'
+  | 'UNSUPPORTED_BROWSER'
+  | 'PWA_NOT_INSTALLED'
+  | 'UNKNOWN_ERROR';

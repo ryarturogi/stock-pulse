@@ -118,12 +118,15 @@ export const useStockStore = create<StockStoreState>()(
           });
           
           // Reconnect after a short delay if there are still stocks to watch
-          setTimeout(() => {
+          const reconnectTimeout = setTimeout(() => {
             const currentState = get();
             if (currentState.watchedStocks.length > 0) {
               currentState.connectWebSocket();
             }
           }, 300);
+          
+          // Store timeout reference for cleanup
+          set({ reconnectTimeout });
         }
       },
 
@@ -260,6 +263,13 @@ export const useStockStore = create<StockStoreState>()(
 
       // Disconnect WebSocket
       disconnectWebSocket: () => {
+        // Clear any pending reconnect timeout
+        const state = get();
+        if (state.reconnectTimeout) {
+          clearTimeout(state.reconnectTimeout);
+          set({ reconnectTimeout: null });
+        }
+
         if (webSocketService) {
           webSocketService.disconnectWebSocket();
         } else {
@@ -439,6 +449,15 @@ export const useStockStore = create<StockStoreState>()(
 
       setWebSocketConnection: (connection: EventSource | null) => {
         set({ webSocketConnection: connection });
+      },
+
+      // Cleanup reconnect timeout
+      clearReconnectTimeout: () => {
+        const state = get();
+        if (state.reconnectTimeout) {
+          clearTimeout(state.reconnectTimeout);
+          set({ reconnectTimeout: null });
+        }
       },
 
       // Loading state management

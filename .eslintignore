@@ -1,0 +1,3 @@
+# Ignore problematic Vercel Analytics files
+node_modules/.pnpm/@vercel+analytics@*/
+**/node_modules/.pnpm/@vercel+analytics@*/

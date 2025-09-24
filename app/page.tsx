@@ -40,6 +40,7 @@ import {
   getTourSteps
 } from '@/shared/hooks';
 import { useNotificationPermission } from '@/features/notifications';
+import { ErrorBoundary, ClientOnly } from '@/shared/components';
 
 
 export default function HomePage() {
@@ -128,7 +129,7 @@ export default function HomePage() {
     }, 1500); // Increased delay to ensure responsive hook is ready
 
     return () => clearTimeout(timer);
-  }, [isMobileOrTablet]); // Removed startTour from dependencies to prevent re-runs
+  }, [isMobileOrTablet, startTour]); // Include startTour in dependencies
 
   // Connect WebSocket when stocks are added (periodic refresh as fallback)
   useEffect(() => {
@@ -268,7 +269,7 @@ export default function HomePage() {
   const manualRefreshCooldown = 5000; // 5 second cooldown
 
   /**
-   * Handle manual refresh with debouncing
+   * Handle manual refresh with debouncing and comprehensive error handling
    */
   const handleManualRefresh = useCallback(async () => {
     const now = Date.now();
@@ -282,32 +283,58 @@ export default function HomePage() {
     lastManualRefreshRef.current = now;
     console.log('🔄 Manual refresh triggered...');
     
+    // Validate input before processing
+    if (!watchedStocks || watchedStocks.length === 0) {
+      console.warn('No stocks to refresh');
+      return;
+    }
+    
     // Refresh all watched stocks with real API data (with better error isolation)
     const refreshPromises = watchedStocks.map(async (stock) => {
       try {
+        // Validate stock symbol
+        if (!stock.symbol || typeof stock.symbol !== 'string') {
+          throw new Error('Invalid stock symbol');
+        }
+        
         const quoteData = await stockService.fetchStockQuote(stock.symbol);
         
-        if (quoteData && quoteData.current) {
+        if (quoteData && quoteData.current && typeof quoteData.current === 'number') {
           // Update stock price in store (this will persist to localStorage)
           updateStockPrice(stock.symbol, {
             symbol: stock.symbol,
             current: quoteData.current,
-            change: quoteData.change,
-            percentChange: quoteData.percentChange,
-            high: quoteData.high,
-            low: quoteData.low,
-            open: quoteData.open,
-            previousClose: quoteData.previousClose,
+            change: quoteData.change || 0,
+            percentChange: quoteData.percentChange || 0,
+            high: quoteData.high || quoteData.current,
+            low: quoteData.low || quoteData.current,
+            open: quoteData.open || quoteData.current,
+            previousClose: quoteData.previousClose || quoteData.current,
             timestamp: Date.now()
           });
           return { symbol: stock.symbol, success: true };
         } else {
-          console.warn(`No quote data for ${stock.symbol}`);
-          return { symbol: stock.symbol, success: false, error: 'No quote data' };
+          console.warn(`No valid quote data for ${stock.symbol}`);
+          return { symbol: stock.symbol, success: false, error: 'No valid quote data' };
         }
       } catch (error) {
         console.error(`Failed to refresh ${stock.symbol}:`, error);
-        return { symbol: stock.symbol, success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        
+        // Handle specific error types
+        let errorMessage = 'Unknown error';
+        if (error instanceof Error) {
+          if (error.message.includes('Network')) {
+            errorMessage = 'Network error - please check your connection';
+          } else if (error.message.includes('rate limit')) {
+            errorMessage = 'Rate limited - please wait before trying again';
+          } else if (error.message.includes('timeout')) {
+            errorMessage = 'Request timeout - please try again';
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
+        return { symbol: stock.symbol, success: false, error: errorMessage };
       }
     });
     
@@ -318,26 +345,49 @@ export default function HomePage() {
           return true;
         }
         if (result.status === 'rejected') {
-          console.error(`Refresh failed for ${watchedStocks[index].symbol}:`, result.reason);
+          console.error(`Refresh failed for ${watchedStocks[index]?.symbol || 'unknown'}:`, result.reason);
         }
         return false;
       });
       
       console.log(`📊 Manual refresh completed: ${successful.length}/${watchedStocks.length} stocks updated`);
+      
+      // Show user feedback for partial failures
+      if (successful.length < watchedStocks.length) {
+        const failedCount = watchedStocks.length - successful.length;
+        console.warn(`⚠️ ${failedCount} stocks failed to refresh`);
+      }
     } catch (error) {
       console.error('Failed to refresh stocks:', error);
+      // Set error in store for user feedback
+      if (error instanceof Error) {
+        // You would need to add a setError method to your store
+        // setError(`Refresh failed: ${error.message}`);
+      }
     }
   }, [watchedStocks, updateStockPrice]);
 
 
   return (
-    <div 
-      className="min-h-screen bg-gray-50 dark:bg-gray-900"
-      data-intro="Welcome to your real-time stock tracking dashboard! This tour will show you how to get the most out of StockPulse. We'll walk you through adding stocks, setting up alerts, and monitoring your watchlist."
-      data-title="👋 Welcome to StockPulse!"
-      data-desktop-step="1"
-      data-mobile-step="1"
-    >
+    <ErrorBoundary fallback={<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Something went wrong</h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">We&apos;re having trouble loading your dashboard.</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Reload Page
+        </button>
+      </div>
+    </div>}>
+      <div 
+        className="min-h-screen bg-gray-50 dark:bg-gray-900"
+        data-intro="Welcome to your real-time stock tracking dashboard! This tour will show you how to get the most out of StockPulse. We'll walk you through adding stocks, setting up alerts, and monitoring your watchlist."
+        data-title="👋 Welcome to StockPulse!"
+        data-desktop-step="1"
+        data-mobile-step="1"
+      >
       <div className="flex flex-col lg:flex-row">
         {/* Slide Out Sidebar - Stock Form */}
         <SlideOutSidebar
@@ -424,49 +474,51 @@ export default function HomePage() {
                     </button>
 
                     {/* Notifications */}
-                    {notificationPermission === 'default' && (
-                      <button
-                        onClick={requestNotificationPermission}
-                        className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
-                        title="Enable webpush notifications for price alerts"
-                        data-intro="Enable browser notifications to receive real-time alerts when your stocks hit target prices. Click this button to grant notification permissions and stay updated on your investments."
-                        data-title="📱 Enable Notifications"
-                        data-desktop-step="7"
-                      >
-                        <Bell className="w-4 h-4" />
-                        <span>Enable Alerts</span>
-                      </button>
-                    )}
-                    
-                    {notificationPermission === 'granted' && (
-                      <button
-                        onClick={handleToggleNotifications}
-                        className={`flex items-center space-x-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                          notificationsEnabled 
-                            ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/30'
-                            : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30'
-                        }`}
-                        title={notificationsEnabled ? 'Disable webpush notifications' : 'Enable webpush notifications'}
-                        data-intro="Enable browser notifications to receive real-time alerts when your stocks hit target prices. Click this button to grant notification permissions and stay updated on your investments."
-                        data-title="📱 Enable Notifications"
-                        data-desktop-step="7"
-                      >
-                        {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-                        <span>{notificationsEnabled ? 'Alerts ON' : 'Alerts OFF'}</span>
-                      </button>
-                    )}
-                    
-                    {notificationPermission === 'denied' && (
-                      <div 
-                        className="flex items-center space-x-2 px-3 py-2 text-sm bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg" 
-                        data-intro="Enable browser notifications to receive real-time alerts when your stocks hit target prices. Click this button to grant notification permissions and stay updated on your investments."
-                        data-title="📱 Enable Notifications"
-                        data-desktop-step="7"
-                      >
-                        <BellOff className="w-4 h-4" />
-                        <span>Alerts Disabled</span>
-                      </div>
-                    )}
+                    <ClientOnly>
+                      {notificationPermission === 'default' && (
+                        <button
+                          onClick={requestNotificationPermission}
+                          className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+                          title="Enable webpush notifications for price alerts"
+                          data-intro="Enable browser notifications to receive real-time alerts when your stocks hit target prices. Click this button to grant notification permissions and stay updated on your investments."
+                          data-title="📱 Enable Notifications"
+                          data-desktop-step="7"
+                        >
+                          <Bell className="w-4 h-4" />
+                          <span>Enable Alerts</span>
+                        </button>
+                      )}
+                      
+                      {notificationPermission === 'granted' && (
+                        <button
+                          onClick={handleToggleNotifications}
+                          className={`flex items-center space-x-2 px-3 py-2 text-sm rounded-lg transition-colors ${
+                            notificationsEnabled 
+                              ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/30'
+                              : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30'
+                          }`}
+                          title={notificationsEnabled ? 'Disable webpush notifications' : 'Enable webpush notifications'}
+                          data-intro="Enable browser notifications to receive real-time alerts when your stocks hit target prices. Click this button to grant notification permissions and stay updated on your investments."
+                          data-title="📱 Enable Notifications"
+                          data-desktop-step="7"
+                        >
+                          {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                          <span>{notificationsEnabled ? 'Alerts ON' : 'Alerts OFF'}</span>
+                        </button>
+                      )}
+                      
+                      {notificationPermission === 'denied' && (
+                        <div 
+                          className="flex items-center space-x-2 px-3 py-2 text-sm bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg" 
+                          data-intro="Enable browser notifications to receive real-time alerts when your stocks hit target prices. Click this button to grant notification permissions and stay updated on your investments."
+                          data-title="📱 Enable Notifications"
+                          data-desktop-step="7"
+                        >
+                          <BellOff className="w-4 h-4" />
+                          <span>Alerts Disabled</span>
+                        </div>
+                      )}
+                    </ClientOnly>
 
                     {/* Help - Restart Tour */}
                     <button
@@ -610,36 +662,38 @@ export default function HomePage() {
                     </button>
 
                     {/* Notifications */}
-                    {notificationPermission === 'default' && (
-                      <button
-                        onClick={requestNotificationPermission}
-                        className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
-                      >
-                        <Bell className="w-4 h-4" />
-                        <span>Enable Alerts</span>
-                      </button>
-                    )}
-                    
-                    {notificationPermission === 'granted' && (
-                      <button
-                        onClick={handleToggleNotifications}
-                        className={`w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                          notificationsEnabled 
-                            ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/30'
-                            : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30'
-                        }`}
-                      >
-                        {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-                        <span>{notificationsEnabled ? 'Alerts ON' : 'Alerts OFF'}</span>
-                      </button>
-                    )}
-                    
-                    {notificationPermission === 'denied' && (
-                      <div className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg">
-                        <BellOff className="w-4 h-4" />
-                        <span>Alerts Disabled</span>
-                      </div>
-                    )}
+                    <ClientOnly>
+                      {notificationPermission === 'default' && (
+                        <button
+                          onClick={requestNotificationPermission}
+                          className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+                        >
+                          <Bell className="w-4 h-4" />
+                          <span>Enable Alerts</span>
+                        </button>
+                      )}
+                      
+                      {notificationPermission === 'granted' && (
+                        <button
+                          onClick={handleToggleNotifications}
+                          className={`w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                            notificationsEnabled 
+                              ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/30'
+                              : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30'
+                          }`}
+                        >
+                          {notificationsEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                          <span>{notificationsEnabled ? 'Alerts ON' : 'Alerts OFF'}</span>
+                        </button>
+                      )}
+                      
+                      {notificationPermission === 'denied' && (
+                        <div className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg">
+                          <BellOff className="w-4 h-4" />
+                          <span>Alerts Disabled</span>
+                        </div>
+                      )}
+                    </ClientOnly>
                   </div>
                 </div>
               )}
@@ -727,5 +781,6 @@ export default function HomePage() {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }

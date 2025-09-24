@@ -18,7 +18,6 @@ import {
   type WatchlistItem,
   type PriceAlert,
   type NewsArticle,
-  type LegacyApiResponse,
   type UserPreferences,
   type TimeRange,
   type StockSearchResult,
@@ -311,7 +310,7 @@ describe('Types Index', () => {
 
   describe('Legacy Types', () => {
     it('should validate LegacyApiResponse structure', () => {
-      const response: LegacyApiResponse<string> = {
+      const response: ApiResponse<string> = {
         data: 'test data',
         success: true,
         message: 'Success',

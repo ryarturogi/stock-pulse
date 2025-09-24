@@ -75,7 +75,7 @@ export class PushNotificationService {
   }
 
   /**
-   * Check if push notifications are supported (with mobile-specific checks)
+   * Check if push notifications are supported with enhanced browser compatibility
    */
   public isSupported(): boolean {
     if (typeof window === 'undefined') return false;
@@ -87,39 +87,31 @@ export class PushNotificationService {
 
     if (!basicSupport) return false;
 
-    // iOS Safari has limited push notification support
+    // Browser-specific compatibility checks
     if (this.browserType === 'ios-safari') {
-      // iOS 16.4+ supports push notifications in PWA mode
-      const iosVersion = this.getIOSVersion();
-      if (iosVersion && iosVersion < 16.4) {
-        console.warn('iOS version too old for push notifications:', iosVersion);
-        return false;
-      }
-      
-      // Check if running as PWA (standalone mode)
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                          (window.navigator as { standalone?: boolean }).standalone === true;
-      
-      if (!isStandalone) {
-        console.warn('iOS Safari requires PWA mode for push notifications');
-        return false;
-      }
+      // iOS Safari has limited notification support
+      return 'Notification' in window && Notification.permission !== 'denied';
     }
 
-    return true;
+    if (this.browserType === 'android-chrome') {
+      // Android Chrome has full support
+      return true;
+    }
+
+    if (this.browserType === 'desktop-firefox') {
+      // Firefox has good support but some limitations
+      return 'serviceWorker' in navigator && 'PushManager' in window;
+    }
+
+    if (this.browserType === 'desktop-chrome') {
+      // Chrome has full support
+      return true;
+    }
+
+    // For unknown browsers, check basic support
+    return basicSupport;
   }
 
-  /**
-   * Get iOS version from user agent
-   */
-  private getIOSVersion(): number | null {
-    const userAgent = navigator.userAgent;
-    const match = userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
-    if (match) {
-      return parseFloat(`${match[1]}.${match[2]}`);
-    }
-    return null;
-  }
 
   /**
    * Check if push notifications are ready (no VAPID required)
@@ -129,7 +121,7 @@ export class PushNotificationService {
   }
 
   /**
-   * Register service worker for push notifications (mobile-optimized)
+   * Register service worker for push notifications with enhanced browser compatibility
    */
   public async registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
     if (!this.isSupported()) {
@@ -137,20 +129,82 @@ export class PushNotificationService {
       return null;
     }
 
+    // Enhanced browser detection and service worker path selection
+    let swPath = '/sw.js'; // Default service worker
+    
+    // Browser-specific optimizations
+    if (this.deviceType === 'mobile') {
+      if (this.browserType === 'ios-safari') {
+        // iOS Safari has limited service worker support
+        swPath = '/sw-minimal.js';
+      } else if (this.browserType === 'android-chrome') {
+        // Android Chrome has full support
+        swPath = '/sw-custom.js';
+      } else {
+        swPath = '/sw-mobile.js';
+      }
+    } else {
+      // Desktop browsers
+      if (this.browserType === 'desktop-firefox') {
+        // Firefox has some limitations
+        swPath = '/sw-firefox.js';
+      } else {
+        swPath = '/sw.js';
+      }
+    }
+
     try {
-      // Use custom service worker for better mobile support
-      const swPath = this.deviceType === 'mobile' ? '/sw-custom.js' : '/sw.js';
-      this.registration = await navigator.serviceWorker.register(swPath);
+      this.registration = await navigator.serviceWorker.register(swPath, {
+        scope: '/',
+        updateViaCache: 'none' // Always check for updates
+      });
       
-      console.log(`Service worker registered for push notifications (${this.deviceType}):`, this.registration);
+      console.log(`Service worker registered for ${this.deviceType}/${this.browserType}:`, this.registration);
       
+      // Enhanced service worker lifecycle management
+      await this.waitForServiceWorkerReady();
+      
+      return this.registration;
+    } catch (error) {
+      console.error('Failed to register service worker:', error);
+      
+      // Fallback: try with minimal service worker
+      if (swPath !== '/sw-minimal.js') {
+        try {
+          console.log('Attempting fallback service worker registration...');
+          this.registration = await navigator.serviceWorker.register('/sw-minimal.js');
+          return this.registration;
+        } catch (fallbackError) {
+          console.error('Fallback service worker registration also failed:', fallbackError);
+        }
+      }
+      
+      return null;
+    }
+  }
+
+  /**
+   * Wait for service worker to be ready with enhanced error handling
+   */
+  private async waitForServiceWorkerReady(): Promise<void> {
+    if (!this.registration) return;
+
+    try {
       // Wait for service worker to be ready
       if (this.registration.installing) {
-        await new Promise<void>((resolve) => {
+        await new Promise<void>((resolve, reject) => {
           const installingWorker = this.registration!.installing!;
+          const timeout = setTimeout(() => {
+            reject(new Error('Service worker installation timeout'));
+          }, 10000); // 10 second timeout
+
           installingWorker.addEventListener('statechange', () => {
             if (installingWorker.state === 'installed') {
+              clearTimeout(timeout);
               resolve();
+            } else if (installingWorker.state === 'redundant') {
+              clearTimeout(timeout);
+              reject(new Error('Service worker installation failed'));
             }
           });
         });
@@ -159,20 +213,26 @@ export class PushNotificationService {
       // Ensure service worker is active
       if (this.registration.waiting) {
         this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        await new Promise<void>((resolve) => {
+        await new Promise<void>((resolve, reject) => {
           const waitingWorker = this.registration!.waiting!;
+          const timeout = setTimeout(() => {
+            reject(new Error('Service worker activation timeout'));
+          }, 5000); // 5 second timeout
+
           waitingWorker.addEventListener('statechange', () => {
             if (waitingWorker.state === 'activated') {
+              clearTimeout(timeout);
               resolve();
+            } else if (waitingWorker.state === 'redundant') {
+              clearTimeout(timeout);
+              reject(new Error('Service worker activation failed'));
             }
           });
         });
       }
-      
-      return this.registration;
     } catch (error) {
-      console.error('Failed to register service worker:', error);
-      return null;
+      console.warn('Service worker ready check failed:', error);
+      // Don't throw - service worker might still work
     }
   }
 

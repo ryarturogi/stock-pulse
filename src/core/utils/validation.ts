@@ -324,9 +324,135 @@ export function sanitizeString(value: unknown, maxLength: number = 1000): string
 }
 
 /**
+ * Enhanced input sanitization for security
+ */
+export function sanitizeHtml(input: unknown): string {
+  if (!isString(input)) return '';
+  
+  // Remove potentially dangerous HTML tags and attributes
+  return input
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^<]*>/gi, '')
+    .replace(/<link\b[^<]*>/gi, '')
+    .replace(/<meta\b[^<]*>/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
+    .trim();
+}
+
+/**
+ * Validate and sanitize search queries
+ */
+export function validateSearchQuery(query: unknown): ValidationResult {
+  if (!isString(query)) {
+    return { isValid: false, error: 'Search query must be a string' };
+  }
+  
+  const trimmed = query.trim();
+  
+  if (trimmed.length === 0) {
+    return { isValid: false, error: 'Search query cannot be empty' };
+  }
+  
+  if (trimmed.length > 100) {
+    return { isValid: false, error: 'Search query too long (max 100 characters)' };
+  }
+  
+  // Check for potentially malicious patterns
+  const dangerousPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /on\w+\s*=/i,
+    /eval\s*\(/i,
+    /expression\s*\(/i
+  ];
+  
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(trimmed)) {
+      return { isValid: false, error: 'Search query contains invalid characters' };
+    }
+  }
+  
+  return { isValid: true };
+}
+
+/**
+ * Validate numeric ranges
+ */
+export function validateNumericRange(
+  value: unknown,
+  min: number,
+  max: number,
+  fieldName: string
+): ValidationResult {
+  if (!isNumber(value)) {
+    return { isValid: false, error: `${fieldName} must be a number` };
+  }
+  
+  if (value < min) {
+    return { isValid: false, error: `${fieldName} must be at least ${min}` };
+  }
+  
+  if (value > max) {
+    return { isValid: false, error: `${fieldName} must be at most ${max}` };
+  }
+  
+  return { isValid: true };
+}
+
+/**
+ * Validate array inputs
+ */
+export function validateArray(
+  value: unknown,
+  fieldName: string,
+  maxLength: number = 100
+): ValidationResult {
+  if (!Array.isArray(value)) {
+    return { isValid: false, error: `${fieldName} must be an array` };
+  }
+  
+  if (value.length === 0) {
+    return { isValid: false, error: `${fieldName} cannot be empty` };
+  }
+  
+  if (value.length > maxLength) {
+    return { isValid: false, error: `${fieldName} cannot have more than ${maxLength} items` };
+  }
+  
+  return { isValid: true };
+}
+
+/**
+ * Validate object structure
+ */
+export function validateObjectStructure(
+  value: unknown,
+  requiredKeys: string[],
+  fieldName: string
+): ValidationResult {
+  if (typeof value !== 'object' || value === null) {
+    return { isValid: false, error: `${fieldName} must be an object` };
+  }
+  
+  const obj = value as Record<string, unknown>;
+  
+  for (const key of requiredKeys) {
+    if (!(key in obj)) {
+      return { isValid: false, error: `${fieldName} is missing required property: ${key}` };
+    }
+  }
+  
+  return { isValid: true };
+}
+
+/**
  * Validation helper for quick checks (returns boolean)
  */
 export const isValidSymbol = (symbol: unknown): boolean => validateSymbol(symbol).isValid;
 export const isValidAlertPrice = (price: unknown): boolean => validateAlertPrice(price).isValid;
 export const isValidEmail = (email: unknown): boolean => validateEmail(email).isValid;
 export const isValidUrl = (url: unknown): boolean => validateUrl(url).isValid;
+export const isValidSearchQuery = (query: unknown): boolean => validateSearchQuery(query).isValid;
