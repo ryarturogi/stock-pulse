@@ -62,7 +62,7 @@ export class SubscriptionStorageService {
         this.subscriptions = new Map(Object.entries(storageData.subscriptions));
         
         console.log(`📦 Loaded ${this.subscriptions.size} subscriptions from storage`);
-      } catch (error) {
+      } catch {
         // File doesn't exist or is corrupted, start with empty storage
         console.log('📦 Starting with empty subscription storage');
         this.subscriptions = new Map();

@@ -12,7 +12,7 @@ import { useState, useEffect, useCallback } from 'react';
 export interface ThemeState {
   isDarkMode: boolean;
   toggle: () => void;
-  setDarkMode: (dark: boolean) => void;
+  setDarkMode: (isDark: boolean) => void;
 }
 
 /**
@@ -88,12 +88,12 @@ export const useTheme = (initialDark: boolean = false): ThemeState => {
 
   // Set specific theme
   const setDarkMode = useCallback(
-    (dark: boolean) => {
-      setIsDarkMode(dark);
-      updateDOMTheme(dark);
+    (isDark: boolean) => {
+      setIsDarkMode(isDark);
+      updateDOMTheme(isDark);
       try {
         if (typeof window !== 'undefined') {
-          localStorage.setItem('stockpulse_theme', dark ? 'dark' : 'light');
+          localStorage.setItem('stockpulse_theme', isDark ? 'dark' : 'light');
         }
       } catch {
         // Ignore localStorage errors

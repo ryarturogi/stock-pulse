@@ -267,7 +267,7 @@ export const useStockStore = create<StockStoreState>()(
         const state = get();
         if (state.reconnectTimeout) {
           clearTimeout(state.reconnectTimeout);
-          set({ reconnectTimeout: undefined });
+          set({ reconnectTimeout: null });
         }
 
         if (webSocketService) {
@@ -456,7 +456,7 @@ export const useStockStore = create<StockStoreState>()(
         const state = get();
         if (state.reconnectTimeout) {
           clearTimeout(state.reconnectTimeout);
-          set({ reconnectTimeout: undefined });
+          set({ reconnectTimeout: null });
         }
       },
 
