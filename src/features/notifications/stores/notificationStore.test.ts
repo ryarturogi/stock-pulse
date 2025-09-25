@@ -32,7 +32,7 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 // Mock notification service
-jest.mock('@/features/notifications', () => ({
+jest.mock('../services/notificationService', () => ({
   getNotificationService: () => ({
     requestPermission: jest.fn().mockResolvedValue('granted'),
   }),

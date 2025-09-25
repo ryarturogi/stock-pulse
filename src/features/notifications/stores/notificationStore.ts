@@ -16,7 +16,7 @@ import {
   Notification,
   PushSubscriptionData,
 } from '@/core/types';
-import { getNotificationService } from '@/features/notifications';
+import { getNotificationService } from '../services/notificationService';
 
 /**
  * Generate unique ID for notifications

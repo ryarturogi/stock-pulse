@@ -473,6 +473,45 @@ export const useStockStore = create<StockStoreState>()(
       clearError: () => {
         set({ error: null });
       },
+
+      // Reset store to initial state for testing
+      reset: () => {
+        // Clear any active intervals/timeouts
+        const state = get();
+        if (state.refreshInterval) {
+          clearInterval(state.refreshInterval);
+        }
+        if (state.reconnectTimeout) {
+          clearTimeout(state.reconnectTimeout);
+        }
+        
+        // Disconnect WebSocket
+        if (state.webSocketConnection) {
+          (state.webSocketConnection as EventSource).close();
+        }
+
+        // Reset service instance
+        if (webSocketService) {
+          webSocketService.disconnectWebSocket();
+          webSocketService = null;
+        }
+
+        // Reset to initial state
+        set({
+          watchedStocks: [],
+          webSocketStatus: 'disconnected',
+          webSocketConnection: null,
+          refreshInterval: null,
+          isConnecting: false,
+          isLoading: false,
+          error: null,
+          lastUpdateTimes: new Map<string, number>(),
+          refreshTimeInterval: '30s',
+          isLiveDataEnabled: true,
+          connectionAttempts: 0,
+          reconnectTimeout: null,
+        });
+      },
     }),
     {
       name: STORAGE_KEYS.WATCHED_STOCKS,
@@ -570,6 +609,7 @@ export const useStockActions = () => ({
   setRefreshTimeInterval: useStockStore(state => state.setRefreshTimeInterval),
   setLiveDataEnabled: useStockStore(state => state.setLiveDataEnabled),
   clearError: useStockStore(state => state.clearError),
+  reset: useStockStore(state => state.reset),
 });
 
 // WebSocket management actions hook

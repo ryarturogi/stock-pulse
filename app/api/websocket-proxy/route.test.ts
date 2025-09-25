@@ -83,7 +83,7 @@ describe('/api/websocket-proxy', () => {
   const originalEnv = process.env;
   let mockWebSocketInstance: MockWebSocket;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     
     // Reset environment

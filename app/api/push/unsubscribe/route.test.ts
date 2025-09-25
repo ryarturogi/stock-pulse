@@ -22,7 +22,7 @@ afterAll(() => {
 });
 
 describe('/api/push/unsubscribe', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     
     // Clear in-memory subscriptions and add test data

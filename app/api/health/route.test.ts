@@ -17,26 +17,8 @@ const mockJsonResponse = {
   status: 200,
 };
 
-jest.mock('next/server', () => ({
-  NextResponse: {
-    json: jest.fn().mockImplementation((data, init) => ({
-      ...mockJsonResponse,
-      json: jest.fn().mockResolvedValue(data),
-      status: init?.status || 200,
-      headers: {
-        get: (key: string) => {
-          const headers = new Map([
-            ['Cache-Control', 'no-cache, no-store, must-revalidate'],
-            ['Pragma', 'no-cache'],
-            ['Expires', '0'],
-            ['Content-Type', 'application/json'],
-          ]);
-          return headers.get(key) || null;
-        },
-      },
-    })),
-  },
-}));
+// Don't mock NextResponse, use the real implementation
+// jest.mock('next/server');
 
 import { GET } from './route';
 
@@ -70,12 +52,9 @@ global.AbortController = jest.fn().mockImplementation(() => ({
   abort: jest.fn(),
 }));
 
-// Mock setTimeout and clearTimeout
-global.setTimeout = jest.fn().mockImplementation((fn) => {
-  if (typeof fn === 'function') {
-    // Don't actually call the function in tests
-    return 'timeout-id' as unknown as NodeJS.Timeout;
-  }
+// Mock setTimeout and clearTimeout to work properly
+global.setTimeout = jest.fn().mockImplementation((fn, delay) => {
+  // Return a timeout ID but don't actually set timeout
   return 'timeout-id' as unknown as NodeJS.Timeout;
 }) as unknown as typeof setTimeout;
 
@@ -121,6 +100,10 @@ describe('/api/health', () => {
   describe('Successful Health Checks', () => {
     it('should return healthy status with all checks', async () => {
       const response = await GET();
+      
+      expect(response).toBeDefined();
+      expect(response.status).toBe(200);
+      
       const data = await response.json();
 
       expect(response.status).toBe(200);

@@ -38,7 +38,7 @@ describe('RefreshIntervalSelector', () => {
 
       expect(screen.getByLabelText(/Refresh/)).toBeInTheDocument();
       expect(screen.getByRole('combobox')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('Every 2 minutes')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('2 minutes')).toBeInTheDocument();
     });
 
     it('should show clock icon', () => {
@@ -370,7 +370,7 @@ describe('RefreshIntervalSelector', () => {
         />
       );
 
-      expect(screen.getByDisplayValue('Every 2 minutes')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('2 minutes')).toBeInTheDocument();
 
       rerender(
         <RefreshIntervalSelector

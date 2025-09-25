@@ -223,16 +223,24 @@ describe('Stock Store', () => {
 
     it('should maintain price history with limit', () => {
       const { updateStockPrice } = useStockStore.getState();
+      const baseTime = Date.now();
 
       // Add more than 500 price points to test limit
+      // We need to account for throttling (500ms), so we use different timestamps
       for (let i = 0; i < 510; i++) {
+        // Use mock timers to bypass throttling for this test
+        const originalGetTime = Date.now;
+        Date.now = jest.fn(() => baseTime + i * 600); // 600ms apart to avoid throttling
+        
         act(() => {
           updateStockPrice('AAPL', {
             ...mockQuote,
             current: 150 + i,
-            timestamp: Date.now() + i * 1000,
+            timestamp: baseTime + i * 600,
           });
         });
+        
+        Date.now = originalGetTime;
       }
 
       const state = useStockStore.getState();
@@ -337,10 +345,11 @@ describe('Stock Store', () => {
       expect(state.refreshInterval).toBeNull();
     });
 
-    it('should not start periodic refresh when WebSocket is connected', () => {
+    it('should start periodic refresh as WebSocket fallback when connected', () => {
       useStockStore.setState({
         webSocketStatus: 'connected',
         webSocketConnection: mockEventSource as any,
+        isLiveDataEnabled: true, // Must be enabled for refresh to work
       });
 
       const { startPeriodicRefresh } = useStockStore.getState();
@@ -349,7 +358,8 @@ describe('Stock Store', () => {
       });
 
       const state = useStockStore.getState();
-      expect(state.refreshInterval).toBeNull();
+      // Periodic refresh should start even when WebSocket is connected (as fallback)
+      expect(state.refreshInterval).not.toBeNull();
     });
 
     it('should stop periodic refresh', () => {

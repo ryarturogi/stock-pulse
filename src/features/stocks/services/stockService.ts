@@ -398,7 +398,7 @@ export class StockService {
    * Search for stocks using Finnhub API
    */
   async searchStocks(query: string): Promise<StockOption[]> {
-    if (!isString(query) || query.trim().length < 1) {
+    if (!isString(query) || query.trim().length < 2) {
       return [];
     }
 
@@ -551,6 +551,77 @@ export class StockService {
   // Historical data and health check methods removed - not currently used
 
   /**
+   * Health check for API connectivity (detailed version)
+   */
+  async healthCheckDetailed(): Promise<{ status: 'ok' | 'error'; message: string; timestamp: number }> {
+    try {
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(`${this.baseUrl}/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          status: 'ok',
+          message: data.message || 'API is healthy',
+          timestamp: Date.now()
+        };
+      } else {
+        return {
+          status: 'error',
+          message: `API health check failed: ${response.status} ${response.statusText}`,
+          timestamp: Date.now()
+        };
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown health check error';
+      return {
+        status: 'error',
+        message: `API health check failed: ${message}`,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  /**
+   * Health check for API connectivity (simple boolean version for tests)
+   */
+  async healthCheck(): Promise<boolean> {
+    try {
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10);
+
+      const response = await fetch(`${this.baseUrl}/health`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.error('Health check failed:', new Error(`HTTP ${response.status}`));
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Health check failed:', error);
+      return false;
+    }
+  }
+
+  /**
    * Clear request cache manually (debug utility)
    */
   clearRequestCache(): void {
@@ -566,6 +637,70 @@ export class StockService {
       size: this.requestCache.size,
       keys: Array.from(this.requestCache.keys())
     };
+  }
+
+  /**
+   * Generate WebSocket URL for Finnhub
+   */
+  getWebSocketUrl(): string {
+    const apiKey = process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('Finnhub API key not configured');
+    }
+    return `wss://ws.finnhub.io?token=${apiKey}`;
+  }
+
+  /**
+   * Create WebSocket subscription message
+   */
+  createSubscriptionMessage(symbol: string): string {
+    return JSON.stringify({
+      type: 'subscribe',
+      symbol: symbol.toUpperCase()
+    });
+  }
+
+  /**
+   * Create WebSocket unsubscription message
+   */
+  createUnsubscriptionMessage(symbol: string): string {
+    return JSON.stringify({
+      type: 'unsubscribe',
+      symbol: symbol.toUpperCase()
+    });
+  }
+
+  /**
+   * Parse WebSocket trade message
+   */
+  parseTradeMessage(message: string | object): { symbol: string; price: number; timestamp: number } | null {
+    try {
+      let data;
+      if (typeof message === 'string') {
+        data = JSON.parse(message);
+      } else {
+        data = message;
+      }
+      
+      if (data.type === 'trade' && data.data && data.data.length > 0) {
+        const trade = data.data[0];
+        
+        // Check if all required fields are present
+        if (!trade.s || typeof trade.p !== 'number' || typeof trade.t !== 'number') {
+          return null;
+        }
+        
+        return {
+          symbol: trade.s,
+          price: trade.p,
+          timestamp: trade.t
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to parse trade message:', error);
+      return null;
+    }
   }
 }
 

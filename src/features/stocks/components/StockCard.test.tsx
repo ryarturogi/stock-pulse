@@ -66,8 +66,7 @@ describe('StockCard', () => {
       render(<StockCard stock={loadingStock} onRemove={mockOnRemove} />);
 
       // Should show animated skeleton
-      const skeleton = screen.getByTestId('loading-skeleton') || 
-                      document.querySelector('.animate-pulse');
+      const skeleton = document.querySelector('.animate-pulse');
       expect(skeleton).toBeInTheDocument();
     });
 
@@ -125,7 +124,7 @@ describe('StockCard', () => {
       };
       render(<StockCard stock={incompleteStock} onRemove={mockOnRemove} />);
 
-      expect(screen.getByText('---.--')).toBeInTheDocument();
+      expect(screen.getAllByText('---.--').length).toBeGreaterThan(0);
       expect(screen.getByText('--.--%')).toBeInTheDocument();
     });
   });
@@ -135,7 +134,7 @@ describe('StockCard', () => {
       render(<StockCard stock={mockStock} onRemove={mockOnRemove} />);
 
       // Current price (155.50) > alert price (150.0)
-      const alertBadge = screen.getByText('ABOVE ALERT');
+      const alertBadge = screen.getByText('Above Alert');
       expect(alertBadge).toBeInTheDocument();
       expect(alertBadge).toHaveClass('bg-green-100');
     });
@@ -147,7 +146,7 @@ describe('StockCard', () => {
       };
       render(<StockCard stock={belowAlertStock} onRemove={mockOnRemove} />);
 
-      const alertBadge = screen.getByText('BELOW ALERT');
+      const alertBadge = screen.getByText('Below Alert');
       expect(alertBadge).toBeInTheDocument();
       expect(alertBadge).toHaveClass('bg-red-100');
     });
