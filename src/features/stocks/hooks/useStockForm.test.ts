@@ -372,16 +372,18 @@ describe('useStockForm', () => {
       const { result } = renderHook(() => useStockForm());
 
       await act(async () => {
-        await Promise.all([
-          result.current.fetchCurrentPrice('AAPL'),
-          result.current.fetchCurrentPrice('GOOGL')
-        ]);
+        if (result.current) {
+          await Promise.all([
+            result.current.fetchCurrentPrice('AAPL'),
+            result.current.fetchCurrentPrice('GOOGL')
+          ]);
+        }
       });
 
       expect(mockStockService.fetchStockQuote).toHaveBeenCalledTimes(2);
-      expect(result.current.isLoadingPrice).toBe(false);
+      expect(result.current?.isLoadingPrice).toBe(false);
       // The last resolved price should be set
-      expect(result.current.currentPrice).toBe(2850.0);
+      expect(result.current?.currentPrice).toBe(2850.0);
     });
   });
 
@@ -391,29 +393,40 @@ describe('useStockForm', () => {
 
       // Set some state
       act(() => {
-        result.current.setSelectedStock('AAPL');
-        result.current.setAlertPrice('150.00');
-        result.current.validateForm(); // Set errors
+        if (result.current) {
+          result.current.setSelectedStock('AAPL');
+          result.current.setAlertPrice('150.00');
+          result.current.validateForm(); // Set errors
+        }
       });
 
       // Manually set current price (simulating successful fetch)
       act(() => {
-        result.current.fetchCurrentPrice('AAPL');
+        if (result.current) {
+          result.current.fetchCurrentPrice('AAPL');
+        }
       });
 
       // Reset form
       act(() => {
-        result.current.resetForm();
+        if (result.current) {
+          result.current.resetForm();
+        }
       });
 
-      expect(result.current.selectedStock).toBe('');
-      expect(result.current.alertPrice).toBe('');
-      expect(result.current.currentPrice).toBeNull();
-      expect(result.current.errors).toEqual({});
+      expect(result.current?.selectedStock).toBe('');
+      expect(result.current?.alertPrice).toBe('');
+      expect(result.current?.currentPrice).toBeNull();
+      expect(result.current?.errors).toEqual({});
     });
 
     it('should maintain function references after reset', () => {
       const { result } = renderHook(() => useStockForm());
+
+      if (!result.current) {
+        expect(result.current).toBeTruthy();
+        return;
+      }
 
       const originalFunctions = {
         setSelectedStock: result.current.setSelectedStock,
@@ -424,15 +437,17 @@ describe('useStockForm', () => {
       };
 
       act(() => {
-        result.current.resetForm();
+        if (result.current) {
+          result.current.resetForm();
+        }
       });
 
       // Functions should be the same references (useCallback)
-      expect(result.current.setSelectedStock).toBe(originalFunctions.setSelectedStock);
-      expect(result.current.setAlertPrice).toBe(originalFunctions.setAlertPrice);
-      expect(result.current.validateForm).toBe(originalFunctions.validateForm);
-      expect(result.current.resetForm).toBe(originalFunctions.resetForm);
-      expect(result.current.fetchCurrentPrice).toBe(originalFunctions.fetchCurrentPrice);
+      expect(result.current?.setSelectedStock).toBe(originalFunctions.setSelectedStock);
+      expect(result.current?.setAlertPrice).toBe(originalFunctions.setAlertPrice);
+      expect(result.current?.validateForm).toBe(originalFunctions.validateForm);
+      expect(result.current?.resetForm).toBe(originalFunctions.resetForm);
+      expect(result.current?.fetchCurrentPrice).toBe(originalFunctions.fetchCurrentPrice);
     });
   });
 
@@ -442,18 +457,22 @@ describe('useStockForm', () => {
 
       // Set stock and then validate to create error
       act(() => {
-        result.current.setSelectedStock('AAPL');
-        result.current.validateForm(); // Creates price error
+        if (result.current) {
+          result.current.setSelectedStock('AAPL');
+          result.current.validateForm(); // Creates price error
+        }
       });
 
-      expect(result.current.errors.price).toBe('Price must be a valid number');
+      expect(result.current?.errors.price).toBe('Price must be a valid number');
 
       // Set stock to empty - should not clear price error
       act(() => {
-        result.current.setSelectedStock('');
+        if (result.current) {
+          result.current.setSelectedStock('');
+        }
       });
 
-      expect(result.current.errors.price).toBe('Price must be a valid number');
+      expect(result.current?.errors.price).toBe('Price must be a valid number');
     });
 
     it('should not clear errors if alertPrice becomes empty', () => {
@@ -461,18 +480,22 @@ describe('useStockForm', () => {
 
       // Set price and then validate to create error
       act(() => {
-        result.current.setAlertPrice('150.00');
-        result.current.validateForm(); // Creates stock error
+        if (result.current) {
+          result.current.setAlertPrice('150.00');
+          result.current.validateForm(); // Creates stock error
+        }
       });
 
-      expect(result.current.errors.stock).toBe('Symbol cannot be empty');
+      expect(result.current?.errors.stock).toBe('Symbol cannot be empty');
 
       // Set price to empty - should not clear stock error
       act(() => {
-        result.current.setAlertPrice('');
+        if (result.current) {
+          result.current.setAlertPrice('');
+        }
       });
 
-      expect(result.current.errors.stock).toBe('Symbol cannot be empty');
+      expect(result.current?.errors.stock).toBe('Symbol cannot be empty');
     });
 
     it('should handle complex error clearing scenarios', () => {
@@ -480,33 +503,44 @@ describe('useStockForm', () => {
 
       // Create both errors
       act(() => {
-        result.current.validateForm();
+        if (result.current) {
+          result.current.validateForm();
+        }
       });
 
-      expect(result.current.errors.stock).toBe('Symbol cannot be empty');
-      expect(result.current.errors.price).toBe('Price must be a valid number');
+      expect(result.current?.errors.stock).toBe('Symbol cannot be empty');
+      expect(result.current?.errors.price).toBe('Price must be a valid number');
 
       // Fix stock error
       act(() => {
-        result.current.setSelectedStock('AAPL');
+        if (result.current) {
+          result.current.setSelectedStock('AAPL');
+        }
       });
 
-      expect(result.current.errors.stock).toBeUndefined();
-      expect(result.current.errors.price).toBe('Price must be a valid number');
+      expect(result.current?.errors.stock).toBeUndefined();
+      expect(result.current?.errors.price).toBe('Price must be a valid number');
 
       // Fix price error
       act(() => {
-        result.current.setAlertPrice('150.00');
+        if (result.current) {
+          result.current.setAlertPrice('150.00');
+        }
       });
 
-      expect(result.current.errors.stock).toBeUndefined();
-      expect(result.current.errors.price).toBeUndefined();
+      expect(result.current?.errors.stock).toBeUndefined();
+      expect(result.current?.errors.price).toBeUndefined();
     });
   });
 
   describe('Performance and Memoization', () => {
     it('should memoize functions with useCallback', () => {
       const { result, rerender } = renderHook(() => useStockForm());
+
+      if (!result.current) {
+        expect(result.current).toBeTruthy();
+        return;
+      }
 
       const firstRenderFunctions = {
         validateForm: result.current.validateForm,
@@ -516,31 +550,40 @@ describe('useStockForm', () => {
 
       // Trigger re-render by updating state
       act(() => {
-        result.current.setSelectedStock('AAPL');
+        if (result.current) {
+          result.current.setSelectedStock('AAPL');
+        }
       });
 
       rerender();
 
       // Functions should be the same references
-      expect(result.current.validateForm).toBe(firstRenderFunctions.validateForm);
-      expect(result.current.resetForm).toBe(firstRenderFunctions.resetForm);
-      expect(result.current.fetchCurrentPrice).toBe(firstRenderFunctions.fetchCurrentPrice);
+      expect(result.current?.validateForm).toBe(firstRenderFunctions.validateForm);
+      expect(result.current?.resetForm).toBe(firstRenderFunctions.resetForm);
+      expect(result.current?.fetchCurrentPrice).toBe(firstRenderFunctions.fetchCurrentPrice);
     });
 
     it('should update memoized functions when dependencies change', () => {
       const { result } = renderHook(() => useStockForm());
 
+      if (!result.current) {
+        expect(result.current).toBeTruthy();
+        return;
+      }
+
       const firstValidateForm = result.current.validateForm;
 
       // Change dependencies
       act(() => {
-        result.current.setSelectedStock('AAPL');
-        result.current.setAlertPrice('150.00');
+        if (result.current) {
+          result.current.setSelectedStock('AAPL');
+          result.current.setAlertPrice('150.00');
+        }
       });
 
       // validateForm should be the same reference as it depends on selectedStock and alertPrice
       // but uses current values from state, so reference shouldn't change with useCallback
-      expect(result.current.validateForm).toBe(firstValidateForm);
+      expect(result.current?.validateForm).toBe(firstValidateForm);
     });
   });
 
@@ -548,18 +591,20 @@ describe('useStockForm', () => {
     it('should handle rapid state changes', () => {
       const { result } = renderHook(() => useStockForm());
 
-      // Rapidly change state
+      // Rapidly change state in a single act call
       act(() => {
-        result.current.setSelectedStock('AAPL');
-        result.current.setAlertPrice('150.00');
-        result.current.setSelectedStock('GOOGL');
-        result.current.setAlertPrice('2800.00');
-        result.current.setSelectedStock('MSFT');
-        result.current.setAlertPrice('300.00');
+        if (result.current) {
+          result.current.setSelectedStock('AAPL');
+          result.current.setAlertPrice('150.00');
+          result.current.setSelectedStock('GOOGL');
+          result.current.setAlertPrice('2800.00');
+          result.current.setSelectedStock('MSFT');
+          result.current.setAlertPrice('300.00');
+        }
       });
 
-      expect(result.current.selectedStock).toBe('MSFT');
-      expect(result.current.alertPrice).toBe('300.00');
+      expect(result.current?.selectedStock).toBe('MSFT');
+      expect(result.current?.alertPrice).toBe('300.00');
     });
 
     it('should handle validation after price fetch', async () => {
@@ -573,28 +618,34 @@ describe('useStockForm', () => {
 
       const { result } = renderHook(() => useStockForm());
 
+      // Ensure result.current is available before proceeding
+      expect(result.current).toBeTruthy();
+
       // Set stock and fetch price
       act(() => {
-        result.current.setSelectedStock('AAPL');
+        if (result.current) {
+          result.current.setSelectedStock('AAPL');
+        }
       });
 
       await act(async () => {
-        await result.current.fetchCurrentPrice('AAPL');
+        if (result.current) {
+          await result.current.fetchCurrentPrice('AAPL');
+        }
       });
 
       // Set alert price and validate
-      act(() => {
-        result.current.setAlertPrice('160.00');
-      });
-
       let isValid;
       act(() => {
-        isValid = result.current.validateForm();
+        if (result.current) {
+          result.current.setAlertPrice('160.00');
+          isValid = result.current.validateForm();
+        }
       });
 
       expect(isValid).toBe(true);
-      expect(result.current.currentPrice).toBe(155.50);
-      expect(result.current.errors).toEqual({});
+      expect(result.current?.currentPrice).toBe(155.50);
+      expect(result.current?.errors).toEqual({});
     });
   });
 });

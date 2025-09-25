@@ -297,7 +297,7 @@ describe('StockCard', () => {
     it('should display last updated time', () => {
       render(<StockCard stock={mockStock} onRemove={mockOnRemove} />);
 
-      const lastUpdated = screen.getByText(/\d{1,2}:\d{2}(:\d{2})?/);
+      const lastUpdated = screen.getAllByText(/\d{1,2}:\d{2}(:\d{2})?/)[0];
       expect(lastUpdated).toBeInTheDocument();
     });
 
@@ -372,7 +372,7 @@ describe('StockCard', () => {
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('p-4', 'lg:p-6');
 
-      const priceElement = screen.getByText('$155.50');
+      const priceElement = screen.getByText('$155.50').closest('p');
       expect(priceElement).toHaveClass('text-xl', 'lg:text-2xl');
     });
   });

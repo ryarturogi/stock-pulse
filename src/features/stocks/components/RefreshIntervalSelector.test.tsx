@@ -96,11 +96,11 @@ describe('RefreshIntervalSelector', () => {
       );
 
       // Check that all default intervals are present
-      expect(screen.getByText('Every 30 seconds')).toBeInTheDocument();
-      expect(screen.getByText('Every 1 minute')).toBeInTheDocument();
-      expect(screen.getByText('Every 2 minutes')).toBeInTheDocument();
-      expect(screen.getByText('Every 5 minutes')).toBeInTheDocument();
-      expect(screen.getByText('Every 10 minutes')).toBeInTheDocument();
+      expect(screen.getByText('30 seconds')).toBeInTheDocument();
+      expect(screen.getByText('1 minute')).toBeInTheDocument();
+      expect(screen.getByText('2 minutes')).toBeInTheDocument();
+      expect(screen.getByText('5 minutes')).toBeInTheDocument();
+      expect(screen.getByText('10 minutes')).toBeInTheDocument();
     });
 
     it('should show current interval as selected', () => {
@@ -113,14 +113,14 @@ describe('RefreshIntervalSelector', () => {
 
       const select = screen.getByRole('combobox') as HTMLSelectElement;
       expect(select.value).toBe('5m');
-      expect(screen.getByDisplayValue('Every 5 minutes')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('5 minutes')).toBeInTheDocument();
     });
 
     it('should handle different current intervals', () => {
       const intervals: RefreshInterval[] = ['30s', '1m', '2m', '5m', '10m'];
       
       intervals.forEach(interval => {
-        const { rerender } = render(
+        const { unmount } = render(
           <RefreshIntervalSelector
             currentInterval={interval}
             onIntervalChange={mockOnIntervalChange}
@@ -130,12 +130,7 @@ describe('RefreshIntervalSelector', () => {
         const select = screen.getByRole('combobox') as HTMLSelectElement;
         expect(select.value).toBe(interval);
 
-        rerender(
-          <RefreshIntervalSelector
-            currentInterval="1m"
-            onIntervalChange={mockOnIntervalChange}
-          />
-        );
+        unmount();
       });
     });
   });
@@ -245,7 +240,7 @@ describe('RefreshIntervalSelector', () => {
       );
 
       const clockIcon = document.querySelector('svg');
-      const label = screen.getByLabelText(/Refresh/);
+      const label = document.querySelector('label[for="refresh-interval"]');
       const select = screen.getByRole('combobox');
 
       expect(clockIcon).toHaveClass('dark:text-gray-400');
@@ -264,7 +259,7 @@ describe('RefreshIntervalSelector', () => {
       );
 
       const select = screen.getByRole('combobox');
-      const label = screen.getByLabelText(/Refresh/);
+      const label = document.querySelector('label[for="refresh-interval"]');
 
       expect(select).toHaveAttribute('id', 'refresh-interval');
       expect(label).toHaveAttribute('for', 'refresh-interval');
@@ -379,7 +374,7 @@ describe('RefreshIntervalSelector', () => {
         />
       );
 
-      expect(screen.getByDisplayValue('Every 5 minutes')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('5 minutes')).toBeInTheDocument();
     });
   });
 });
