@@ -245,6 +245,9 @@ export interface StockStoreState {
   
   // Live data toggle actions
   setLiveDataEnabled: (enabled: boolean) => void;
+
+  // Testing utilities
+  reset: () => void;
 }
 
 // ============================================================================

@@ -201,7 +201,7 @@ describe('NotificationService', () => {
       
       await service.requestPermission();
       
-      expect(global.navigator.serviceWorker.register).toHaveBeenCalledWith('/sw.js');
+      expect(global.navigator.serviceWorker.register).toHaveBeenCalledWith('/sw-custom.js');
     });
 
     test('should handle service worker registration failure gracefully', async () => {

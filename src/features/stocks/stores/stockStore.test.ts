@@ -400,6 +400,7 @@ describe('Stock Store', () => {
       useStockStore.setState({
         refreshInterval: 123 as any,
         webSocketConnection: mockEventSource as any,
+        webSocketStatus: 'connected' as any,
       });
 
       const { setLiveDataEnabled } = useStockStore.getState();

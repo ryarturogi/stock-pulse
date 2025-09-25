@@ -290,14 +290,16 @@ export const StockChart: React.FC<
               />
             ))}
 
-
+            {/* Only show Brush when there's enough data */}
+            {chartData.length > 1 && (
               <Brush
                 dataKey='timestamp'
                 height={30}
                 stroke='#8884d8'
                 startIndex={Math.max(0, chartData.length - 20)}
-              endIndex={chartData.length - 1}
-            />
+                endIndex={Math.max(0, chartData.length - 1)}
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
 

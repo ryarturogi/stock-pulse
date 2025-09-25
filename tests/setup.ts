@@ -191,10 +191,10 @@ if (typeof global.Response === 'undefined') {
     async text() { return typeof this.body === 'string' ? this.body : JSON.stringify(this.body); }
     get headers() { 
       const headers = new Headers(this.init?.headers || {});
-      headers.get = (name: string) => {
+      headers.get = (name: string): string | null => {
         const entries = Object.entries(this.init?.headers || {});
         const entry = entries.find(([key]) => key.toLowerCase() === name.toLowerCase());
-        return entry ? entry[1] : null;
+        return entry ? String(entry[1]) : null;
       };
       return headers;
     }
@@ -217,7 +217,7 @@ if (typeof global.Response === 'undefined') {
 // Mock Notification API for tests
 if (typeof global.Notification === 'undefined') {
   global.Notification = class Notification {
-    constructor(title: string, options?: NotificationOptions) {}
+    constructor(_title: string, _options?: NotificationOptions) {}
     static permission: NotificationPermission = 'default';
     static requestPermission(): Promise<NotificationPermission> {
       return Promise.resolve('granted');
@@ -347,8 +347,8 @@ if (typeof global.AbortSignal === 'undefined') {
 }
 
 // Mock NextResponse for API route tests
-if (typeof global.NextResponse === 'undefined') {
-  global.NextResponse = class NextResponse extends Response {
+if (typeof (global as any).NextResponse === 'undefined') {
+  (global as any).NextResponse = class NextResponse extends Response {
     private _headers: Headers;
     private _status: number;
     
@@ -361,15 +361,15 @@ if (typeof global.NextResponse === 'undefined') {
       });
     }
     
-    get headers() {
+    override get headers() {
       return this._headers;
     }
     
-    get status() {
+    override get status() {
       return this._status;
     }
     
-    static json(data: any, init?: ResponseInit) {
+    static override json(data: any, init?: ResponseInit) {
       const body = JSON.stringify(data);
       return new NextResponse(body, init);
     }

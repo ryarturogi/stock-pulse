@@ -49,6 +49,48 @@ jest.mock('@/shared/components/ui/Button', () => ({
   ),
 }));
 
+// Mock InfiniteStockSelector component
+jest.mock('./InfiniteStockSelector', () => ({
+  InfiniteStockSelector: ({ onStockSelect, selectedStock }: any) => (
+    <div data-testid="infinite-stock-selector">
+      <label htmlFor="stock-select">Select Stock</label>
+      <select 
+        id="stock-select" 
+        value={selectedStock || ''}
+        onChange={(e) => onStockSelect && onStockSelect(e.target.value)}
+      >
+        <option value="">Select a stock...</option>
+        <option value="AAPL">Apple Inc.</option>
+        <option value="GOOGL">Alphabet Inc.</option>
+        <option value="MSFT">Microsoft Corp.</option>
+      </select>
+    </div>
+  ),
+}));
+
+// Mock StockSearch component
+jest.mock('./StockSearch', () => ({
+  StockSearch: ({ onStockSelect }: any) => (
+    <div data-testid="stock-search">
+      <input 
+        type="text" 
+        placeholder="Search stocks..."
+        onChange={(e) => {
+          if (e.target.value === 'AAPL') {
+            onStockSelect && onStockSelect({ symbol: 'AAPL', name: 'Apple Inc.' });
+          }
+        }}
+      />
+    </div>
+  ),
+}));
+
+// Mock fetch for API calls
+global.fetch = jest.fn();
+
+// Mock timers to prevent timeout issues in tests
+jest.useFakeTimers();
+
 describe('StockForm', () => {
   const mockAvailableStocks: StockOption[] = [
     { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ' },
@@ -72,6 +114,50 @@ describe('StockForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockValidateForm.mockReturnValue(true);
+    
+    // Mock successful API responses for all possible endpoints
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      // Handle stock symbols API requests
+      if (url.includes('/stock-symbols') || url.includes('stock-symbols')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            data: {
+              items: mockAvailableStocks,
+              pagination: {
+                page: 1,
+                limit: mockAvailableStocks.length,
+                total: mockAvailableStocks.length,
+                totalPages: 1,
+                hasMore: false,
+              },
+            },
+          }),
+        });
+      }
+      
+      // Default mock response for any other requests
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          data: mockAvailableStocks,
+        }),
+      });
+    });
+  });
+
+  afterEach(() => {
+    // Clear any pending timers
+    jest.runOnlyPendingTimers();
+    jest.clearAllTimers();
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
   });
 
   describe('Rendering', () => {

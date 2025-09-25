@@ -92,7 +92,7 @@ export class NotificationService {
 
       // Service worker registration now works in both development and production
 
-      this.serviceWorkerRegistration = await navigator.serviceWorker.register('/sw.js');
+      this.serviceWorkerRegistration = await navigator.serviceWorker.register('/sw-custom.js');
       console.log('Service worker registered for notifications');
       
       // Wait for service worker to become active

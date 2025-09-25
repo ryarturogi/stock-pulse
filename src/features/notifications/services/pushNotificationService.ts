@@ -129,29 +129,8 @@ export class PushNotificationService {
       return null;
     }
 
-    // Enhanced browser detection and service worker path selection
-    let swPath = '/sw.js'; // Default service worker
-    
-    // Browser-specific optimizations
-    if (this.deviceType === 'mobile') {
-      if (this.browserType === 'ios-safari') {
-        // iOS Safari has limited service worker support
-        swPath = '/sw-minimal.js';
-      } else if (this.browserType === 'android-chrome') {
-        // Android Chrome has full support
-        swPath = '/sw-custom.js';
-      } else {
-        swPath = '/sw-mobile.js';
-      }
-    } else {
-      // Desktop browsers
-      if (this.browserType === 'desktop-firefox') {
-        // Firefox has some limitations
-        swPath = '/sw-firefox.js';
-      } else {
-        swPath = '/sw.js';
-      }
-    }
+    // Use custom service worker with push notification support for all platforms
+    const swPath = '/sw-custom.js';
 
     try {
       this.registration = await navigator.serviceWorker.register(swPath, {
@@ -168,16 +147,7 @@ export class PushNotificationService {
     } catch (error) {
       console.error('Failed to register service worker:', error);
       
-      // Fallback: try with minimal service worker
-      if (swPath !== '/sw-minimal.js') {
-        try {
-          console.log('Attempting fallback service worker registration...');
-          this.registration = await navigator.serviceWorker.register('/sw-minimal.js');
-          return this.registration;
-        } catch (fallbackError) {
-          console.error('Fallback service worker registration also failed:', fallbackError);
-        }
-      }
+      // No fallback needed since we're using a single service worker file
       
       return null;
     }
