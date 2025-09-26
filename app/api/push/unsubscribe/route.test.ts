@@ -9,6 +9,21 @@ import { NextRequest } from 'next/server';
 
 import { POST } from './route';
 
+// Mock the subscription storage service
+const mockSubscriptionStorage = {
+  initialize: jest.fn().mockResolvedValue(undefined),
+  removeSubscription: jest.fn(),
+  clearAllSubscriptions: jest.fn(),
+  storeSubscription: jest.fn(),
+  getSubscription: jest.fn(),
+  getAllSubscriptions: jest.fn(),
+  getSubscriptionCount: jest.fn(),
+};
+
+jest.mock('@/core/services/subscriptionStorage', () => ({
+  getSubscriptionStorage: () => mockSubscriptionStorage,
+}));
+
 // Mock console methods to avoid noise in tests
 const originalConsole = { ...console };
 beforeAll(() => {
@@ -25,22 +40,9 @@ describe('/api/push/unsubscribe', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Clear in-memory subscriptions and add test data
-    const route = await import('./route');
-    route.subscriptions?.clear?.();
-    
-    // Add some test subscriptions
-    route.subscriptions?.set?.('subscription-1', {
-      endpoint: 'https://fcm.googleapis.com/fcm/send/endpoint1',
-      keys: { p256dh: 'key1', auth: 'auth1' },
-      timestamp: Date.now(),
-    });
-    
-    route.subscriptions?.set?.('subscription-2', {
-      endpoint: 'https://fcm.googleapis.com/fcm/send/endpoint2',
-      keys: { p256dh: 'key2', auth: 'auth2' },
-      timestamp: Date.now(),
-    });
+    // Setup default mock behavior
+    mockSubscriptionStorage.removeSubscription.mockResolvedValue(true);
+    mockSubscriptionStorage.clearAllSubscriptions.mockResolvedValue(2);
   });
 
   describe('Specific Subscription Removal', () => {
@@ -71,6 +73,8 @@ describe('/api/push/unsubscribe', () => {
     });
 
     it('should return 404 for non-existent subscription', async () => {
+      mockSubscriptionStorage.removeSubscription.mockResolvedValue(false);
+
       const requestBody = {
         subscriptionId: 'non-existent-subscription',
         timestamp: Date.now(),
@@ -181,9 +185,7 @@ describe('/api/push/unsubscribe', () => {
     });
 
     it('should handle bulk removal when no subscriptions exist', async () => {
-      // Clear all subscriptions first
-      const route = await import('./route');
-      route.subscriptions?.clear?.();
+      mockSubscriptionStorage.clearAllSubscriptions.mockResolvedValue(0);
 
       const requestBody = {
         timestamp: Date.now(),
@@ -284,14 +286,9 @@ describe('/api/push/unsubscribe', () => {
     });
 
     it('should handle non-Error exceptions', async () => {
-      // Mock Map.delete to throw a non-Error
-      const route = await import('./route');
-      const originalDelete = route.subscriptions?.delete;
-      if (route.subscriptions) {
-        route.subscriptions.delete = jest.fn().mockImplementation(() => {
-          throw 'String error';  
-        });
-      }
+      mockSubscriptionStorage.removeSubscription.mockImplementation(() => {
+        throw 'String error';  
+      });
 
       const requestBody = {
         subscriptionId: 'subscription-1',
@@ -309,11 +306,6 @@ describe('/api/push/unsubscribe', () => {
 
       expect(response.status).toBe(500);
       expect(data.details.error).toBe('Unknown error');
-
-      // Restore original function
-      if (route.subscriptions && originalDelete) {
-        route.subscriptions.delete = originalDelete;
-      }
     });
 
     it('should log unsubscription processing errors', async () => {
@@ -357,12 +349,7 @@ describe('/api/push/unsubscribe', () => {
     it('should handle subscription IDs with special characters', async () => {
       const specialSubscriptionId = 'subscription-with-special-chars-!@#$%^&*()[]{}';
       
-      // Add the special subscription first
-      const route = await import('./route');
-      route.subscriptions?.set?.(specialSubscriptionId, {
-        endpoint: 'https://example.com/endpoint',
-        timestamp: Date.now(),
-      });
+      mockSubscriptionStorage.removeSubscription.mockResolvedValue(true);
 
       const requestBody = {
         subscriptionId: specialSubscriptionId,
@@ -385,12 +372,7 @@ describe('/api/push/unsubscribe', () => {
     it('should handle unicode subscription IDs', async () => {
       const unicodeSubscriptionId = 'subscription-ñáéíóú-🚀-测试';
       
-      // Add the unicode subscription first
-      const route = await import('./route');
-      route.subscriptions?.set?.(unicodeSubscriptionId, {
-        endpoint: 'https://example.com/endpoint',
-        timestamp: Date.now(),
-      });
+      mockSubscriptionStorage.removeSubscription.mockResolvedValue(true);
 
       const requestBody = {
         subscriptionId: unicodeSubscriptionId,

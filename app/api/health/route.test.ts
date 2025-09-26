@@ -5,43 +5,44 @@
  * Tests for the application health monitoring endpoint
  */
 
-// Mock NextResponse
-const mockJsonResponse = {
-  json: jest.fn(),
-  headers: new Map([
-    ['Cache-Control', 'no-cache, no-store, must-revalidate'],
-    ['Pragma', 'no-cache'],
-    ['Expires', '0'],
-    ['Content-Type', 'application/json'],
-  ]),
-  status: 200,
+// Mock NextResponse for proper header handling in tests
+const mockJsonResponse = (data: any, init: any = {}) => {
+  const headers = init?.headers || {};
+  const mockHeaders = {
+    get: (name: string) => headers[name] || null,
+    has: (name: string) => name in headers,
+    set: (name: string, value: string) => { headers[name] = value; },
+    delete: (name: string) => delete headers[name],
+    forEach: (callback: (value: string, key: string) => void) => {
+      Object.entries(headers).forEach(([key, value]) => callback(value as string, key));
+    },
+    entries: () => Object.entries(headers)[Symbol.iterator](),
+    keys: () => Object.keys(headers)[Symbol.iterator](),
+    values: () => Object.values(headers)[Symbol.iterator](),
+  };
+
+  return {
+    json: async () => data,
+    headers: mockHeaders,
+    status: init?.status || 200,
+  };
 };
 
 jest.mock('next/server', () => ({
   NextResponse: {
-    json: jest.fn().mockImplementation((data, init) => ({
-      ...mockJsonResponse,
-      json: jest.fn().mockResolvedValue(data),
-      status: init?.status || 200,
-      headers: {
-        get: (key: string) => {
-          const headers = new Map([
-            ['Cache-Control', 'no-cache, no-store, must-revalidate'],
-            ['Pragma', 'no-cache'],
-            ['Expires', '0'],
-            ['Content-Type', 'application/json'],
-          ]);
-          return headers.get(key) || null;
-        },
-      },
-    })),
+    json: jest.fn().mockImplementation(mockJsonResponse),
   },
 }));
 
-import { GET } from './route';
+const { GET } = require('./route');
 
-// Mock fetch globally
-global.fetch = jest.fn();
+// Mock fetch globally with simpler implementation
+global.fetch = jest.fn().mockResolvedValue({
+  ok: true,
+  status: 200,
+  json: async () => ({ status: 'ok' }),
+  headers: new Headers({ 'content-type': 'application/json' }),
+});
 
 // Mock process methods
 const mockProcess = {
@@ -70,16 +71,11 @@ global.AbortController = jest.fn().mockImplementation(() => ({
   abort: jest.fn(),
 }));
 
-// Mock setTimeout and clearTimeout
-global.setTimeout = jest.fn().mockImplementation((fn) => {
-  if (typeof fn === 'function') {
-    // Don't actually call the function in tests
-    return 'timeout-id' as unknown as NodeJS.Timeout;
-  }
-  return 'timeout-id' as unknown as NodeJS.Timeout;
-}) as unknown as typeof setTimeout;
-
-global.clearTimeout = jest.fn();
+// Keep original setTimeout and clearTimeout for basic functionality
+const originalSetTimeout = setTimeout;
+const originalClearTimeout = clearTimeout;
+global.setTimeout = jest.fn().mockImplementation((fn, delay) => originalSetTimeout(fn, delay));
+global.clearTimeout = jest.fn().mockImplementation(originalClearTimeout);
 
 describe('/api/health', () => {
   const originalEnv = process.env;
@@ -121,6 +117,10 @@ describe('/api/health', () => {
   describe('Successful Health Checks', () => {
     it('should return healthy status with all checks', async () => {
       const response = await GET();
+      
+      expect(response).toBeDefined();
+      expect(response.status).toBe(200);
+      
       const data = await response.json();
 
       expect(response.status).toBe(200);

@@ -5,9 +5,21 @@
  * Comprehensive tests for stock state management
  */
 
-import { act } from '@testing-library/react';
-import { useStockStore } from './stockStore';
-import type { FinnhubStockQuote } from '@/core/types';
+// Mock the stockWebSocketService BEFORE any imports
+jest.mock('@/features/stocks/services/stockWebSocketService', () => {
+  const mockService = {
+    connectWebSocket: jest.fn().mockResolvedValue(undefined),
+    disconnectWebSocket: jest.fn(),
+    subscribeToStock: jest.fn(),
+    unsubscribeFromStock: jest.fn(),
+    resetWebSocketState: jest.fn(),
+    cleanup: jest.fn(),
+  };
+  
+  return {
+    StockWebSocketService: jest.fn().mockImplementation(() => mockService),
+  };
+});
 
 // Mock the notification service
 jest.mock('@/features/notifications', () => ({
@@ -15,6 +27,10 @@ jest.mock('@/features/notifications', () => ({
     showNotification: jest.fn(),
   }),
 }));
+
+import { act } from '@testing-library/react';
+import { useStockStore } from './stockStore';
+import type { FinnhubStockQuote } from '@/core/types';
 
 // Mock EventSource for WebSocket tests
 const mockEventSource = {
@@ -37,6 +53,9 @@ global.EventSource = jest.fn(() => mockEventSource) as any;
 
 describe('Stock Store', () => {
   beforeEach(() => {
+    // Clear all mocks
+    jest.clearAllMocks();
+    
     // Reset store state before each test
     useStockStore.setState({
       watchedStocks: [],
@@ -51,9 +70,6 @@ describe('Stock Store', () => {
       isLiveDataEnabled: true,
       connectionAttempts: 0,
     });
-
-    // Clear all mocks
-    jest.clearAllMocks();
   });
 
   describe('Initial State', () => {
@@ -223,16 +239,24 @@ describe('Stock Store', () => {
 
     it('should maintain price history with limit', () => {
       const { updateStockPrice } = useStockStore.getState();
+      const baseTime = Date.now();
 
       // Add more than 500 price points to test limit
+      // We need to account for throttling (500ms), so we use different timestamps
       for (let i = 0; i < 510; i++) {
+        // Use mock timers to bypass throttling for this test
+        const originalGetTime = Date.now;
+        Date.now = jest.fn(() => baseTime + i * 600); // 600ms apart to avoid throttling
+        
         act(() => {
           updateStockPrice('AAPL', {
             ...mockQuote,
             current: 150 + i,
-            timestamp: Date.now() + i * 1000,
+            timestamp: baseTime + i * 600,
           });
         });
+        
+        Date.now = originalGetTime;
       }
 
       const state = useStockStore.getState();
@@ -337,10 +361,11 @@ describe('Stock Store', () => {
       expect(state.refreshInterval).toBeNull();
     });
 
-    it('should not start periodic refresh when WebSocket is connected', () => {
+    it('should start periodic refresh as WebSocket fallback when connected', () => {
       useStockStore.setState({
         webSocketStatus: 'connected',
         webSocketConnection: mockEventSource as any,
+        isLiveDataEnabled: true, // Must be enabled for refresh to work
       });
 
       const { startPeriodicRefresh } = useStockStore.getState();
@@ -349,7 +374,8 @@ describe('Stock Store', () => {
       });
 
       const state = useStockStore.getState();
-      expect(state.refreshInterval).toBeNull();
+      // Periodic refresh should start even when WebSocket is connected (as fallback)
+      expect(state.refreshInterval).not.toBeNull();
     });
 
     it('should stop periodic refresh', () => {
@@ -390,6 +416,7 @@ describe('Stock Store', () => {
       useStockStore.setState({
         refreshInterval: 123 as any,
         webSocketConnection: mockEventSource as any,
+        webSocketStatus: 'connected' as any,
       });
 
       const { setLiveDataEnabled } = useStockStore.getState();

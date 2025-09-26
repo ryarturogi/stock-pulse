@@ -172,7 +172,7 @@ export const getMobileTourSteps = (): TourStep[] => [
         <p class="text-sm opacity-75">The dropdown will show available stocks that you haven't added yet.</p>
       </div>
     `,
-    position: 'right',
+    position: 'bottom',
   },
   {
     element: '[data-mobile-step="4"]',

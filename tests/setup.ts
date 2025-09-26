@@ -164,6 +164,7 @@ afterAll(() => {
 });
 
 // Mock Web APIs for Node.js environment (for API route tests)
+// Only define if they don't exist (allow tests to override)
 if (typeof global.Request === 'undefined') {
   global.Request = class Request {
     constructor(public url: string, public init?: any) {}
@@ -177,27 +178,104 @@ if (typeof global.Response === 'undefined') {
     constructor(public body?: any, public init?: any) {}
     get status() { return this.init?.status || 200; }
     get ok() { return this.status >= 200 && this.status < 300; }
-    async json() { return this.body; }
+    async json() { 
+      if (typeof this.body === 'string') {
+        try {
+          return JSON.parse(this.body);
+        } catch {
+          return this.body;
+        }
+      }
+      return this.body; 
+    }
     async text() { return typeof this.body === 'string' ? this.body : JSON.stringify(this.body); }
     get headers() { 
-      return {
-        get: (name: string) => this.init?.headers?.[name] || null,
+      const headers = new Headers(this.init?.headers || {});
+      headers.get = (name: string): string | null => {
+        const entries = Object.entries(this.init?.headers || {});
+        const entry = entries.find(([key]) => key.toLowerCase() === name.toLowerCase());
+        return entry ? String(entry[1]) : null;
       };
+      return headers;
+    }
+    
+    // Add static json method for NextResponse compatibility
+    static json(data: any, init?: ResponseInit) {
+      const body = JSON.stringify(data);
+      const headers = {
+        'content-type': 'application/json',
+        ...(init?.headers || {})
+      };
+      return new Response(body, { ...init, headers });
     }
   } as any;
 }
 
+// Store original fetch for tests that need to use their own mocks
+(global as any).__originalFetch = global.fetch;
+
+// Mock Notification API for tests
+if (typeof global.Notification === 'undefined') {
+  global.Notification = class Notification {
+    constructor(_title: string, _options?: NotificationOptions) {}
+    static permission: NotificationPermission = 'default';
+    static requestPermission(): Promise<NotificationPermission> {
+      return Promise.resolve('granted');
+    }
+  } as any;
+}
+
+// Mock navigator for tests
+if (typeof global.navigator === 'undefined') {
+  global.navigator = {
+    serviceWorker: {
+      ready: Promise.resolve({
+        showNotification: jest.fn(),
+        getNotifications: jest.fn().mockResolvedValue([]),
+      }),
+      register: jest.fn().mockResolvedValue({
+        showNotification: jest.fn(),
+        getNotifications: jest.fn().mockResolvedValue([]),
+      }),
+    },
+    userAgent: 'jest',
+  } as any;
+}
+
+// Define fetch if not available (for older Node.js environments)
+if (typeof global.fetch === 'undefined') {
+  global.fetch = jest.fn(() => Promise.resolve(new Response()));
+}
+
+// Handle unhandled promise rejections to prevent test crashes
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 if (typeof global.Headers === 'undefined') {
   global.Headers = class Headers {
     private headers: Record<string, string> = {};
-    constructor(init?: Record<string, string>) {
+    constructor(init?: Record<string, string> | Headers) {
       if (init) {
-        Object.assign(this.headers, init);
+        if (init instanceof Headers) {
+          // Copy from another Headers instance
+          (init as any).forEach?.((value: string, key: string) => {
+            this.headers[key.toLowerCase()] = value;
+          });
+        } else {
+          // Copy from object
+          Object.entries(init).forEach(([key, value]) => {
+            this.headers[key.toLowerCase()] = value;
+          });
+        }
       }
     }
     get(name: string) { return this.headers[name.toLowerCase()] || null; }
     set(name: string, value: string) { this.headers[name.toLowerCase()] = value; }
     has(name: string) { return name.toLowerCase() in this.headers; }
+    forEach(callback: (value: string, key: string) => void) {
+      Object.entries(this.headers).forEach(([key, value]) => callback(value, key));
+    }
   } as any;
 }
 
@@ -237,9 +315,25 @@ if (typeof global.TextEncoder === 'undefined') {
   } as any;
 }
 
-// Mock AbortSignal for API route tests
+// Mock AbortController and AbortSignal for API route tests
+if (typeof global.AbortController === 'undefined') {
+  global.AbortController = class AbortController {
+    public signal: AbortSignal;
+    
+    constructor() {
+      this.signal = new AbortSignal();
+    }
+    
+    abort() {
+      (this.signal as any).aborted = true;
+    }
+  } as any;
+}
+
 if (typeof global.AbortSignal === 'undefined') {
   global.AbortSignal = class AbortSignal {
+    public aborted = false;
+    
     static timeout(delay: number) {
       const signal = new AbortSignal();
       setTimeout(() => {
@@ -249,5 +343,35 @@ if (typeof global.AbortSignal === 'undefined') {
     }
     addEventListener() {}
     removeEventListener() {}
+  } as any;
+}
+
+// Mock NextResponse for API route tests
+if (typeof (global as any).NextResponse === 'undefined') {
+  (global as any).NextResponse = class NextResponse extends Response {
+    private _headers: Headers;
+    private _status: number;
+    
+    constructor(body?: any, init?: any) {
+      super(body, init);
+      this._status = init?.status || 200;
+      this._headers = new Headers({
+        'content-type': 'application/json',
+        ...(init?.headers || {})
+      });
+    }
+    
+    override get headers() {
+      return this._headers;
+    }
+    
+    override get status() {
+      return this._status;
+    }
+    
+    static override json(data: any, init?: ResponseInit) {
+      const body = JSON.stringify(data);
+      return new NextResponse(body, init);
+    }
   } as any;
 }

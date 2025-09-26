@@ -6,6 +6,8 @@ const config = {
   testMatch: [
     '**/__tests__/**/*.(ts|tsx|js)',
     '**/*.(test|spec).(ts|tsx|js)',
+    '!**/e2e/**/*.(spec|test).(ts|tsx|js)', // Exclude Playwright e2e tests
+    '!**/tests/e2e/**/*.(spec|test).(ts|tsx|js)', // Exclude Playwright e2e tests
   ],
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
@@ -50,6 +52,9 @@ const config = {
   verbose: true,
   clearMocks: true,
   restoreMocks: true,
+  maxWorkers: 1,
+  resetMocks: true,
+  resetModules: true,
 };
 
 module.exports = config;

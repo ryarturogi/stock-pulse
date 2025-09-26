@@ -9,11 +9,12 @@ jest.mock('recharts', () => ({
   XAxis: () => <div data-testid='x-axis' />,
   YAxis: () => <div data-testid='y-axis' />,
   CartesianGrid: () => <div data-testid='grid' />,
-  Tooltip: () => <div data-testid='tooltip' />,
+  Tooltip: ({ content }: any) => <div data-testid='tooltip'>{content}</div>,
   ResponsiveContainer: ({ children }: any) => (
     <div data-testid='responsive-container'>{children}</div>
   ),
   Legend: () => <div data-testid='legend' />,
+  Brush: () => <div data-testid='brush' />,
 }));
 
 /**
@@ -284,8 +285,9 @@ describe('StockChart', () => {
     it('should have responsive padding', () => {
       render(<StockChart stocks={mockStocks} />);
 
-      const header = screen.getByText('Stock Price Chart').closest('div');
-      expect(header).toHaveClass('p-3', 'lg:p-4');
+      const headerContainer = screen.getByText('Stock Price Chart').closest('.p-3');
+      expect(headerContainer).toHaveClass('p-3');
+      expect(headerContainer).toHaveClass('lg:p-4');
     });
   });
 
@@ -310,11 +312,12 @@ describe('StockChart', () => {
       expect(latestTime).toBeInTheDocument();
     });
 
-    it('should show live indicator', () => {
+    it('should show latest timestamp indicator', () => {
       render(<StockChart stocks={mockStocks} />);
 
-      // Should show live indicator
-      expect(screen.getByText('Live')).toBeInTheDocument();
+      // Should show latest timestamp, not a "Live" indicator
+      // The component shows "Latest: [timestamp]" format
+      expect(screen.getByText(/Latest:/)).toBeInTheDocument();
     });
 
     it('should handle millisecond precision in timestamps', () => {

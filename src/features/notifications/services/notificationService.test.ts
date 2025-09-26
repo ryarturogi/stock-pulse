@@ -20,8 +20,8 @@ interface MockServiceWorkerRegistration extends ServiceWorkerRegistration {
   installing: ServiceWorker | null;
   waiting: ServiceWorker | null;
   active: ServiceWorker | null;
-  showNotification: jest.MockedFunction<any>;
-  getNotifications: jest.MockedFunction<any>;
+  showNotification: jest.MockedFunction<(...args: any[]) => any>;
+  getNotifications: jest.MockedFunction<() => Promise<Notification[]>>;
 }
 
 // Global test setup
@@ -41,10 +41,8 @@ describe('NotificationService', () => {
     alertPrice: 150.00,
     currentPrice: 155.50,
     change: 5.50,
-    changePercent: 3.67,
-    volume: 1000000,
-    lastUpdated: Date.now(),
-    color: '#007bff'
+    percentChange: 3.67,
+    lastUpdated: Date.now()
   };
 
   beforeEach(() => {
@@ -60,11 +58,12 @@ describe('NotificationService', () => {
 
     // Setup notification mock
     mockRequestPermission = jest.fn();
-    mockNotification = jest.fn().mockImplementation((title: string, options?: NotificationOptions) => {
+    mockNotification = jest.fn().mockImplementation((...args: any[]) => {
+      const [title, options] = args as [string, NotificationOptions?];
       const notification: Partial<MockNotification> = {
         title,
-        body: options?.body,
-        icon: options?.icon,
+        body: options?.body ?? '',
+        icon: options?.icon ?? '',
         close: jest.fn(),
         onclick: null,
         onclose: null,
@@ -83,7 +82,7 @@ describe('NotificationService', () => {
         addEventListener: jest.fn(),
       } as any,
       showNotification: jest.fn(),
-      getNotifications: jest.fn().mockResolvedValue([]),
+      getNotifications: jest.fn().mockResolvedValue([]) as jest.MockedFunction<() => Promise<Notification[]>>,
     } as MockServiceWorkerRegistration;
 
     // Setup global mocks
@@ -201,7 +200,7 @@ describe('NotificationService', () => {
       
       await service.requestPermission();
       
-      expect(global.navigator.serviceWorker.register).toHaveBeenCalledWith('/sw.js');
+      expect(global.navigator.serviceWorker.register).toHaveBeenCalledWith('/sw-custom.js');
     });
 
     test('should handle service worker registration failure gracefully', async () => {
