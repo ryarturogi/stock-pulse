@@ -365,7 +365,7 @@ describe('NotificationStore', () => {
       localStorageMock.setItem('stockpulse_notifications_enabled', 'false');
       
       // Create a new store instance (simulating app restart)
-      const { result } = renderHook(() => useNotificationStore());
+      renderHook(() => useNotificationStore());
       
       // The migration should have run and cleaned up old data
       expect(localStorageMock.getItem('stockpulse_notifications_enabled')).toBeNull();

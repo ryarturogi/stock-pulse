@@ -6,7 +6,6 @@
  */
 
 import { stockService, StockService } from './stockService';
-import type { FinnhubStockQuote } from '@/core/types';
 
 // Mock fetch globally
 const mockFetch = jest.fn();

@@ -51,7 +51,7 @@ export const useStockForm = (): StockFormState => {
 
   // Clear errors when inputs change
   useEffect(() => {
-    if (errors.stock && selectedStock) {
+    if (errors.stock && selectedStock.trim()) {
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors.stock;
@@ -61,7 +61,7 @@ export const useStockForm = (): StockFormState => {
   }, [selectedStock, errors.stock]);
 
   useEffect(() => {
-    if (errors.price && alertPrice) {
+    if (errors.price && alertPrice.trim()) {
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors.price;

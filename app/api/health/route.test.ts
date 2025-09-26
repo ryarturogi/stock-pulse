@@ -6,50 +6,42 @@
  */
 
 // Mock NextResponse for proper header handling in tests
-const mockResponse = (data: any, init: any = {}) => ({
-  json: async () => data,
-  headers: {
-    get: (name: string) => {
-      const headers = init?.headers || {};
-      return headers[name] || null;
+const mockJsonResponse = (data: any, init: any = {}) => {
+  const headers = init?.headers || {};
+  const mockHeaders = {
+    get: (name: string) => headers[name] || null,
+    has: (name: string) => name in headers,
+    set: (name: string, value: string) => { headers[name] = value; },
+    delete: (name: string) => delete headers[name],
+    forEach: (callback: (value: string, key: string) => void) => {
+      Object.entries(headers).forEach(([key, value]) => callback(value as string, key));
     },
-  },
-  status: init?.status || 200,
-});
+    entries: () => Object.entries(headers)[Symbol.iterator](),
+    keys: () => Object.keys(headers)[Symbol.iterator](),
+    values: () => Object.values(headers)[Symbol.iterator](),
+  };
+
+  return {
+    json: async () => data,
+    headers: mockHeaders,
+    status: init?.status || 200,
+  };
+};
 
 jest.mock('next/server', () => ({
   NextResponse: {
-    json: jest.fn().mockImplementation(mockResponse),
+    json: jest.fn().mockImplementation(mockJsonResponse),
   },
 }));
 
-import { GET } from './route';
+const { GET } = require('./route');
 
-// Mock fetch globally with better implementation
-global.fetch = jest.fn().mockImplementation((url: string, init?: any) => {
-  // Handle external API health checks
-  if (url.includes('finnhub.io') || url.includes('example.com')) {
-    const isTimeout = init?.signal?.aborted;
-    if (isTimeout) {
-      return Promise.reject(new DOMException('The operation was aborted', 'AbortError'));
-    }
-    
-    // Simulate successful API response
-    return Promise.resolve({
-      ok: true,
-      status: 200,
-      json: async () => ({ status: 'ok' }),
-      headers: new Headers({ 'content-type': 'application/json' }),
-    });
-  }
-  
-  // Default successful response
-  return Promise.resolve({
-    ok: true,
-    status: 200,
-    json: async () => ({}),
-    headers: new Headers({ 'content-type': 'application/json' }),
-  });
+// Mock fetch globally with simpler implementation
+global.fetch = jest.fn().mockResolvedValue({
+  ok: true,
+  status: 200,
+  json: async () => ({ status: 'ok' }),
+  headers: new Headers({ 'content-type': 'application/json' }),
 });
 
 // Mock process methods
@@ -73,26 +65,17 @@ Object.defineProperty(global, 'process', {
   writable: true,
 });
 
-// Mock AbortController with better timeout simulation
-const mockAbortController = {
+// Mock AbortController
+global.AbortController = jest.fn().mockImplementation(() => ({
   signal: { aborted: false },
   abort: jest.fn(),
-};
+}));
 
-global.AbortController = jest.fn().mockImplementation(() => {
-  const controller = { ...mockAbortController };
-  return controller;
-});
-
-// Mock setTimeout and clearTimeout for timeout simulation
-global.setTimeout = jest.fn().mockImplementation((callback, delay) => {
-  if (delay >= 5000) { // Health check timeout - simulate immediate timeout
-    setTimeout(() => callback(), 0); // Use real setTimeout with 0 delay
-  }
-  return 123; // mock timer id
-}) as unknown as typeof setTimeout;
-
-global.clearTimeout = jest.fn();
+// Keep original setTimeout and clearTimeout for basic functionality
+const originalSetTimeout = setTimeout;
+const originalClearTimeout = clearTimeout;
+global.setTimeout = jest.fn().mockImplementation((fn, delay) => originalSetTimeout(fn, delay));
+global.clearTimeout = jest.fn().mockImplementation(originalClearTimeout);
 
 describe('/api/health', () => {
   const originalEnv = process.env;

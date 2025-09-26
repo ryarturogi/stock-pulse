@@ -5,7 +5,7 @@
  * Tests for the stock selection and alert form component
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StockForm } from './StockForm';
 import type { StockOption, WatchedStock } from '@/core/types';
@@ -51,21 +51,38 @@ jest.mock('@/shared/components/ui/Button', () => ({
 
 // Mock InfiniteStockSelector component
 jest.mock('./InfiniteStockSelector', () => ({
-  InfiniteStockSelector: ({ onStockSelect, selectedStock }: any) => (
-    <div data-testid="infinite-stock-selector">
-      <label htmlFor="stock-select">Select Stock</label>
-      <select 
-        id="stock-select" 
-        value={selectedStock || ''}
-        onChange={(e) => onStockSelect && onStockSelect(e.target.value)}
-      >
-        <option value="">Select a stock...</option>
-        <option value="AAPL">Apple Inc.</option>
-        <option value="GOOGL">Alphabet Inc.</option>
-        <option value="MSFT">Microsoft Corp.</option>
-      </select>
-    </div>
-  ),
+  InfiniteStockSelector: ({ onChange, value, watchedStocks = [] }: any) => {
+    // Mock stocks that would be available
+    const mockStocks = [
+      { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ' },
+      { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ' },
+      { symbol: 'MSFT', name: 'Microsoft Corp.', exchange: 'NASDAQ' },
+      { symbol: 'TSLA', name: 'Tesla Inc.', exchange: 'NASDAQ' },
+    ];
+    
+    // Filter out watched stocks
+    const filteredStocks = mockStocks.filter(
+      stock => !watchedStocks?.some((watched: any) => watched.symbol === stock.symbol)
+    );
+    
+    return (
+      <div data-testid="infinite-stock-selector">
+        <label htmlFor="stock-select">Select Stock</label>
+        <select 
+          id="stock-select" 
+          value={value || ''}
+          onChange={(e) => onChange && onChange(e.target.value)}
+        >
+          <option value="">Select a stock...</option>
+          {filteredStocks.map((stock) => (
+            <option key={stock.symbol} value={stock.symbol}>
+              {stock.symbol} - {stock.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  },
 }));
 
 // Mock StockSearch component
@@ -84,6 +101,17 @@ jest.mock('./StockSearch', () => ({
     </div>
   ),
 }));
+
+// Mock the stock service
+jest.mock('@/features/stocks/services', () => ({
+  stockService: {
+    getAvailableStocksLegacy: jest.fn(),
+  },
+}));
+
+// Get mock reference after mocking
+const { stockService } = require('@/features/stocks/services');
+const mockGetAvailableStocksLegacy = stockService.getAvailableStocksLegacy as jest.Mock;
 
 // Mock fetch for API calls
 global.fetch = jest.fn();
@@ -114,6 +142,9 @@ describe('StockForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockValidateForm.mockReturnValue(true);
+    
+    // Setup default mock for stock service
+    mockGetAvailableStocksLegacy.mockResolvedValue(mockAvailableStocks);
     
     // Mock successful API responses for all possible endpoints
     (global.fetch as jest.Mock).mockImplementation((url: string) => {
@@ -213,14 +244,21 @@ describe('StockForm', () => {
   });
 
   describe('Stock Selection', () => {
-    it('should render available stocks in dropdown', () => {
-      render(
-        <StockForm
-          availableStocks={mockAvailableStocks}
-          onAddStock={mockOnAddStock}
-          watchedStocks={mockWatchedStocks}
-        />
-      );
+    it('should render available stocks in dropdown', async () => {
+      await waitFor(() => {
+        render(
+          <StockForm
+            availableStocks={mockAvailableStocks}
+            onAddStock={mockOnAddStock}
+            watchedStocks={mockWatchedStocks}
+          />
+        );
+      });
+
+      // Wait for async stock loading to complete
+      await waitFor(() => {
+        expect(screen.getByTestId('infinite-stock-selector')).toBeInTheDocument();
+      });
 
       // TSLA should be filtered out since it's already watched
       expect(screen.getByText('AAPL - Apple Inc.')).toBeInTheDocument();

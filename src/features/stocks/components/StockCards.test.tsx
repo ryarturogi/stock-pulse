@@ -34,7 +34,6 @@ describe('StockCards', () => {
       alertPrice: 150.0,
       currentPrice: 155.50,
       change: 5.50,
-      changePercent: 3.67,
       percentChange: 3.67,
       high: 157.0,
       low: 153.0,
@@ -51,7 +50,6 @@ describe('StockCards', () => {
       alertPrice: 2800.0,
       currentPrice: 2850.0,
       change: 50.0,
-      changePercent: 1.79,
       percentChange: 1.79,
       high: 2860.0,
       low: 2820.0,
@@ -189,10 +187,10 @@ describe('StockCards', () => {
     });
 
     it('should handle stocks without lastUpdated', () => {
-      const stocksWithoutTimestamps = mockStocks.map(stock => ({
-        ...stock,
-        lastUpdated: undefined,
-      }));
+      const stocksWithoutTimestamps: WatchedStock[] = mockStocks.map(stock => {
+        const { lastUpdated, ...stockWithoutTimestamp } = stock;
+        return stockWithoutTimestamp;
+      });
 
       render(<StockCards stocks={stocksWithoutTimestamps} onRemoveStock={mockOnRemoveStock} />);
 

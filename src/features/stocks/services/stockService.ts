@@ -762,8 +762,12 @@ export class StockService {
   /**
    * Parse WebSocket trade message
    */
-  parseTradeMessage(message: string | object): { symbol: string; price: number; timestamp: number } | null {
+  parseTradeMessage(message: string | object | null | undefined): { symbol: string; price: number; timestamp: number } | null {
     try {
+      if (message === null || message === undefined) {
+        return null;
+      }
+      
       let data;
       if (typeof message === 'string') {
         data = JSON.parse(message);

@@ -5,9 +5,21 @@
  * Comprehensive tests for stock state management
  */
 
-import { act } from '@testing-library/react';
-import { useStockStore } from './stockStore';
-import type { FinnhubStockQuote } from '@/core/types';
+// Mock the stockWebSocketService BEFORE any imports
+jest.mock('@/features/stocks/services/stockWebSocketService', () => {
+  const mockService = {
+    connectWebSocket: jest.fn().mockResolvedValue(undefined),
+    disconnectWebSocket: jest.fn(),
+    subscribeToStock: jest.fn(),
+    unsubscribeFromStock: jest.fn(),
+    resetWebSocketState: jest.fn(),
+    cleanup: jest.fn(),
+  };
+  
+  return {
+    StockWebSocketService: jest.fn().mockImplementation(() => mockService),
+  };
+});
 
 // Mock the notification service
 jest.mock('@/features/notifications', () => ({
@@ -16,18 +28,9 @@ jest.mock('@/features/notifications', () => ({
   }),
 }));
 
-// Mock the stockWebSocketService
-const mockWebSocketService = {
-  connectWebSocket: jest.fn(),
-  disconnectWebSocket: jest.fn(),
-  subscribeToStock: jest.fn(),
-  unsubscribeFromStock: jest.fn(),
-  cleanup: jest.fn(),
-};
-
-jest.mock('@/features/stocks/services/stockWebSocketService', () => ({
-  StockWebSocketService: jest.fn().mockImplementation(() => mockWebSocketService),
-}));
+import { act } from '@testing-library/react';
+import { useStockStore } from './stockStore';
+import type { FinnhubStockQuote } from '@/core/types';
 
 // Mock EventSource for WebSocket tests
 const mockEventSource = {

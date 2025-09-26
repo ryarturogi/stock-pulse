@@ -365,11 +365,10 @@ test.describe('API Integration Tests', () => {
       for (const endpoint of endpoints) {
         const startTime = Date.now();
         
-        let response;
         if (endpoint.includes('subscribe')) {
-          response = await apiContext.get(endpoint);
+          await apiContext.get(endpoint);
         } else {
-          response = await apiContext.get(endpoint);
+          await apiContext.get(endpoint);
         }
         
         const responseTime = Date.now() - startTime;

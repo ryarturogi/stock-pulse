@@ -100,11 +100,11 @@ describe('Stock Store WebSocket Integration', () => {
     const mockEventSourceConstructor = jest.fn().mockImplementation((url) => {
       mockEventSource = new MockEventSource(url);
       return mockEventSource;
-    });
+    }) as any;
     mockEventSourceConstructor.CONNECTING = 0;
     mockEventSourceConstructor.OPEN = 1;
     mockEventSourceConstructor.CLOSED = 2;
-    global.EventSource = mockEventSourceConstructor as any;
+    global.EventSource = mockEventSourceConstructor;
 
     // Setup default stock service mocks
     mockStockService.fetchStockQuote.mockResolvedValue(createMockQuote('AAPL', 150.00));
@@ -245,11 +245,15 @@ describe('Stock Store WebSocket Integration', () => {
       const { result } = renderHook(() => useStockStore());
       
       // Mock EventSource that never connects
-      global.EventSource = jest.fn().mockImplementation((url) => {
+      const mockEventSourceConstructor = jest.fn().mockImplementation((url) => {
         mockEventSource = new MockEventSource(url);
         mockEventSource.readyState = MockEventSource.CONNECTING; // Stay connecting
         return mockEventSource;
-      });
+      }) as any;
+      mockEventSourceConstructor.CONNECTING = 0;
+      mockEventSourceConstructor.OPEN = 1;
+      mockEventSourceConstructor.CLOSED = 2;
+      global.EventSource = mockEventSourceConstructor;
 
       act(() => {
         result.current.setLiveDataEnabled(true);
@@ -275,11 +279,15 @@ describe('Stock Store WebSocket Integration', () => {
       const { result } = renderHook(() => useStockStore());
       
       // Mock EventSource that never connects
-      global.EventSource = jest.fn().mockImplementation((url) => {
+      const mockEventSourceConstructor = jest.fn().mockImplementation((url) => {
         mockEventSource = new MockEventSource(url);
         mockEventSource.readyState = MockEventSource.CONNECTING;
         return mockEventSource;
-      });
+      }) as any;
+      mockEventSourceConstructor.CONNECTING = 0;
+      mockEventSourceConstructor.OPEN = 1;
+      mockEventSourceConstructor.CLOSED = 2;
+      global.EventSource = mockEventSourceConstructor;
 
       const startPeriodicRefreshSpy = jest.spyOn(result.current, 'startPeriodicRefresh');
 
@@ -771,11 +779,11 @@ describe('Stock Store WebSocket Integration', () => {
       // Mock EventSource constructor to throw
       const mockEventSourceConstructor = jest.fn().mockImplementation(() => {
         throw new Error('EventSource creation failed');
-      });
+      }) as any;
       mockEventSourceConstructor.CONNECTING = 0;
       mockEventSourceConstructor.OPEN = 1;
       mockEventSourceConstructor.CLOSED = 2;
-      global.EventSource = mockEventSourceConstructor as any;
+      global.EventSource = mockEventSourceConstructor;
 
       act(() => {
         result.current.setLiveDataEnabled(true);

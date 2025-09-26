@@ -114,7 +114,7 @@ export const useTour = () => {
         // Check if we're on mobile/tablet (matches responsive hook logic)
         // Mobile/tablet both use mobile tour since they both hide desktop sidebar
         const isMobileOrTablet = window.innerWidth < 1024;
-        const isVerySmallScreen = window.innerWidth <= 375;
+        // const isVerySmallScreen = window.innerWidth <= 375;
         
         if (targetElement) {
           const step = targetElement.getAttribute('data-step');

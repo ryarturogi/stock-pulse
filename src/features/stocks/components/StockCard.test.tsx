@@ -29,7 +29,6 @@ describe('StockCard', () => {
     alertPrice: 150.0,
     currentPrice: 155.50,
     change: 5.50,
-    changePercent: 3.67,
     percentChange: 3.67,
     high: 157.0,
     low: 153.0,
@@ -115,13 +114,8 @@ describe('StockCard', () => {
     });
 
     it('should handle missing price data gracefully', () => {
-      const incompleteStock = {
-        ...mockStock,
-        currentPrice: undefined,
-        change: undefined,
-        changePercent: undefined,
-        percentChange: undefined,
-      };
+      const { currentPrice, change, percentChange, ...stockWithoutPrices } = mockStock;
+      const incompleteStock: WatchedStock = stockWithoutPrices;
       render(<StockCard stock={incompleteStock} onRemove={mockOnRemove} />);
 
       expect(screen.getAllByText('---.--').length).toBeGreaterThan(0);
@@ -322,12 +316,9 @@ describe('StockCard', () => {
     });
 
     it('should handle missing high/low prices', () => {
-      const stockWithoutHighLow = {
-        ...mockStock,
-        high: undefined,
-        low: undefined,
-      };
-      render(<StockCard stock={stockWithoutHighLow} onRemove={mockOnRemove} />);
+      const { high, low, ...stockWithoutHighLow } = mockStock;
+      const testStock: WatchedStock = stockWithoutHighLow;
+      render(<StockCard stock={testStock} onRemove={mockOnRemove} />);
 
       expect(screen.queryByText(/H: \$/)).not.toBeInTheDocument();
       expect(screen.queryByText(/L: \$/)).not.toBeInTheDocument();

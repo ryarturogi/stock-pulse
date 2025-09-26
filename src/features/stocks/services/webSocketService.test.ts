@@ -324,7 +324,7 @@ describe('WebSocket Service Integration', () => {
         CLOSED: MockWebSocket.CLOSED,
       });
       
-      global.WebSocket = MockedWebSocket as typeof WebSocket;
+      global.WebSocket = MockedWebSocket as any;
     });
 
     it('should create WebSocket connection with correct URL', () => {
@@ -440,7 +440,7 @@ describe('WebSocket Service Integration', () => {
         CLOSED: MockEventSource.CLOSED,
       });
       
-      global.EventSource = MockedEventSource as typeof EventSource;
+      global.EventSource = MockedEventSource as any;
     });
 
     it('should create EventSource connection to WebSocket proxy', () => {
@@ -595,7 +595,7 @@ describe('WebSocket Service Integration', () => {
         CLOSED: 3,
       });
       
-      global.WebSocket = FailingWebSocket as typeof WebSocket;
+      global.WebSocket = FailingWebSocket as any;
 
       expect(() => new WebSocket('wss://test.com')).toThrow('WebSocket not supported');
     });
@@ -611,7 +611,7 @@ describe('WebSocket Service Integration', () => {
         CLOSED: 2,
       });
       
-      global.EventSource = FailingEventSource as typeof EventSource;
+      global.EventSource = FailingEventSource as any;
 
       expect(() => new EventSource('/test')).toThrow('EventSource not supported');
     });
@@ -672,7 +672,7 @@ describe('WebSocket Service Integration', () => {
         CLOSED: MockEventSource.CLOSED,
       });
       
-      global.EventSource = MockedEventSource as typeof EventSource;
+      global.EventSource = MockedEventSource as any;
     });
 
     it('should handle rapid succession of trade messages', (done) => {

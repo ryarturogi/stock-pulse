@@ -20,8 +20,8 @@ interface MockServiceWorkerRegistration extends ServiceWorkerRegistration {
   installing: ServiceWorker | null;
   waiting: ServiceWorker | null;
   active: ServiceWorker | null;
-  showNotification: jest.MockedFunction<any>;
-  getNotifications: jest.MockedFunction<any>;
+  showNotification: jest.MockedFunction<(...args: any[]) => any>;
+  getNotifications: jest.MockedFunction<() => Promise<Notification[]>>;
 }
 
 // Global test setup
@@ -62,8 +62,8 @@ describe('NotificationService', () => {
       const [title, options] = args as [string, NotificationOptions?];
       const notification: Partial<MockNotification> = {
         title,
-        body: options?.body || undefined,
-        icon: options?.icon || undefined,
+        body: options?.body ?? '',
+        icon: options?.icon ?? '',
         close: jest.fn(),
         onclick: null,
         onclose: null,
@@ -82,7 +82,7 @@ describe('NotificationService', () => {
         addEventListener: jest.fn(),
       } as any,
       showNotification: jest.fn(),
-      getNotifications: jest.fn().mockResolvedValue([] as any),
+      getNotifications: jest.fn().mockResolvedValue([]) as jest.MockedFunction<() => Promise<Notification[]>>,
     } as MockServiceWorkerRegistration;
 
     // Setup global mocks
@@ -97,7 +97,7 @@ describe('NotificationService', () => {
         navigator: {
           userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           serviceWorker: {
-            register: jest.fn().mockResolvedValue(mockServiceWorkerRegistration as any),
+            register: jest.fn().mockResolvedValue(mockServiceWorkerRegistration),
             addEventListener: jest.fn(),
           },
         },
@@ -112,7 +112,7 @@ describe('NotificationService', () => {
       value: {
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         serviceWorker: {
-          register: jest.fn().mockResolvedValue(mockServiceWorkerRegistration as any),
+          register: jest.fn().mockResolvedValue(mockServiceWorkerRegistration),
           addEventListener: jest.fn(),
         },
       },
