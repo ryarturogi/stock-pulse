@@ -94,6 +94,7 @@ export const StockChart: React.FC<
       return [
         {
           timestamp: new Date(now).toLocaleTimeString(),
+          index: 0,
           price: 0,
           ...Object.fromEntries(
             stocksWithData.map(stock => [stock.symbol, stock.currentPrice || 0])
@@ -106,7 +107,7 @@ export const StockChart: React.FC<
     const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => a - b); // Show all collected data points
 
     // Create chart data points with unique timestamp formatting
-    return sortedTimestamps.map(timestamp => {
+    return sortedTimestamps.map((timestamp, index) => {
       const date = new Date(timestamp);
       // Create unique time labels to prevent duplicate timestamps
       // Use milliseconds for precision when multiple points in same second
@@ -117,6 +118,7 @@ export const StockChart: React.FC<
 
       const dataPoint: ChartDataPoint = {
         timestamp: timeLabel,
+        index: index, // Add numeric index for Brush component
         price: 0, // This will be overridden by individual stock prices
       };
 
@@ -291,13 +293,13 @@ export const StockChart: React.FC<
             ))}
 
             {/* Only show Brush when there's enough data */}
-            {chartData.length > 1 && (
+            {chartData.length > 5 && (
               <Brush
-                dataKey='timestamp'
+                dataKey='index'
                 height={30}
                 stroke='#8884d8'
-                startIndex={Math.max(0, chartData.length - 20)}
-                endIndex={Math.max(0, chartData.length - 1)}
+                startIndex={Math.max(0, chartData.length - Math.min(20, chartData.length))}
+                endIndex={chartData.length - 1}
               />
             )}
           </LineChart>

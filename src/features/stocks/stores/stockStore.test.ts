@@ -16,6 +16,19 @@ jest.mock('@/features/notifications', () => ({
   }),
 }));
 
+// Mock the stockWebSocketService
+const mockWebSocketService = {
+  connectWebSocket: jest.fn(),
+  disconnectWebSocket: jest.fn(),
+  subscribeToStock: jest.fn(),
+  unsubscribeFromStock: jest.fn(),
+  cleanup: jest.fn(),
+};
+
+jest.mock('@/features/stocks/services/stockWebSocketService', () => ({
+  StockWebSocketService: jest.fn().mockImplementation(() => mockWebSocketService),
+}));
+
 // Mock EventSource for WebSocket tests
 const mockEventSource = {
   close: jest.fn(),
@@ -37,6 +50,9 @@ global.EventSource = jest.fn(() => mockEventSource) as any;
 
 describe('Stock Store', () => {
   beforeEach(() => {
+    // Clear all mocks
+    jest.clearAllMocks();
+    
     // Reset store state before each test
     useStockStore.setState({
       watchedStocks: [],
@@ -51,9 +67,6 @@ describe('Stock Store', () => {
       isLiveDataEnabled: true,
       connectionAttempts: 0,
     });
-
-    // Clear all mocks
-    jest.clearAllMocks();
   });
 
   describe('Initial State', () => {

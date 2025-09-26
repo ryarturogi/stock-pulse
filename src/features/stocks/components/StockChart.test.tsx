@@ -9,11 +9,12 @@ jest.mock('recharts', () => ({
   XAxis: () => <div data-testid='x-axis' />,
   YAxis: () => <div data-testid='y-axis' />,
   CartesianGrid: () => <div data-testid='grid' />,
-  Tooltip: () => <div data-testid='tooltip' />,
+  Tooltip: ({ content }: any) => <div data-testid='tooltip'>{content}</div>,
   ResponsiveContainer: ({ children }: any) => (
     <div data-testid='responsive-container'>{children}</div>
   ),
   Legend: () => <div data-testid='legend' />,
+  Brush: () => <div data-testid='brush' />,
 }));
 
 /**
