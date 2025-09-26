@@ -314,6 +314,7 @@ describe('Types Index', () => {
         data: 'test data',
         success: true,
         message: 'Success',
+        timestamp: '2023-01-01T00:00:00.000Z',
       };
 
       expect(response.success).toBe(true);

@@ -86,6 +86,7 @@ export interface PriceDataPoint {
  */
 export interface ChartDataPoint {
   timestamp: string;
+  index: number; // Numeric index for Brush component positioning
   [symbol: string]: number | string;
 }
 
