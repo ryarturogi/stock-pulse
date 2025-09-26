@@ -122,3 +122,6 @@ package-lock.json
 
 # Subscription storage data
 data/
+
+# Claude settings and guides
+.claude/
