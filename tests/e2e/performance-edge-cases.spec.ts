@@ -17,12 +17,6 @@ async function addMultipleStocks(page: Page, symbols: string[]) {
   }
 }
 
-async function waitForStocksToLoad(page: Page, symbols: string[]) {
-  for (const symbol of symbols) {
-    await expect(page.getByTestId(`stock-item-${symbol}`)).toBeVisible();
-    await expect(page.getByTestId(`stock-price-${symbol}`)).not.toContainText('Loading...');
-  }
-}
 
 test.describe('Performance Tests', () => {
   test.beforeEach(async ({ page }) => {
@@ -273,7 +267,7 @@ test.describe('Edge Cases and Error Scenarios', () => {
     await page.addInitScript(() => {
       // Mock timezone
       Object.defineProperty(Intl, 'DateTimeFormat', {
-        value: function(locale, options) {
+        value: function(_locale, _options) {
           return {
             format: (date: Date) => date.toLocaleString('en-US', { timeZone: 'America/New_York' }),
             resolvedOptions: () => ({ timeZone: 'America/New_York' })
@@ -294,7 +288,7 @@ test.describe('Edge Cases and Error Scenarios', () => {
     // Simulate timezone change (page reload with different timezone)
     await page.addInitScript(() => {
       Object.defineProperty(Intl, 'DateTimeFormat', {
-        value: function(locale, options) {
+        value: function(_locale, _options) {
           return {
             format: (date: Date) => date.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }),
             resolvedOptions: () => ({ timeZone: 'Asia/Tokyo' })

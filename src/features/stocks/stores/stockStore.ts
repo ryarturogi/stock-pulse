@@ -188,28 +188,35 @@ export const useStockStore = create<StockStoreState>()(
                 priceHistory: newPriceHistory,
                 isLoading: false,
                 lastUpdated: now,
-                isAlertTriggered: stock.alertPrice && quote.current >= stock.alertPrice ? true : stock.isAlertTriggered,
+                isAlertTriggered: false, // Reset alert status - will be set by the alert check below
               };
             }
             return stock;
           }),
         }));
 
-        // Check for price alerts
-        const stock = get().watchedStocks.find(s => s.symbol === symbol);
-        if (stock && stock.alertPrice && quote.current >= stock.alertPrice && !stock.isAlertTriggered) {
-          getNotificationService().showNotification({
-            title: `Price Alert: ${symbol}`,
-            body: `${symbol} has reached your target price of $${stock.alertPrice}. Current price: $${quote.current}`,
-            icon: '/icons/icon-192x192.svg',
-            badge: '/icons/icon-72x72.svg',
-            data: {
-              symbol: symbol,
-              currentPrice: quote.current,
-              alertPrice: stock.alertPrice,
-              type: 'above'
-            }
-          });
+        // Check for price alerts and update alert status
+        const updatedStock = get().watchedStocks.find(s => s.symbol === symbol);
+        if (updatedStock && updatedStock.alertPrice && quote.current) {
+          const isBelowAlert = quote.current < updatedStock.alertPrice;
+          
+          // Update alert status in the stock
+          set(state => ({
+            watchedStocks: state.watchedStocks.map(stock => {
+              if (stock.symbol === symbol) {
+                return {
+                  ...stock,
+                  isAlertTriggered: isBelowAlert
+                };
+              }
+              return stock;
+            })
+          }));
+          
+          // Show notification only when price goes below the alert threshold
+          if (isBelowAlert && !updatedStock.isAlertTriggered) {
+            getNotificationService().showPriceAlert(updatedStock, quote.current);
+          }
         }
       },
 
@@ -473,6 +480,45 @@ export const useStockStore = create<StockStoreState>()(
       clearError: () => {
         set({ error: null });
       },
+
+      // Reset store to initial state for testing
+      reset: () => {
+        // Clear any active intervals/timeouts
+        const state = get();
+        if (state.refreshInterval) {
+          clearInterval(state.refreshInterval);
+        }
+        if (state.reconnectTimeout) {
+          clearTimeout(state.reconnectTimeout);
+        }
+        
+        // Disconnect WebSocket
+        if (state.webSocketConnection) {
+          (state.webSocketConnection as EventSource).close();
+        }
+
+        // Reset service instance
+        if (webSocketService) {
+          webSocketService.disconnectWebSocket();
+          webSocketService = null;
+        }
+
+        // Reset to initial state
+        set({
+          watchedStocks: [],
+          webSocketStatus: 'disconnected',
+          webSocketConnection: null,
+          refreshInterval: null,
+          isConnecting: false,
+          isLoading: false,
+          error: null,
+          lastUpdateTimes: new Map<string, number>(),
+          refreshTimeInterval: '30s',
+          isLiveDataEnabled: true,
+          connectionAttempts: 0,
+          reconnectTimeout: null,
+        });
+      },
     }),
     {
       name: STORAGE_KEYS.WATCHED_STOCKS,
@@ -570,6 +616,7 @@ export const useStockActions = () => ({
   setRefreshTimeInterval: useStockStore(state => state.setRefreshTimeInterval),
   setLiveDataEnabled: useStockStore(state => state.setLiveDataEnabled),
   clearError: useStockStore(state => state.clearError),
+  reset: useStockStore(state => state.reset),
 });
 
 // WebSocket management actions hook

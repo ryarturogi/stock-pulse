@@ -3,7 +3,7 @@ import typography from '@tailwindcss/typography';
 import aspectRatio from '@tailwindcss/aspect-ratio';
 
 /** @type {import('tailwindcss').Config} */
-export default {
+const config = {
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -93,3 +93,5 @@ export default {
     aspectRatio,
   ],
 };
+
+export default config;

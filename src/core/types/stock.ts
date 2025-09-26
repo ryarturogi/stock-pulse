@@ -86,6 +86,7 @@ export interface PriceDataPoint {
  */
 export interface ChartDataPoint {
   timestamp: string;
+  index: number; // Numeric index for Brush component positioning
   [symbol: string]: number | string;
 }
 
@@ -245,6 +246,9 @@ export interface StockStoreState {
   
   // Live data toggle actions
   setLiveDataEnabled: (enabled: boolean) => void;
+
+  // Testing utilities
+  reset: () => void;
 }
 
 // ============================================================================

@@ -5,7 +5,7 @@
  * Tests for the stock selection and alert form component
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StockForm } from './StockForm';
 import type { StockOption, WatchedStock } from '@/core/types';
@@ -49,6 +49,76 @@ jest.mock('@/shared/components/ui/Button', () => ({
   ),
 }));
 
+// Mock InfiniteStockSelector component
+jest.mock('./InfiniteStockSelector', () => ({
+  InfiniteStockSelector: ({ onChange, value, watchedStocks = [] }: any) => {
+    // Mock stocks that would be available
+    const mockStocks = [
+      { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ' },
+      { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ' },
+      { symbol: 'MSFT', name: 'Microsoft Corp.', exchange: 'NASDAQ' },
+      { symbol: 'TSLA', name: 'Tesla Inc.', exchange: 'NASDAQ' },
+    ];
+    
+    // Filter out watched stocks
+    const filteredStocks = mockStocks.filter(
+      stock => !watchedStocks?.some((watched: any) => watched.symbol === stock.symbol)
+    );
+    
+    return (
+      <div data-testid="infinite-stock-selector">
+        <label htmlFor="stock-select">Select Stock</label>
+        <select 
+          id="stock-select" 
+          value={value || ''}
+          onChange={(e) => onChange && onChange(e.target.value)}
+        >
+          <option value="">Select a stock...</option>
+          {filteredStocks.map((stock) => (
+            <option key={stock.symbol} value={stock.symbol}>
+              {stock.symbol} - {stock.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  },
+}));
+
+// Mock StockSearch component
+jest.mock('./StockSearch', () => ({
+  StockSearch: ({ onStockSelect }: any) => (
+    <div data-testid="stock-search">
+      <input 
+        type="text" 
+        placeholder="Search stocks..."
+        onChange={(e) => {
+          if (e.target.value === 'AAPL') {
+            onStockSelect && onStockSelect({ symbol: 'AAPL', name: 'Apple Inc.' });
+          }
+        }}
+      />
+    </div>
+  ),
+}));
+
+// Mock the stock service
+jest.mock('@/features/stocks/services', () => ({
+  stockService: {
+    getAvailableStocksLegacy: jest.fn(),
+  },
+}));
+
+// Get mock reference after mocking
+const { stockService } = require('@/features/stocks/services');
+const mockGetAvailableStocksLegacy = stockService.getAvailableStocksLegacy as jest.Mock;
+
+// Mock fetch for API calls
+global.fetch = jest.fn();
+
+// Mock timers to prevent timeout issues in tests
+jest.useFakeTimers();
+
 describe('StockForm', () => {
   const mockAvailableStocks: StockOption[] = [
     { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ' },
@@ -72,6 +142,53 @@ describe('StockForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockValidateForm.mockReturnValue(true);
+    
+    // Setup default mock for stock service
+    mockGetAvailableStocksLegacy.mockResolvedValue(mockAvailableStocks);
+    
+    // Mock successful API responses for all possible endpoints
+    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+      // Handle stock symbols API requests
+      if (url.includes('/stock-symbols') || url.includes('stock-symbols')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            data: {
+              items: mockAvailableStocks,
+              pagination: {
+                page: 1,
+                limit: mockAvailableStocks.length,
+                total: mockAvailableStocks.length,
+                totalPages: 1,
+                hasMore: false,
+              },
+            },
+          }),
+        });
+      }
+      
+      // Default mock response for any other requests
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          data: mockAvailableStocks,
+        }),
+      });
+    });
+  });
+
+  afterEach(() => {
+    // Clear any pending timers
+    jest.runOnlyPendingTimers();
+    jest.clearAllTimers();
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
   });
 
   describe('Rendering', () => {
@@ -127,14 +244,21 @@ describe('StockForm', () => {
   });
 
   describe('Stock Selection', () => {
-    it('should render available stocks in dropdown', () => {
-      render(
-        <StockForm
-          availableStocks={mockAvailableStocks}
-          onAddStock={mockOnAddStock}
-          watchedStocks={mockWatchedStocks}
-        />
-      );
+    it('should render available stocks in dropdown', async () => {
+      await waitFor(() => {
+        render(
+          <StockForm
+            availableStocks={mockAvailableStocks}
+            onAddStock={mockOnAddStock}
+            watchedStocks={mockWatchedStocks}
+          />
+        );
+      });
+
+      // Wait for async stock loading to complete
+      await waitFor(() => {
+        expect(screen.getByTestId('infinite-stock-selector')).toBeInTheDocument();
+      });
 
       // TSLA should be filtered out since it's already watched
       expect(screen.getByText('AAPL - Apple Inc.')).toBeInTheDocument();

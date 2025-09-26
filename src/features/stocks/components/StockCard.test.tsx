@@ -29,7 +29,6 @@ describe('StockCard', () => {
     alertPrice: 150.0,
     currentPrice: 155.50,
     change: 5.50,
-    changePercent: 3.67,
     percentChange: 3.67,
     high: 157.0,
     low: 153.0,
@@ -66,8 +65,7 @@ describe('StockCard', () => {
       render(<StockCard stock={loadingStock} onRemove={mockOnRemove} />);
 
       // Should show animated skeleton
-      const skeleton = screen.getByTestId('loading-skeleton') || 
-                      document.querySelector('.animate-pulse');
+      const skeleton = document.querySelector('.animate-pulse');
       expect(skeleton).toBeInTheDocument();
     });
 
@@ -116,16 +114,11 @@ describe('StockCard', () => {
     });
 
     it('should handle missing price data gracefully', () => {
-      const incompleteStock = {
-        ...mockStock,
-        currentPrice: undefined,
-        change: undefined,
-        changePercent: undefined,
-        percentChange: undefined,
-      };
+      const { currentPrice, change, percentChange, ...stockWithoutPrices } = mockStock;
+      const incompleteStock: WatchedStock = stockWithoutPrices;
       render(<StockCard stock={incompleteStock} onRemove={mockOnRemove} />);
 
-      expect(screen.getByText('---.--')).toBeInTheDocument();
+      expect(screen.getAllByText('---.--').length).toBeGreaterThan(0);
       expect(screen.getByText('--.--%')).toBeInTheDocument();
     });
   });
@@ -135,7 +128,7 @@ describe('StockCard', () => {
       render(<StockCard stock={mockStock} onRemove={mockOnRemove} />);
 
       // Current price (155.50) > alert price (150.0)
-      const alertBadge = screen.getByText('ABOVE ALERT');
+      const alertBadge = screen.getByText('Above Alert');
       expect(alertBadge).toBeInTheDocument();
       expect(alertBadge).toHaveClass('bg-green-100');
     });
@@ -147,7 +140,7 @@ describe('StockCard', () => {
       };
       render(<StockCard stock={belowAlertStock} onRemove={mockOnRemove} />);
 
-      const alertBadge = screen.getByText('BELOW ALERT');
+      const alertBadge = screen.getByText('Below Alert');
       expect(alertBadge).toBeInTheDocument();
       expect(alertBadge).toHaveClass('bg-red-100');
     });
@@ -298,7 +291,7 @@ describe('StockCard', () => {
     it('should display last updated time', () => {
       render(<StockCard stock={mockStock} onRemove={mockOnRemove} />);
 
-      const lastUpdated = screen.getByText(/\d{1,2}:\d{2}(:\d{2})?/);
+      const lastUpdated = screen.getAllByText(/\d{1,2}:\d{2}(:\d{2})?/)[0];
       expect(lastUpdated).toBeInTheDocument();
     });
 
@@ -323,12 +316,9 @@ describe('StockCard', () => {
     });
 
     it('should handle missing high/low prices', () => {
-      const stockWithoutHighLow = {
-        ...mockStock,
-        high: undefined,
-        low: undefined,
-      };
-      render(<StockCard stock={stockWithoutHighLow} onRemove={mockOnRemove} />);
+      const { high, low, ...stockWithoutHighLow } = mockStock;
+      const testStock: WatchedStock = stockWithoutHighLow;
+      render(<StockCard stock={testStock} onRemove={mockOnRemove} />);
 
       expect(screen.queryByText(/H: \$/)).not.toBeInTheDocument();
       expect(screen.queryByText(/L: \$/)).not.toBeInTheDocument();
@@ -373,7 +363,7 @@ describe('StockCard', () => {
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('p-4', 'lg:p-6');
 
-      const priceElement = screen.getByText('$155.50');
+      const priceElement = screen.getByText('$155.50').closest('p');
       expect(priceElement).toHaveClass('text-xl', 'lg:text-2xl');
     });
   });

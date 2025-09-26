@@ -97,10 +97,14 @@ describe('Stock Store WebSocket Integration', () => {
     useStockStore.getState().reset();
     
     // Setup mock EventSource
-    global.EventSource = jest.fn().mockImplementation((url) => {
+    const mockEventSourceConstructor = jest.fn().mockImplementation((url) => {
       mockEventSource = new MockEventSource(url);
       return mockEventSource;
-    });
+    }) as any;
+    mockEventSourceConstructor.CONNECTING = 0;
+    mockEventSourceConstructor.OPEN = 1;
+    mockEventSourceConstructor.CLOSED = 2;
+    global.EventSource = mockEventSourceConstructor;
 
     // Setup default stock service mocks
     mockStockService.fetchStockQuote.mockResolvedValue(createMockQuote('AAPL', 150.00));
@@ -119,7 +123,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       // Add a stock but keep live data disabled
       act(() => {
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.setLiveDataEnabled(false);
       });
 
@@ -148,7 +152,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -162,9 +166,9 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
-        result.current.addStock('GOOGL');
-        result.current.addStock('MSFT');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
+        result.current.addStock('GOOGL', 'Alphabet Inc.', 2500.0);
+        result.current.addStock('MSFT', 'Microsoft Corporation', 300.0);
         result.current.connectWebSocket();
       });
 
@@ -176,7 +180,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -194,7 +198,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -203,7 +207,7 @@ describe('Stock Store WebSocket Integration', () => {
 
       // Add another stock and reconnect
       act(() => {
-        result.current.addStock('GOOGL');
+        result.current.addStock('GOOGL', 'Alphabet Inc.', 2500.0);
         result.current.connectWebSocket();
       });
 
@@ -218,7 +222,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -241,15 +245,19 @@ describe('Stock Store WebSocket Integration', () => {
       const { result } = renderHook(() => useStockStore());
       
       // Mock EventSource that never connects
-      global.EventSource = jest.fn().mockImplementation((url) => {
+      const mockEventSourceConstructor = jest.fn().mockImplementation((url) => {
         mockEventSource = new MockEventSource(url);
         mockEventSource.readyState = MockEventSource.CONNECTING; // Stay connecting
         return mockEventSource;
-      });
+      }) as any;
+      mockEventSourceConstructor.CONNECTING = 0;
+      mockEventSourceConstructor.OPEN = 1;
+      mockEventSourceConstructor.CLOSED = 2;
+      global.EventSource = mockEventSourceConstructor;
 
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -271,17 +279,21 @@ describe('Stock Store WebSocket Integration', () => {
       const { result } = renderHook(() => useStockStore());
       
       // Mock EventSource that never connects
-      global.EventSource = jest.fn().mockImplementation((url) => {
+      const mockEventSourceConstructor = jest.fn().mockImplementation((url) => {
         mockEventSource = new MockEventSource(url);
         mockEventSource.readyState = MockEventSource.CONNECTING;
         return mockEventSource;
-      });
+      }) as any;
+      mockEventSourceConstructor.CONNECTING = 0;
+      mockEventSourceConstructor.OPEN = 1;
+      mockEventSourceConstructor.CLOSED = 2;
+      global.EventSource = mockEventSourceConstructor;
 
       const startPeriodicRefreshSpy = jest.spyOn(result.current, 'startPeriodicRefresh');
 
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -302,7 +314,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -440,7 +452,7 @@ describe('Stock Store WebSocket Integration', () => {
     });
 
     it('should handle connected messages', async () => {
-      const { result } = renderHook(() => useStockStore());
+      renderHook(() => useStockStore());
 
       act(() => {
         mockEventSource.simulateMessage({
@@ -473,7 +485,7 @@ describe('Stock Store WebSocket Integration', () => {
     });
 
     it('should handle malformed JSON messages', async () => {
-      const { result } = renderHook(() => useStockStore());
+      renderHook(() => useStockStore());
 
       // Mock onmessage to send invalid JSON
       act(() => {
@@ -492,7 +504,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -514,7 +526,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -550,7 +562,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -575,7 +587,7 @@ describe('Stock Store WebSocket Integration', () => {
 
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -594,7 +606,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -623,7 +635,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -654,7 +666,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -694,7 +706,7 @@ describe('Stock Store WebSocket Integration', () => {
       // Start with periodic refresh
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.startPeriodicRefresh();
       });
 
@@ -722,7 +734,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -749,7 +761,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -765,13 +777,17 @@ describe('Stock Store WebSocket Integration', () => {
       const { result } = renderHook(() => useStockStore());
       
       // Mock EventSource constructor to throw
-      global.EventSource = jest.fn().mockImplementation(() => {
+      const mockEventSourceConstructor = jest.fn().mockImplementation(() => {
         throw new Error('EventSource creation failed');
-      });
+      }) as any;
+      mockEventSourceConstructor.CONNECTING = 0;
+      mockEventSourceConstructor.OPEN = 1;
+      mockEventSourceConstructor.CLOSED = 2;
+      global.EventSource = mockEventSourceConstructor;
 
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
@@ -789,7 +805,7 @@ describe('Stock Store WebSocket Integration', () => {
       // Set some connection attempts
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectionAttempts = 3;
         result.current.connectWebSocket();
       });
@@ -809,7 +825,7 @@ describe('Stock Store WebSocket Integration', () => {
       
       act(() => {
         result.current.setLiveDataEnabled(true);
-        result.current.addStock('AAPL');
+        result.current.addStock('AAPL', 'Apple Inc.', 150.0);
       });
 
       // Rapid connect/disconnect cycles

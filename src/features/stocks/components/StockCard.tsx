@@ -167,6 +167,7 @@ export const StockCard: React.FC<StockCardProps> = ({
 
   return (
     <div 
+      role="article"
       className={`p-4 lg:p-6 bg-white rounded-lg border-l-4 shadow-sm ${getBorderColor()} dark:bg-gray-800 ${className} 
         ${wasJustUpdated ? 'ring-2 ring-blue-500 ring-opacity-50 transition-all duration-500' : ''}
         ${wasRecentlyUpdated ? 'shadow-md' : ''}`}
@@ -260,10 +261,8 @@ export const StockCard: React.FC<StockCardProps> = ({
           {/* Day Range */}
           {high && low && (
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Day Range: </span>
-              <span className="text-gray-900 dark:text-white">
-                ${low.toFixed(2)} - ${high.toFixed(2)}
-              </span>
+              <span className="text-gray-500 dark:text-gray-400">H: ${high.toFixed(2)}</span>
+              <span className="ml-4 text-gray-500 dark:text-gray-400">L: ${low.toFixed(2)}</span>
             </div>
           )}
 
@@ -321,6 +320,11 @@ export const StockCard: React.FC<StockCardProps> = ({
                 <span className="hidden sm:inline">{new Date(lastUpdated).toLocaleTimeString()}</span>
                 <span className="sm:hidden">{new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
+              {wasRecentlyUpdated && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                  LIVE
+                </span>
+              )}
             </div>
           )}
         </div>

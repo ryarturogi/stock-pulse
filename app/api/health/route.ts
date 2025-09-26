@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
 
-import { Timestamp } from '@/core/types';
-
 // Define types for health check response
 interface HealthCheckResponse {
   status: 'healthy' | 'unhealthy' | 'degraded';
-  timestamp: Timestamp;
+  timestamp: string;
   responseTime: string;
   checks?: {
-    timestamp: Timestamp;
+    timestamp: string;
     uptime: number;
     memory: NodeJS.MemoryUsage;
     environment: string | undefined;

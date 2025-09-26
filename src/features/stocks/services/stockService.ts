@@ -26,6 +26,11 @@ export class StockService {
   // Request deduplication cache
   private requestCache = new Map<string, Promise<FinnhubStockQuote>>();
   private cacheTimeout = 2000; // 2 seconds cache for deduplication
+  // Stock list cache
+  private stockListCache = new Map<string, { data: any; timestamp: number }>();
+  private stockListPendingRequests = new Map<string, Promise<any>>();
+  private readonly STOCK_LIST_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private readonly TIMEOUT_MS = 60000; // 1 minute
   // Performance optimization: request queue with priority
   private requestQueue: Array<{ symbol: string; priority: number; resolve: (value: FinnhubStockQuote) => void; reject: (error: Error) => void }> = [];
   private isProcessingQueue = false;
@@ -262,7 +267,51 @@ export class StockService {
     search?: string;
   }> {
     const { exchange = 'US', page = 1, limit = 50, search = '' } = options;
+    const requestId = Math.random().toString(36).substr(2, 9);
     
+    // Create cache key
+    const cacheKey = `${exchange}-${page}-${limit}-${search}`;
+    
+    // Check cache first
+    const cached = this.stockListCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < this.STOCK_LIST_CACHE_TTL)) {
+      console.log(`📋 [API] [${requestId}] Using cached stock list for ${cacheKey}`);
+      return cached.data;
+    }
+    
+    // Check if there's already a pending request for this exact query
+    const pendingRequest = this.stockListPendingRequests.get(cacheKey);
+    if (pendingRequest) {
+      console.log(`⏳ [API] [${requestId}] Waiting for pending request ${cacheKey}`);
+      return pendingRequest;
+    }
+    
+    // Create new request and cache the promise
+    const requestPromise = this._fetchStockList(exchange, page, limit, search, requestId);
+    this.stockListPendingRequests.set(cacheKey, requestPromise);
+    
+    try {
+      const result = await requestPromise;
+      // Cache the result
+      this.stockListCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      return result;
+    } finally {
+      // Remove from pending requests
+      this.stockListPendingRequests.delete(cacheKey);
+    }
+  }
+
+  private async _fetchStockList(exchange: string, page: number, limit: number, search: string, requestId: string): Promise<{
+    data: StockOption[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasMore: boolean;
+    };
+    search?: string;
+  }> {
     try {
       const params = new URLSearchParams({
         exchange,
@@ -275,21 +324,27 @@ export class StockService {
       }
 
       const url = `${this.baseUrl}/stock-symbols?${params}`;
-      console.log('🔍 [API] Fetching stock symbols from:', url);
+      console.log(`🔍 [API] [${requestId}] Fetching stock symbols from:`, url);
 
-      // Create abort controller for timeout (fallback for environments without AbortSignal.timeout)
+      // Create abort controller for timeout - 1 minute for very slow external APIs
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => {
+        console.warn(`⏰ [API] [${requestId}] Request timeout after ${this.TIMEOUT_MS/1000}s, aborting...`);
+        controller.abort();
+      }, this.TIMEOUT_MS);
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!response.ok) {
         console.error('❌ [API] Failed to fetch stock symbols', { status: response.status, statusText: response.statusText });
@@ -308,12 +363,24 @@ export class StockService {
 
       const data = await response.json();
       
+      // Add debugging to understand response structure
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📄 [API] Raw response data:', {
+          success: data.success,
+          hasData: !!data.data,
+          dataType: typeof data.data,
+          dataKeys: data.data ? Object.keys(data.data) : [],
+          dataStructure: data.data
+        });
+      }
+      
       if (data.success && data.data) {
         // Handle new standardized response format
         const responseData = data.data;
         
         if (responseData.items && Array.isArray(responseData.items)) {
           // New paginated response format
+          console.log(`✅ [API] [${requestId}] Using paginated response format with`, responseData.items.length, 'items');
           return {
             data: responseData.items,
             pagination: responseData.pagination || {
@@ -327,6 +394,7 @@ export class StockService {
           };
         } else if (Array.isArray(responseData)) {
           // Legacy array format
+          console.log('✅ [API] Using legacy array format with', responseData.length, 'items');
           return {
             data: responseData,
             pagination: {
@@ -337,10 +405,19 @@ export class StockService {
               hasMore: false
             }
           };
+        } else {
+          console.warn('⚠️ [API] Unexpected response data structure:', responseData);
         }
+      } else {
+        console.warn('⚠️ [API] Response not successful or missing data:', {
+          success: data.success,
+          hasData: !!data.data,
+          message: data.message
+        });
       }
       
       // Fallback to default options
+      console.log('🔄 [API] Using fallback stock options');
       return {
         data: this.getDefaultStockOptions(),
         pagination: {
@@ -353,12 +430,23 @@ export class StockService {
       };
       
     } catch (error) {
-      console.error('❌ [API] Error fetching available stocks', { 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        errorType: error instanceof Error ? error.constructor.name : typeof error,
-        url: `${this.baseUrl}/stock-symbols?${new URLSearchParams({ exchange, page: page.toString(), limit: limit.toString() })}`,
-        options: { exchange, page, limit, search }
-      });
+      // Handle AbortError specifically
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn(`⏰ [API] [${requestId}] Request timed out after ${this.TIMEOUT_MS/1000}s - using fallback data:`, {
+          url: `${this.baseUrl}/stock-symbols?${new URLSearchParams({ exchange, page: page.toString(), limit: limit.toString() })}`,
+          options: { exchange, page, limit, search }
+        });
+        // Don't log this as an error since timeout is expected with slow APIs
+      } else {
+        console.error(`❌ [API] [${requestId}] Error fetching available stocks:`, error);
+        console.error(`❌ [API] [${requestId}] Error details:`, { 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          errorType: error instanceof Error ? error.constructor.name : typeof error,
+          stack: error instanceof Error ? error.stack : undefined,
+          url: `${this.baseUrl}/stock-symbols?${new URLSearchParams({ exchange, page: page.toString(), limit: limit.toString() })}`,
+          options: { exchange, page, limit, search }
+        });
+      }
       
       // Check if it's a network error
       if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -383,7 +471,8 @@ export class StockService {
    * Legacy method for backward compatibility
    */
   async getAvailableStocksLegacy(exchange: string = 'US'): Promise<StockOption[]> {
-    const result = await this.getAvailableStocks({ exchange, limit: 1000 });
+    // Reduced limit to prevent timeouts - use pagination if more data is needed
+    const result = await this.getAvailableStocks({ exchange, limit: 200 });
     return result.data;
   }
 
@@ -398,7 +487,7 @@ export class StockService {
    * Search for stocks using Finnhub API
    */
   async searchStocks(query: string): Promise<StockOption[]> {
-    if (!isString(query) || query.trim().length < 1) {
+    if (!isString(query) || query.trim().length < 2) {
       return [];
     }
 
@@ -551,6 +640,77 @@ export class StockService {
   // Historical data and health check methods removed - not currently used
 
   /**
+   * Health check for API connectivity (detailed version)
+   */
+  async healthCheckDetailed(): Promise<{ status: 'ok' | 'error'; message: string; timestamp: number }> {
+    try {
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(`${this.baseUrl}/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          status: 'ok',
+          message: data.message || 'API is healthy',
+          timestamp: Date.now()
+        };
+      } else {
+        return {
+          status: 'error',
+          message: `API health check failed: ${response.status} ${response.statusText}`,
+          timestamp: Date.now()
+        };
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown health check error';
+      return {
+        status: 'error',
+        message: `API health check failed: ${message}`,
+        timestamp: Date.now()
+      };
+    }
+  }
+
+  /**
+   * Health check for API connectivity (simple boolean version for tests)
+   */
+  async healthCheck(): Promise<boolean> {
+    try {
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10);
+
+      const response = await fetch(`${this.baseUrl}/health`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.error('Health check failed:', new Error(`HTTP ${response.status}`));
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Health check failed:', error);
+      return false;
+    }
+  }
+
+  /**
    * Clear request cache manually (debug utility)
    */
   clearRequestCache(): void {
@@ -566,6 +726,74 @@ export class StockService {
       size: this.requestCache.size,
       keys: Array.from(this.requestCache.keys())
     };
+  }
+
+  /**
+   * Generate WebSocket URL for Finnhub
+   */
+  getWebSocketUrl(): string {
+    const apiKey = process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('Finnhub API key not configured');
+    }
+    return `wss://ws.finnhub.io?token=${apiKey}`;
+  }
+
+  /**
+   * Create WebSocket subscription message
+   */
+  createSubscriptionMessage(symbol: string): string {
+    return JSON.stringify({
+      type: 'subscribe',
+      symbol: symbol.toUpperCase()
+    });
+  }
+
+  /**
+   * Create WebSocket unsubscription message
+   */
+  createUnsubscriptionMessage(symbol: string): string {
+    return JSON.stringify({
+      type: 'unsubscribe',
+      symbol: symbol.toUpperCase()
+    });
+  }
+
+  /**
+   * Parse WebSocket trade message
+   */
+  parseTradeMessage(message: string | object | null | undefined): { symbol: string; price: number; timestamp: number } | null {
+    try {
+      if (message === null || message === undefined) {
+        return null;
+      }
+      
+      let data;
+      if (typeof message === 'string') {
+        data = JSON.parse(message);
+      } else {
+        data = message;
+      }
+      
+      if (data.type === 'trade' && data.data && data.data.length > 0) {
+        const trade = data.data[0];
+        
+        // Check if all required fields are present
+        if (!trade.s || typeof trade.p !== 'number' || typeof trade.t !== 'number') {
+          return null;
+        }
+        
+        return {
+          symbol: trade.s,
+          price: trade.p,
+          timestamp: trade.t
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to parse trade message:', error);
+      return null;
+    }
   }
 }
 

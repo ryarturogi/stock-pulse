@@ -6,7 +6,6 @@
  */
 
 import { stockService, StockService } from './stockService';
-import type { FinnhubStockQuote } from '@/core/types';
 
 // Mock fetch globally
 const mockFetch = jest.fn();
@@ -120,16 +119,19 @@ describe('StockService', () => {
     it('should handle network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(stockService.fetchStockQuote('AAPL')).rejects.toThrow('Failed to fetch quote for AAPL');
+      await expect(stockService.fetchStockQuote('AAPL')).rejects.toThrow('Network error');
     });
 
     it('should validate quote data format', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ invalid: 'data' }),
+        json: async () => ({ 
+          success: true, 
+          data: { invalid: 'data' }  // This will pass initial check but fail validation
+        }),
       });
 
-      await expect(stockService.fetchStockQuote('AAPL')).rejects.toThrow('Invalid quote data received from API');
+      await expect(stockService.fetchStockQuote('AAPL')).rejects.toThrow('Invalid symbol in quote data for AAPL');
     });
 
     it('should deduplicate concurrent requests', async () => {
@@ -238,6 +240,9 @@ describe('StockService', () => {
     });
 
     it('should batch requests correctly', async () => {
+      // Use real timers for this test to avoid timer conflicts
+      jest.useRealTimers();
+      
       const symbols = Array.from({ length: 12 }, (_, i) => `STOCK${i}`);
       
       mockFetch.mockResolvedValue({
@@ -250,14 +255,18 @@ describe('StockService', () => {
 
       await stockService.fetchMultipleQuotes(symbols);
 
-      // Should batch in groups of 5 (2 full batches + 2 remaining)
+      // Should batch in groups of 3 (dynamic batch size for 12 symbols: Math.min(Math.max(3, Math.floor(12/4)), 8) = 3)
       expect(mockFetch).toHaveBeenCalledTimes(12);
+      
+      // Restore fake timers for other tests
+      jest.useFakeTimers();
     });
   });
 
   describe('getAvailableStocks', () => {
     it('should return default stock options', async () => {
-      const stocks = await stockService.getAvailableStocks();
+      const result = await stockService.getAvailableStocks();
+      const stocks = result.data;
 
       expect(stocks).toHaveLength(8);
       expect(stocks[0]).toMatchObject({
@@ -468,14 +477,22 @@ describe('StockService', () => {
   });
 
   describe('Cache Management', () => {
-    it('should clear request cache manually', () => {
+    it('should clear request cache manually', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ success: true, data: {} }),
+        json: async () => ({ 
+          success: true, 
+          data: {
+            symbol: 'AAPL',
+            current: 150.00,
+            change: 1.50,
+            percentChange: 1.0
+          }
+        }),
       });
 
       // Make a request to populate cache
-      stockService.fetchStockQuote('AAPL');
+      await stockService.fetchStockQuote('AAPL');
 
       const statsBeforeClear = stockService.getCacheStats();
       expect(statsBeforeClear.size).toBe(1);

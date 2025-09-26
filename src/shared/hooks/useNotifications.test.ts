@@ -6,7 +6,8 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { useNotifications } from './useNotificationsCompat';
+// Import directly from the store to avoid circular dependencies
+import { useNotificationPermission } from '../../features/notifications/stores/notificationStore';
 
 // Mock the notification service
 const mockNotificationService = {
@@ -16,7 +17,7 @@ const mockNotificationService = {
   isSupported: jest.fn(),
 };
 
-jest.mock('@/features/notifications', () => ({
+jest.mock('../../features/notifications/services/notificationService', () => ({
   getNotificationService: () => mockNotificationService,
 }));
 
@@ -53,7 +54,7 @@ describe('useNotifications', () => {
 
   describe('Initial State', () => {
     it('should have correct initial state', () => {
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       expect(result.current.permission).toBe('default');
       expect(result.current.isEnabled).toBe(true);
@@ -65,7 +66,7 @@ describe('useNotifications', () => {
     it('should load notification permission status on mount', () => {
       mockNotificationService.getPermissionStatus.mockReturnValue('granted');
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       expect(mockNotificationService.getPermissionStatus).toHaveBeenCalled();
       expect(result.current.permission).toBe('granted');
@@ -74,7 +75,7 @@ describe('useNotifications', () => {
     it('should load notification preference from localStorage', () => {
       mockLocalStorage.getItem.mockReturnValue('false');
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       expect(mockLocalStorage.getItem).toHaveBeenCalledWith('stockpulse_notifications_enabled');
       expect(result.current.isEnabled).toBe(false);
@@ -83,7 +84,7 @@ describe('useNotifications', () => {
     it('should handle invalid localStorage values', () => {
       mockLocalStorage.getItem.mockReturnValue('invalid_json');
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       // Should default to true on invalid JSON
       expect(result.current.isEnabled).toBe(true);
@@ -92,7 +93,7 @@ describe('useNotifications', () => {
     it('should handle null localStorage values', () => {
       mockLocalStorage.getItem.mockReturnValue(null);
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       // Should default to true when no saved preference
       expect(result.current.isEnabled).toBe(true);
@@ -105,7 +106,7 @@ describe('useNotifications', () => {
       // @ts-expect-error - Intentionally deleting global.window for SSR testing
       delete global.window;
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       expect(result.current.permission).toBe('default');
       expect(result.current.isEnabled).toBe(true);
@@ -119,7 +120,7 @@ describe('useNotifications', () => {
     it('should request permission successfully', async () => {
       mockNotificationService.requestPermission.mockResolvedValue('granted');
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       let permissionResult;
       await act(async () => {
@@ -136,7 +137,7 @@ describe('useNotifications', () => {
     it('should handle denied permission', async () => {
       mockNotificationService.requestPermission.mockResolvedValue('denied');
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       let permissionResult;
       await act(async () => {
@@ -153,7 +154,7 @@ describe('useNotifications', () => {
       const error = new Error('Permission request failed');
       mockNotificationService.requestPermission.mockRejectedValue(error);
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       let permissionResult;
       await act(async () => {
@@ -169,7 +170,7 @@ describe('useNotifications', () => {
       
       const originalWindow = global.window;
       
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       // Remove window after hook initialization
       // @ts-expect-error - Intentionally deleting global.window for testing
@@ -189,7 +190,7 @@ describe('useNotifications', () => {
 
   describe('Toggle Notifications', () => {
     it('should disable notifications when currently enabled', async () => {
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       // Start with enabled state
       expect(result.current.isEnabled).toBe(true);
@@ -206,7 +207,7 @@ describe('useNotifications', () => {
       mockLocalStorage.getItem.mockReturnValue('false'); // Start disabled
       mockNotificationService.getPermissionStatus.mockReturnValue('granted');
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       expect(result.current.isEnabled).toBe(false);
       expect(result.current.permission).toBe('granted');
@@ -224,7 +225,7 @@ describe('useNotifications', () => {
       mockNotificationService.getPermissionStatus.mockReturnValue('default');
       mockNotificationService.requestPermission.mockResolvedValue('granted');
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       expect(result.current.isEnabled).toBe(false);
       expect(result.current.permission).toBe('default');
@@ -244,7 +245,7 @@ describe('useNotifications', () => {
       mockNotificationService.getPermissionStatus.mockReturnValue('default');
       mockNotificationService.requestPermission.mockResolvedValue('denied');
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       expect(result.current.isEnabled).toBe(false);
 
@@ -262,7 +263,7 @@ describe('useNotifications', () => {
       const error = new Error('Toggle failed');
       mockNotificationService.requestPermission.mockRejectedValue(error);
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       await act(async () => {
         await result.current.toggleNotifications();
@@ -274,7 +275,7 @@ describe('useNotifications', () => {
     it('should handle window undefined during toggle', async () => {
       const originalWindow = global.window;
       
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       // Remove window after hook initialization
       // @ts-expect-error - Intentionally deleting global.window for testing
@@ -293,7 +294,7 @@ describe('useNotifications', () => {
 
   describe('SetEnabled Function', () => {
     it('should enable notifications', () => {
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       act(() => {
         result.current.setEnabled();
@@ -306,7 +307,7 @@ describe('useNotifications', () => {
     it('should handle window undefined during setEnabled', () => {
       const originalWindow = global.window;
       
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       // Remove window after hook initialization
       // @ts-expect-error - Intentionally deleting global.window for testing
@@ -325,7 +326,7 @@ describe('useNotifications', () => {
 
   describe('Function Memoization', () => {
     it('should memoize functions with useCallback', () => {
-      const { result, rerender } = renderHook(() => useNotifications());
+      const { result, rerender } = renderHook(() => useNotificationPermission());
 
       const originalFunctions = {
         requestPermission: result.current.requestPermission,
@@ -342,7 +343,7 @@ describe('useNotifications', () => {
     });
 
     it('should update memoized functions when dependencies change', () => {
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       const originalToggle = result.current.toggleNotifications;
 
@@ -358,7 +359,7 @@ describe('useNotifications', () => {
 
   describe('Complex State Changes', () => {
     it('should handle rapid state changes', async () => {
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       // Rapid toggles
       await act(async () => {
@@ -376,7 +377,7 @@ describe('useNotifications', () => {
       // First toggle should request permission and get granted
       mockNotificationService.requestPermission.mockResolvedValueOnce('granted');
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       expect(result.current.permission).toBe('default');
       expect(result.current.isEnabled).toBe(true);
@@ -401,7 +402,7 @@ describe('useNotifications', () => {
 
   describe('Integration Scenarios', () => {
     it('should maintain state consistency across multiple operations', async () => {
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       // Request permission
       await act(async () => {
@@ -431,7 +432,7 @@ describe('useNotifications', () => {
       mockLocalStorage.getItem.mockReturnValue('false');
       mockNotificationService.getPermissionStatus.mockReturnValue('granted');
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       expect(result.current.permission).toBe('granted');
       expect(result.current.isEnabled).toBe(false);
@@ -451,7 +452,7 @@ describe('useNotifications', () => {
         throw new Error('localStorage error');
       });
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       // Should not crash and use default values
       expect(result.current.isEnabled).toBe(true);
@@ -462,7 +463,7 @@ describe('useNotifications', () => {
         throw new Error('localStorage error');
       });
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       // Should not crash
       act(() => {
@@ -477,7 +478,7 @@ describe('useNotifications', () => {
         throw new Error('Service error');
       });
 
-      const { result } = renderHook(() => useNotifications());
+      const { result } = renderHook(() => useNotificationPermission());
 
       // Should not crash and maintain default state
       expect(result.current.permission).toBe('default');
@@ -486,7 +487,7 @@ describe('useNotifications', () => {
 
   describe('Performance', () => {
     it('should not cause unnecessary re-renders', () => {
-      const { result, rerender } = renderHook(() => useNotifications());
+      const { result, rerender } = renderHook(() => useNotificationPermission());
 
       const initialFunctions = {
         requestPermission: result.current.requestPermission,
