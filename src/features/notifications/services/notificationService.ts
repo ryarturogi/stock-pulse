@@ -173,19 +173,16 @@ export class NotificationService {
       return;
     }
 
-    const isAboveAlert = currentPrice >= stock.alertPrice;
-    const alertType = isAboveAlert ? 'above' : 'below';
-    
     const notification: PriceAlertNotification = {
       title: `Price Alert: ${stock.symbol}`,
-      body: `${stock.symbol} is now $${currentPrice.toFixed(2)} (${alertType} your alert of $${stock.alertPrice.toFixed(2)})`,
+      body: `${stock.symbol} has dropped to $${currentPrice.toFixed(2)} (below your alert threshold of $${stock.alertPrice.toFixed(2)})`,
       icon: '/icons/icon-192x192.svg',
       badge: '/icons/icon-72x72.svg',
       data: {
         symbol: stock.symbol,
         currentPrice,
         alertPrice: stock.alertPrice,
-        type: alertType,
+        type: 'below',
       },
     };
 

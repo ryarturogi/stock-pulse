@@ -41,10 +41,8 @@ describe('NotificationService', () => {
     alertPrice: 150.00,
     currentPrice: 155.50,
     change: 5.50,
-    changePercent: 3.67,
-    volume: 1000000,
-    lastUpdated: Date.now(),
-    color: '#007bff'
+    percentChange: 3.67,
+    lastUpdated: Date.now()
   };
 
   beforeEach(() => {
@@ -60,11 +58,12 @@ describe('NotificationService', () => {
 
     // Setup notification mock
     mockRequestPermission = jest.fn();
-    mockNotification = jest.fn().mockImplementation((title: string, options?: NotificationOptions) => {
+    mockNotification = jest.fn().mockImplementation((...args: any[]) => {
+      const [title, options] = args as [string, NotificationOptions?];
       const notification: Partial<MockNotification> = {
         title,
-        body: options?.body,
-        icon: options?.icon,
+        body: options?.body || undefined,
+        icon: options?.icon || undefined,
         close: jest.fn(),
         onclick: null,
         onclose: null,
@@ -83,7 +82,7 @@ describe('NotificationService', () => {
         addEventListener: jest.fn(),
       } as any,
       showNotification: jest.fn(),
-      getNotifications: jest.fn().mockResolvedValue([]),
+      getNotifications: jest.fn().mockResolvedValue([] as any),
     } as MockServiceWorkerRegistration;
 
     // Setup global mocks
@@ -98,7 +97,7 @@ describe('NotificationService', () => {
         navigator: {
           userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           serviceWorker: {
-            register: jest.fn().mockResolvedValue(mockServiceWorkerRegistration),
+            register: jest.fn().mockResolvedValue(mockServiceWorkerRegistration as any),
             addEventListener: jest.fn(),
           },
         },
@@ -113,7 +112,7 @@ describe('NotificationService', () => {
       value: {
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         serviceWorker: {
-          register: jest.fn().mockResolvedValue(mockServiceWorkerRegistration),
+          register: jest.fn().mockResolvedValue(mockServiceWorkerRegistration as any),
           addEventListener: jest.fn(),
         },
       },
