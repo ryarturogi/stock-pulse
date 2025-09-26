@@ -50,6 +50,9 @@ export const useTour = () => {
 
       if (steps && steps.length > 0) {
         // Configure steps programmatically if provided
+        // Check if we're on mobile/tablet for responsive options
+        const isMobileOrTablet = window.innerWidth < 1024;
+        
         tourRef.current = introJs().setOptions({
           steps: steps.map((step) => ({
             element: step.element,
@@ -72,11 +75,17 @@ export const useTour = () => {
           stepNumbersOfLabel: 'of',
           disableInteraction: true,
           scrollToElement: true,
-          scrollPadding: 30,
-          overlayOpacity: 0.5,
+          scrollPadding: isMobileOrTablet ? 60 : 30, // More padding on mobile
+          overlayOpacity: isMobileOrTablet ? 0.3 : 0.5, // Less overlay opacity on mobile
+          autoPosition: true, // Enable auto positioning for mobile
+          positionPrecedence: isMobileOrTablet 
+            ? ['bottom', 'top', 'left', 'right'] // Prefer vertical positions on mobile
+            : ['bottom', 'top', 'right', 'left'], // Default desktop precedence
         });
       } else {
         // Use data attributes from DOM elements
+        const isMobileOrTablet = window.innerWidth < 1024;
+        
         tourRef.current = introJs().setOptions({
           showProgress: true,
           showBullets: false,
@@ -91,8 +100,12 @@ export const useTour = () => {
           stepNumbersOfLabel: 'of',
           disableInteraction: true,
           scrollToElement: true,
-          scrollPadding: 30,
-          overlayOpacity: 0.5,
+          scrollPadding: isMobileOrTablet ? 60 : 30, // More padding on mobile
+          overlayOpacity: isMobileOrTablet ? 0.3 : 0.5, // Less overlay opacity on mobile
+          autoPosition: true, // Enable auto positioning for mobile
+          positionPrecedence: isMobileOrTablet 
+            ? ['bottom', 'top', 'left', 'right'] // Prefer vertical positions on mobile
+            : ['bottom', 'top', 'right', 'left'], // Default desktop precedence
         });
       }
 
@@ -101,6 +114,7 @@ export const useTour = () => {
         // Check if we're on mobile/tablet (matches responsive hook logic)
         // Mobile/tablet both use mobile tour since they both hide desktop sidebar
         const isMobileOrTablet = window.innerWidth < 1024;
+        const isVerySmallScreen = window.innerWidth <= 375;
         
         if (targetElement) {
           const step = targetElement.getAttribute('data-step');
@@ -162,8 +176,28 @@ export const useTour = () => {
         return true;
       });
 
+      // Handle orientation changes and window resize for mobile
+      const handleOrientationChange = () => {
+        if (tourRef.current && window.innerWidth < 1024) {
+          // Small delay to allow for orientation change to complete
+          setTimeout(() => {
+            // Force tooltip repositioning
+            const activeTooltip = document.querySelector('.introjs-tooltip');
+            if (activeTooltip) {
+              // Trigger a refresh of the tooltip position
+              tourRef.current.refresh();
+            }
+          }, 300);
+        }
+      };
+
+      window.addEventListener('orientationchange', handleOrientationChange);
+      window.addEventListener('resize', handleOrientationChange);
+
+      // Clean up event listeners and overlay classes
       tourRef.current.onexit(() => {
-        // Clean up overlay classes when tour exits
+        window.removeEventListener('orientationchange', handleOrientationChange);
+        window.removeEventListener('resize', handleOrientationChange);
         const overlay = document.querySelector('.introjs-overlay');
         overlay?.classList.remove('sidebar-step');
         overlay?.classList.remove('mobile-menu-step');
