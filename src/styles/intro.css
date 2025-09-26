@@ -379,32 +379,63 @@
 /* Mobile responsive adjustments */
 @media (max-width: 640px) {
   .introjs-tooltip {
-    max-width: calc(100vw - 2rem) !important;
-    margin: 1rem !important;
+    max-width: calc(100vw - 1.5rem) !important;
+    margin: 0.75rem !important;
+    min-width: 280px !important;
+    border-radius: 1rem !important;
+    /* Ensure tooltip doesn't get too close to edges */
+    position: fixed !important;
   }
   
   .introjs-tooltiptext {
-    font-size: 0.8125rem !important;
-    padding: 0.875rem 1rem !important;
+    font-size: 0.875rem !important;
+    padding: 1rem 1.25rem !important;
+    line-height: 1.6 !important;
   }
   
   .introjs-tooltip-header {
-    padding: 0.875rem 1rem 0.625rem !important;
+    padding: 1rem 1.25rem 0.75rem !important;
   }
   
   .introjs-tooltip-title {
-    font-size: 1rem !important;
+    font-size: 1.125rem !important;
+    line-height: 1.3 !important;
   }
   
   .introjs-tooltipbuttons {
-    padding: 0.625rem 1rem 0.875rem !important;
+    padding: 0.75rem 1.25rem 1rem !important;
     text-align: center !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
   }
   
   .introjs-button {
     display: block !important;
     width: 100% !important;
-    margin: 0.25rem 0 !important;
+    margin: 0 !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  .introjs-skipbutton {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    margin: 0 auto 0.5rem auto !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Ensure mobile tooltips are properly positioned */
+  .introjs-tooltip[style*="left"] {
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+  
+  /* Mobile-specific overlay adjustments */
+  .introjs-overlay {
+    background-color: rgba(0, 0, 0, 0.4) !important;
   }
 }
 
@@ -478,12 +509,15 @@
   }
 }
 
-/* Enhanced mobile responsive adjustments */
+/* Enhanced mobile responsive adjustments for phones */
 @media (max-width: 640px) {
   .introjs-tooltip {
-    max-width: calc(100vw - 2rem) !important;
-    margin: 1rem !important;
+    max-width: calc(100vw - 1.5rem) !important;
+    margin: 0.75rem !important;
+    min-width: 280px !important;
     border-radius: 1rem !important;
+    /* Better positioning for small screens */
+    position: fixed !important;
   }
   
   .introjs-tooltip-header {
@@ -491,32 +525,83 @@
   }
   
   .introjs-tooltip-title {
-    font-size: 1.1rem !important;
+    font-size: 1.125rem !important;
+    line-height: 1.3 !important;
   }
   
   .introjs-tooltiptext {
-    font-size: 0.85rem !important;
-    padding: 1.25rem 1.5rem !important;
+    font-size: 0.875rem !important;
+    padding: 1rem 1.25rem !important;
+    line-height: 1.6 !important;
   }
   
   .introjs-tooltipbuttons {
-    padding: 1rem 1.25rem 1.25rem !important;
+    padding: 0.75rem 1.25rem 1rem !important;
     flex-direction: column !important;
-    gap: 0.75rem !important;
+    gap: 0.5rem !important;
   }
   
   .introjs-button {
     width: 100% !important;
     margin: 0 !important;
     justify-content: center !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
   }
   
   .introjs-skipbutton {
     width: 2.5rem !important;
     height: 2.5rem !important;
-    margin: 0 !important;
+    margin: 0 auto 0.5rem auto !important;
     order: 0 !important;
     flex-shrink: 0 !important;
+  }
+  
+  /* Force tooltips to use available width on small screens */
+  .introjs-tooltip[style*="left"] {
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+}
+
+/* Tablet responsive adjustments */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .introjs-tooltip {
+    max-width: 450px !important;
+    min-width: 320px !important;
+  }
+  
+  .introjs-tooltiptext {
+    font-size: 0.9rem !important;
+    padding: 1.25rem 1.5rem !important;
+  }
+  
+  .introjs-tooltip-header {
+    padding: 1.125rem 1.5rem 0.875rem !important;
+  }
+  
+  .introjs-tooltip-title {
+    font-size: 1.125rem !important;
+  }
+  
+  .introjs-tooltipbuttons {
+    padding: 0.875rem 1.5rem 1.125rem !important;
+    flex-direction: row !important;
+    gap: 0.75rem !important;
+  }
+  
+  .introjs-button {
+    flex: 1 !important;
+    margin: 0 !important;
+  }
+  
+  .introjs-skipbutton {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    margin-right: 0.75rem !important;
+    flex: none !important;
   }
 }
 
@@ -554,6 +639,7 @@
 @media (max-width: 1023px) {
   .introjs-overlay {
     z-index: 35 !important; /* Below mobile sidebar drawer (z-50) */
+    background-color: rgba(0, 0, 0, 0.4) !important; /* Lighter overlay for mobile */
   }
   
   /* Ensure drawer content appears above tour overlay */
@@ -574,6 +660,58 @@
   /* Hide desktop tour elements on mobile */
   .hidden.lg\\:block [data-step] {
     display: none !important;
+  }
+  
+  /* Mobile-specific tooltip positioning fixes */
+  .introjs-tooltip {
+    /* Prevent tooltips from going off-screen on mobile */
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 280px !important;
+  }
+  
+  /* Force center positioning for mobile tooltips that can't fit */
+  .introjs-tooltip[data-position="auto"],
+  .introjs-tooltip[data-position="bottom"],
+  .introjs-tooltip[data-position="top"] {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    right: auto !important;
+    max-width: calc(100vw - 2rem) !important;
+    width: auto !important;
+  }
+}
+
+/* Very small screens (iPhone SE, small Android phones) */
+@media (max-width: 375px) {
+  .introjs-tooltip {
+    max-width: calc(100vw - 1rem) !important;
+    margin: 0.5rem !important;
+    min-width: 260px !important;
+  }
+  
+  .introjs-tooltiptext {
+    font-size: 0.8125rem !important;
+    padding: 0.875rem 1rem !important;
+  }
+  
+  .introjs-tooltip-header {
+    padding: 0.875rem 1rem 0.625rem !important;
+  }
+  
+  .introjs-tooltip-title {
+    font-size: 1rem !important;
+  }
+  
+  .introjs-tooltipbuttons {
+    padding: 0.625rem 1rem 0.875rem !important;
+  }
+  
+  .introjs-button {
+    padding: 0.625rem 0.75rem !important;
+    font-size: 0.8125rem !important;
   }
 }
 
