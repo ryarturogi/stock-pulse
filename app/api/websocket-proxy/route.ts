@@ -5,6 +5,9 @@ const activeConnections = new Map<string, { webSocket: WebSocket | null; symbols
 const connectionCooldowns = new Map<string, number>();
 const circuitBreaker = new Map<string, { failures: number; lastFailure: number; state: 'closed' | 'open' | 'half-open' }>();
 
+// Export for testing purposes
+export { activeConnections, connectionCooldowns };
+
 // Note: globalRateLimit removed in favor of user-specific rate limiting
 
 // Per-user rate limiting

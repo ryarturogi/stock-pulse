@@ -5,25 +5,52 @@
  * Tests for the application health monitoring endpoint
  */
 
-// Mock NextResponse
-const mockJsonResponse = {
-  json: jest.fn(),
-  headers: new Map([
-    ['Cache-Control', 'no-cache, no-store, must-revalidate'],
-    ['Pragma', 'no-cache'],
-    ['Expires', '0'],
-    ['Content-Type', 'application/json'],
-  ]),
-  status: 200,
-};
+// Mock NextResponse for proper header handling in tests
+const mockResponse = (data: any, init: any = {}) => ({
+  json: async () => data,
+  headers: {
+    get: (name: string) => {
+      const headers = init?.headers || {};
+      return headers[name] || null;
+    },
+  },
+  status: init?.status || 200,
+});
 
-// Don't mock NextResponse, use the real implementation
-// jest.mock('next/server');
+jest.mock('next/server', () => ({
+  NextResponse: {
+    json: jest.fn().mockImplementation(mockResponse),
+  },
+}));
 
 import { GET } from './route';
 
-// Mock fetch globally
-global.fetch = jest.fn();
+// Mock fetch globally with better implementation
+global.fetch = jest.fn().mockImplementation((url: string, init?: any) => {
+  // Handle external API health checks
+  if (url.includes('finnhub.io') || url.includes('example.com')) {
+    const isTimeout = init?.signal?.aborted;
+    if (isTimeout) {
+      return Promise.reject(new DOMException('The operation was aborted', 'AbortError'));
+    }
+    
+    // Simulate successful API response
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: 'ok' }),
+      headers: new Headers({ 'content-type': 'application/json' }),
+    });
+  }
+  
+  // Default successful response
+  return Promise.resolve({
+    ok: true,
+    status: 200,
+    json: async () => ({}),
+    headers: new Headers({ 'content-type': 'application/json' }),
+  });
+});
 
 // Mock process methods
 const mockProcess = {
@@ -46,16 +73,23 @@ Object.defineProperty(global, 'process', {
   writable: true,
 });
 
-// Mock AbortController
-global.AbortController = jest.fn().mockImplementation(() => ({
+// Mock AbortController with better timeout simulation
+const mockAbortController = {
   signal: { aborted: false },
   abort: jest.fn(),
-}));
+};
 
-// Mock setTimeout and clearTimeout to work properly
-global.setTimeout = jest.fn().mockImplementation((fn, delay) => {
-  // Return a timeout ID but don't actually set timeout
-  return 'timeout-id' as unknown as NodeJS.Timeout;
+global.AbortController = jest.fn().mockImplementation(() => {
+  const controller = { ...mockAbortController };
+  return controller;
+});
+
+// Mock setTimeout and clearTimeout for timeout simulation
+global.setTimeout = jest.fn().mockImplementation((callback, delay) => {
+  if (delay >= 5000) { // Health check timeout - simulate immediate timeout
+    setTimeout(() => callback(), 0); // Use real setTimeout with 0 delay
+  }
+  return 123; // mock timer id
 }) as unknown as typeof setTimeout;
 
 global.clearTimeout = jest.fn();
