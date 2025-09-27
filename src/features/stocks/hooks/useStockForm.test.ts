@@ -1,7 +1,7 @@
 /**
  * Unit Tests for useStockForm Hook
  * ================================
- * 
+ *
  * Tests for the stock form management custom hook
  */
 
@@ -181,7 +181,9 @@ describe('useStockForm', () => {
         });
 
         expect(isValid).toBe(false);
-        expect(result.current.errors.price).toBe('Price must be a valid number');
+        expect(result.current.errors.price).toBe(
+          'Price must be a valid number'
+        );
       }
 
       // Test negative prices
@@ -210,7 +212,9 @@ describe('useStockForm', () => {
       });
 
       expect(isValid).toBe(false);
-      expect(result.current.errors.price).toBe('Price must be less than $1,000,000');
+      expect(result.current.errors.price).toBe(
+        'Price must be less than $1,000,000'
+      );
     });
 
     it('should validate valid form and return true', () => {
@@ -284,8 +288,8 @@ describe('useStockForm', () => {
     it('should fetch current price successfully', async () => {
       const mockQuote = {
         symbol: 'AAPL',
-        current: 155.50,
-        change: 5.50,
+        current: 155.5,
+        change: 5.5,
         percentChange: 3.67,
         high: 157.0,
         low: 153.0,
@@ -303,9 +307,11 @@ describe('useStockForm', () => {
       });
 
       expect(mockStockService.fetchStockQuote).toHaveBeenCalledWith('AAPL');
-      expect(result.current.currentPrice).toBe(155.50);
+      expect(result.current.currentPrice).toBe(155.5);
       expect(result.current.isLoadingPrice).toBe(false);
-      expect(console.log).toHaveBeenCalledWith('💰 Current price for AAPL: $155.5');
+      expect(console.log).toHaveBeenCalledWith(
+        '💰 Current price for AAPL: $155.5'
+      );
     });
 
     it('should handle price fetching errors', async () => {
@@ -321,14 +327,17 @@ describe('useStockForm', () => {
       expect(mockStockService.fetchStockQuote).toHaveBeenCalledWith('AAPL');
       expect(result.current.currentPrice).toBeNull();
       expect(result.current.isLoadingPrice).toBe(false);
-      expect(console.error).toHaveBeenCalledWith('Failed to fetch current price for AAPL:', error);
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to fetch current price for AAPL:',
+        error
+      );
     });
 
     it('should set loading state during price fetch', async () => {
       const mockQuote: FinnhubStockQuote = {
         symbol: 'AAPL',
-        current: 155.50,
-        change: 5.50,
+        current: 155.5,
+        change: 5.5,
         percentChange: 3.67,
         high: 157.0,
         low: 153.0,
@@ -358,7 +367,7 @@ describe('useStockForm', () => {
 
       // Resolve the promise
       resolvePromise(mockQuote);
-      
+
       // Wait for the fetch to complete
       await act(async () => {
         await fetchPromise;
@@ -366,31 +375,31 @@ describe('useStockForm', () => {
 
       // Should no longer be loading
       expect(result.current.isLoadingPrice).toBe(false);
-      expect(result.current.currentPrice).toBe(155.50);
+      expect(result.current.currentPrice).toBe(155.5);
     });
 
     it('should handle multiple concurrent price fetches', async () => {
-      const mockQuote1: FinnhubStockQuote = { 
-        symbol: 'AAPL', 
-        current: 155.50, 
-        change: 5.50,
+      const mockQuote1: FinnhubStockQuote = {
+        symbol: 'AAPL',
+        current: 155.5,
+        change: 5.5,
         percentChange: 3.67,
         high: 157.0,
         low: 153.0,
         open: 154.0,
         previousClose: 150.0,
-        timestamp: Date.now() 
+        timestamp: Date.now(),
       };
-      const mockQuote2: FinnhubStockQuote = { 
-        symbol: 'GOOGL', 
-        current: 2850.0, 
+      const mockQuote2: FinnhubStockQuote = {
+        symbol: 'GOOGL',
+        current: 2850.0,
         change: 50.0,
         percentChange: 1.79,
         high: 2860.0,
         low: 2820.0,
         open: 2830.0,
         previousClose: 2800.0,
-        timestamp: Date.now() 
+        timestamp: Date.now(),
       };
 
       mockStockService.fetchStockQuote
@@ -402,7 +411,7 @@ describe('useStockForm', () => {
       await act(async () => {
         await Promise.all([
           result.current.fetchCurrentPrice('AAPL'),
-          result.current.fetchCurrentPrice('GOOGL')
+          result.current.fetchCurrentPrice('GOOGL'),
         ]);
       });
 
@@ -425,19 +434,19 @@ describe('useStockForm', () => {
       });
 
       // Manually set current price (simulating successful fetch)
-      const mockQuote: FinnhubStockQuote = { 
-        symbol: 'AAPL', 
-        current: 155.50, 
-        change: 5.50,
+      const mockQuote: FinnhubStockQuote = {
+        symbol: 'AAPL',
+        current: 155.5,
+        change: 5.5,
         percentChange: 3.67,
         high: 157.0,
         low: 153.0,
         open: 154.0,
         previousClose: 150.0,
-        timestamp: Date.now() 
+        timestamp: Date.now(),
       };
       mockStockService.fetchStockQuote.mockResolvedValueOnce(mockQuote);
-      
+
       await act(async () => {
         await result.current.fetchCurrentPrice('AAPL');
       });
@@ -469,11 +478,17 @@ describe('useStockForm', () => {
       });
 
       // Functions should be the same references (useCallback)
-      expect(result.current.setSelectedStock).toBe(originalFunctions.setSelectedStock);
-      expect(result.current.setAlertPrice).toBe(originalFunctions.setAlertPrice);
+      expect(result.current.setSelectedStock).toBe(
+        originalFunctions.setSelectedStock
+      );
+      expect(result.current.setAlertPrice).toBe(
+        originalFunctions.setAlertPrice
+      );
       expect(result.current.validateForm).toBe(originalFunctions.validateForm);
       expect(result.current.resetForm).toBe(originalFunctions.resetForm);
-      expect(result.current.fetchCurrentPrice).toBe(originalFunctions.fetchCurrentPrice);
+      expect(result.current.fetchCurrentPrice).toBe(
+        originalFunctions.fetchCurrentPrice
+      );
     });
   });
 
@@ -564,9 +579,13 @@ describe('useStockForm', () => {
 
       // Functions should be the same references
       // Note: This test is flaky due to useCallback dependencies
-      expect(result.current.validateForm).toBe(firstRenderFunctions.validateForm);
+      expect(result.current.validateForm).toBe(
+        firstRenderFunctions.validateForm
+      );
       expect(result.current.resetForm).toBe(firstRenderFunctions.resetForm);
-      expect(result.current.fetchCurrentPrice).toBe(firstRenderFunctions.fetchCurrentPrice);
+      expect(result.current.fetchCurrentPrice).toBe(
+        firstRenderFunctions.fetchCurrentPrice
+      );
     });
 
     it.skip('should update memoized functions when dependencies change', () => {
@@ -608,8 +627,8 @@ describe('useStockForm', () => {
     it.skip('should handle validation after price fetch', async () => {
       const mockQuote: FinnhubStockQuote = {
         symbol: 'AAPL',
-        current: 155.50,
-        change: 5.50,
+        current: 155.5,
+        change: 5.5,
         percentChange: 3.67,
         high: 157.0,
         low: 153.0,
@@ -640,7 +659,7 @@ describe('useStockForm', () => {
 
       // Note: This test sometimes fails due to validation timing issues
       expect(isValid).toBe(true);
-      expect(result.current.currentPrice).toBe(155.50);
+      expect(result.current.currentPrice).toBe(155.5);
       expect(result.current.errors).toEqual({});
     });
   });

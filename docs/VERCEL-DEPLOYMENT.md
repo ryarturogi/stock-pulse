@@ -1,6 +1,7 @@
 # Vercel Deployment Guide for StockPulse
 
-This guide covers the complete deployment process for StockPulse on Vercel, including environment setup, domain configuration, and monitoring.
+This guide covers the complete deployment process for StockPulse on Vercel, including environment
+setup, domain configuration, and monitoring.
 
 ## 🚀 Quick Start
 
@@ -65,8 +66,9 @@ vercel env add REDIS_URL production
 **🌐 Public Variables (Client-side)**
 
 These are set in your codebase and deployed automatically:
+
 - `NEXT_PUBLIC_APP_NAME`
-- `NEXT_PUBLIC_APP_VERSION` 
+- `NEXT_PUBLIC_APP_VERSION`
 - `NEXT_PUBLIC_FEATURE_*`
 
 ### Environment Management
@@ -100,17 +102,20 @@ Our project includes a comprehensive `vercel.json` with:
 ### Key Features Configured
 
 #### 🕐 Cron Jobs
+
 - **Stock Price Updates**: Every 5 minutes
-- **Cache Cleanup**: Every 6 hours  
+- **Cache Cleanup**: Every 6 hours
 - **Price Alerts**: Every minute
 
 #### 🔒 Security Headers
+
 - X-Frame-Options: DENY
 - X-Content-Type-Options: nosniff
 - Referrer-Policy: strict-origin-when-cross-origin
 - Permissions-Policy: Restricted camera/microphone access
 
 #### ⚡ Performance Optimizations
+
 - Static asset caching (1 year)
 - Service Worker caching
 - Compression enabled
@@ -138,6 +143,7 @@ No additional CI/CD setup required - Vercel handles everything!
 ### Manual Deployment
 
 #### Preview Deployment
+
 ```bash
 # Deploy to preview URL
 vercel
@@ -145,6 +151,7 @@ vercel
 ```
 
 #### Production Deployment
+
 ```bash
 # Deploy to production
 vercel --prod
@@ -160,6 +167,7 @@ vercel --prod
    - Add your custom domain (e.g., `stockpulse.com`)
 
 2. **Configure DNS**
+
    ```
    # Add these DNS records:
    A     @     76.76.19.61
@@ -176,7 +184,7 @@ vercel --prod
 # Production
 https://stockpulse.com
 
-# Staging  
+# Staging
 https://staging.stockpulse.com
 
 # Preview (automatic)
@@ -188,6 +196,7 @@ https://stock-pulse-git-feature-branch.vercel.app
 ### Built-in Monitoring
 
 Vercel provides:
+
 - **Performance Analytics**: Core Web Vitals
 - **Function Logs**: Serverless function monitoring
 - **Error Tracking**: Runtime error detection
@@ -196,11 +205,13 @@ Vercel provides:
 ### Custom Monitoring
 
 Our health check endpoint:
+
 ```
 GET /api/health
 ```
 
 Returns:
+
 ```json
 {
   "status": "healthy",
@@ -255,6 +266,7 @@ pnpm run test
 ### Preview Deployments
 
 Every git push automatically creates preview deployment:
+
 - Unique URL for each commit/branch
 - Full production environment
 - Perfect for testing and stakeholder review
@@ -283,6 +295,7 @@ vercel promote <deployment-url> --scope=<team>
 ### Common Issues
 
 #### Build Failures
+
 ```bash
 # Check build logs
 vercel logs
@@ -295,6 +308,7 @@ vercel env ls
 ```
 
 #### Environment Variable Issues
+
 ```bash
 # Verify variables are set
 vercel env ls production
@@ -306,6 +320,7 @@ vercel env pull .env.local
 ```
 
 #### Function Timeouts
+
 ```bash
 # Check function duration in vercel.json:
 "functions": {
@@ -316,6 +331,7 @@ vercel env pull .env.local
 ```
 
 #### Cron Job Failures
+
 ```bash
 # Check cron logs
 vercel logs --filter="cron"
@@ -331,11 +347,13 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 ### Performance Issues
 
 #### Slow Cold Starts
+
 - Use Vercel Pro for faster cold starts
 - Implement proper caching strategies
 - Optimize bundle size
 
 #### API Rate Limits
+
 - Implement Redis caching
 - Use API request batching
 - Set up proper rate limiting
@@ -349,6 +367,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 ## 📋 Deployment Checklist
 
 ### Pre-Deployment
+
 - [ ] Environment variables configured
 - [ ] API keys tested and working
 - [ ] Domain DNS configured
@@ -357,6 +376,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 - [ ] Health checks working
 
 ### Post-Deployment
+
 - [ ] Production URL accessible
 - [ ] Health endpoint responding
 - [ ] Cron jobs executing
@@ -365,6 +385,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 - [ ] Custom domain working
 
 ### Security Review
+
 - [ ] Environment variables secured
 - [ ] API keys rotated
 - [ ] CORS origins configured
@@ -374,27 +395,32 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 ## 🎯 Best Practices
 
 ### Environment Management
+
 - Use different secrets for each environment
 - Rotate secrets regularly
 - Never commit secrets to git
 - Use Vercel's secret management
 
 ### Performance
+
 - Optimize images with Next.js Image component
 - Implement proper caching strategies
 - Use edge functions for global performance
 - Monitor Core Web Vitals
 
 ### Security
+
 - Keep dependencies updated
 - Use Vercel's security headers
 - Implement proper authentication
 - Monitor for vulnerabilities
 
 ### Monitoring
+
 - Set up health checks
 - Monitor function performance
 - Track user analytics
 - Set up error alerting
 
-This comprehensive guide ensures your StockPulse application is properly deployed and monitored on Vercel with enterprise-grade reliability and performance.
+This comprehensive guide ensures your StockPulse application is properly deployed and monitored on
+Vercel with enterprise-grade reliability and performance.

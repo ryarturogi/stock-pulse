@@ -1,7 +1,7 @@
 /**
  * Integration Tests for Push Unsubscribe API Route
  * ================================================
- * 
+ *
  * Tests for the push notification unsubscription endpoint
  */
 
@@ -39,7 +39,7 @@ afterAll(() => {
 describe('/api/push/unsubscribe', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup default mock behavior
     mockSubscriptionStorage.removeSubscription.mockResolvedValue(true);
     mockSubscriptionStorage.clearAllSubscriptions.mockResolvedValue(2);
@@ -52,11 +52,14 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -80,11 +83,14 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -103,11 +109,14 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -123,11 +132,14 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -143,11 +155,14 @@ describe('/api/push/unsubscribe', () => {
         // subscriptionId is undefined
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -164,11 +179,14 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -191,11 +209,14 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -217,11 +238,14 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -233,11 +257,14 @@ describe('/api/push/unsubscribe', () => {
 
   describe('Error Handling', () => {
     it('should handle malformed JSON in request body', async () => {
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: 'invalid json',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: 'invalid json',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -259,11 +286,14 @@ describe('/api/push/unsubscribe', () => {
     });
 
     it('should handle empty request body', async () => {
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: '',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: '',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -274,10 +304,13 @@ describe('/api/push/unsubscribe', () => {
     });
 
     it('should handle request with no Content-Type header', async () => {
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify({ subscriptionId: 'test' }),
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify({ subscriptionId: 'test' }),
+        }
+      );
 
       const response = await POST(request);
 
@@ -287,7 +320,7 @@ describe('/api/push/unsubscribe', () => {
 
     it('should handle non-Error exceptions', async () => {
       mockSubscriptionStorage.removeSubscription.mockImplementation(() => {
-        throw 'String error';  
+        throw 'String error';
       });
 
       const requestBody = {
@@ -295,11 +328,14 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -309,11 +345,14 @@ describe('/api/push/unsubscribe', () => {
     });
 
     it('should log unsubscription processing errors', async () => {
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: 'invalid json',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: 'invalid json',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       await POST(request);
 
@@ -327,17 +366,20 @@ describe('/api/push/unsubscribe', () => {
   describe('Edge Cases', () => {
     it('should handle very long subscription IDs', async () => {
       const longSubscriptionId = 'a'.repeat(1000);
-      
+
       const requestBody = {
         subscriptionId: longSubscriptionId,
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -347,8 +389,9 @@ describe('/api/push/unsubscribe', () => {
     });
 
     it('should handle subscription IDs with special characters', async () => {
-      const specialSubscriptionId = 'subscription-with-special-chars-!@#$%^&*()[]{}';
-      
+      const specialSubscriptionId =
+        'subscription-with-special-chars-!@#$%^&*()[]{}';
+
       mockSubscriptionStorage.removeSubscription.mockResolvedValue(true);
 
       const requestBody = {
@@ -356,11 +399,14 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -371,7 +417,7 @@ describe('/api/push/unsubscribe', () => {
 
     it('should handle unicode subscription IDs', async () => {
       const unicodeSubscriptionId = 'subscription-ñáéíóú-🚀-测试';
-      
+
       mockSubscriptionStorage.removeSubscription.mockResolvedValue(true);
 
       const requestBody = {
@@ -379,11 +425,14 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -394,17 +443,20 @@ describe('/api/push/unsubscribe', () => {
 
     it('should handle numeric subscription IDs', async () => {
       const numericSubscriptionId = 12345;
-      
+
       const requestBody = {
         subscriptionId: numericSubscriptionId,
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -415,17 +467,20 @@ describe('/api/push/unsubscribe', () => {
 
     it('should handle boolean subscription IDs', async () => {
       const booleanSubscriptionId = true;
-      
+
       const requestBody = {
         subscriptionId: booleanSubscriptionId,
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -442,27 +497,37 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
 
-      expect(response.headers.get('Content-Type')).toContain('application/json');
+      expect(response.headers.get('Content-Type')).toContain(
+        'application/json'
+      );
     });
 
     it('should have correct Content-Type header for errors', async () => {
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: 'invalid json',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: 'invalid json',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
 
-      expect(response.headers.get('Content-Type')).toContain('application/json');
+      expect(response.headers.get('Content-Type')).toContain(
+        'application/json'
+      );
     });
 
     it('should have consistent success response structure', async () => {
@@ -471,11 +536,14 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -487,11 +555,14 @@ describe('/api/push/unsubscribe', () => {
     });
 
     it('should have consistent error response structure', async () => {
-      const request = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: 'invalid json',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: 'invalid json',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -511,17 +582,23 @@ describe('/api/push/unsubscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request1 = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request1 = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
-      const request2 = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request2 = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response1 = await POST(request1);
       const response2 = await POST(request2);
@@ -532,21 +609,27 @@ describe('/api/push/unsubscribe', () => {
 
     it('should handle mixed unsubscription operations', async () => {
       // Remove specific subscription
-      const specificRequest = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify({ subscriptionId: 'subscription-1' }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const specificRequest = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify({ subscriptionId: 'subscription-1' }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const specificResponse = await POST(specificRequest);
       expect(specificResponse.status).toBe(200);
 
       // Clear all remaining subscriptions
-      const bulkRequest = new NextRequest('http://localhost:3000/api/push/unsubscribe', {
-        method: 'POST',
-        body: JSON.stringify({ timestamp: Date.now() }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const bulkRequest = new NextRequest(
+        'http://localhost:3000/api/push/unsubscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify({ timestamp: Date.now() }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const bulkResponse = await POST(bulkRequest);
       const bulkData = await bulkResponse.json();

@@ -298,7 +298,10 @@ export const StockChart: React.FC<
                 dataKey='index'
                 height={30}
                 stroke='#8884d8'
-                startIndex={Math.max(0, chartData.length - Math.min(20, chartData.length))}
+                startIndex={Math.max(
+                  0,
+                  chartData.length - Math.min(20, chartData.length)
+                )}
                 endIndex={chartData.length - 1}
               />
             )}

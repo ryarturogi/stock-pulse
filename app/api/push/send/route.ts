@@ -1,26 +1,34 @@
 /**
  * Send Push Notification API Route
  * ================================
- * 
+ *
  * Sends push notifications to subscribed clients (no VAPID required).
  * Simplified implementation using fetch API for push notifications.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ApiError, PushSubscriptionData, PushNotificationRequest, PushNotificationPayload } from '@/core/types';
+import {
+  ApiError,
+  PushSubscriptionData,
+  PushNotificationRequest,
+  PushNotificationPayload,
+} from '@/core/types';
 import { getSubscriptionStorage } from '@/core/services/subscriptionStorage';
 
 /**
  * Send push notification using fetch API (no VAPID)
  */
-async function sendPushNotification(subscription: PushSubscription, payload: string): Promise<boolean> {
+async function sendPushNotification(
+  subscription: PushSubscription,
+  payload: string
+): Promise<boolean> {
   try {
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'TTL': '86400', // 24 hours
+        TTL: '86400', // 24 hours
       },
       body: payload,
     });
@@ -34,26 +42,34 @@ async function sendPushNotification(subscription: PushSubscription, payload: str
 
 /**
  * POST /api/push/send
- * 
+ *
  * Send push notification to all subscribed clients
  */
-export async function POST(request: NextRequest): Promise<NextResponse<{ 
-  success: boolean; 
-  sent: number; 
-  failed: number; 
-  message: string 
-} | ApiError>> {
+export async function POST(request: NextRequest): Promise<
+  NextResponse<
+    | {
+        success: boolean;
+        sent: number;
+        failed: number;
+        message: string;
+      }
+    | ApiError
+  >
+> {
   try {
-    const body = await request.json() as PushNotificationRequest;
+    const body = (await request.json()) as PushNotificationRequest;
     const { notification, targetSubscriptionId } = body;
 
     // Validate notification data
     if (!notification || !notification.title || !notification.body) {
-      return NextResponse.json<ApiError>({
-        code: 'INVALID_NOTIFICATION_DATA',
-        message: 'Invalid notification data',
-        details: { timestamp: new Date().toISOString() },
-      }, { status: 400 });
+      return NextResponse.json<ApiError>(
+        {
+          code: 'INVALID_NOTIFICATION_DATA',
+          message: 'Invalid notification data',
+          details: { timestamp: new Date().toISOString() },
+        },
+        { status: 400 }
+      );
     }
 
     let sent = 0;
@@ -73,13 +89,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<{
         {
           action: 'view',
           title: 'View Details',
-          icon: '/icons/action-view.svg'
+          icon: '/icons/action-view.svg',
         },
         {
           action: 'close',
           title: 'Close',
-          icon: '/icons/action-close.svg'
-        }
+          icon: '/icons/action-close.svg',
+        },
       ],
     };
     const payload = JSON.stringify(payloadData);
@@ -87,39 +103,52 @@ export async function POST(request: NextRequest): Promise<NextResponse<{
     // Get storage service and retrieve subscriptions
     const storage = getSubscriptionStorage();
     await storage.initialize();
-    
+
     const allSubscriptions = await storage.getAllSubscriptions();
-    
+
     // Send to specific subscription or all subscriptions
-    const subscriptionsToNotify = targetSubscriptionId 
-      ? [allSubscriptions.get(targetSubscriptionId)].filter((sub): sub is PushSubscriptionData => sub !== undefined)
+    const subscriptionsToNotify = targetSubscriptionId
+      ? [allSubscriptions.get(targetSubscriptionId)].filter(
+          (sub): sub is PushSubscriptionData => sub !== undefined
+        )
       : Array.from(allSubscriptions.values());
 
     for (const subscriptionData of subscriptionsToNotify) {
       try {
-        const success = await sendPushNotification(subscriptionData.subscription, payload);
-        
+        const success = await sendPushNotification(
+          subscriptionData.subscription,
+          payload
+        );
+
         if (success) {
           sent++;
           // Update last used timestamp
           subscriptionData.lastUsed = Date.now();
-          console.log(`✅ Push notification sent to: ${subscriptionData.subscription.endpoint}`);
+          console.log(
+            `✅ Push notification sent to: ${subscriptionData.subscription.endpoint}`
+          );
         } else {
           failed++;
-          errors.push(`Failed to send to ${subscriptionData.subscription.endpoint}`);
+          errors.push(
+            `Failed to send to ${subscriptionData.subscription.endpoint}`
+          );
         }
       } catch (error) {
         failed++;
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
         errors.push(errorMessage);
-        
+
         console.error(`❌ Failed to send push notification:`, error);
-        
+
         // Remove invalid subscriptions
         if (errorMessage.includes('410') || errorMessage.includes('Gone')) {
-          const subscriptionId = Array.from(allSubscriptions.entries())
-            .find(([, data]) => data.subscription.endpoint === subscriptionData.subscription.endpoint)?.[0];
-          
+          const subscriptionId = Array.from(allSubscriptions.entries()).find(
+            ([, data]) =>
+              data.subscription.endpoint ===
+              subscriptionData.subscription.endpoint
+          )?.[0];
+
           if (subscriptionId) {
             await storage.removeSubscription(subscriptionId);
             console.log(`🗑️ Removed invalid subscription: ${subscriptionId}`);
@@ -137,32 +166,39 @@ export async function POST(request: NextRequest): Promise<NextResponse<{
       message: `Push notifications sent: ${sent} successful, ${failed} failed`,
       ...(errors.length > 0 && { errors }),
     });
-
   } catch (error) {
     console.error('Send push notification error:', error);
-    
-    return NextResponse.json<ApiError>({
-      code: 'PUSH_SEND_ERROR',
-      message: 'Failed to send push notifications',
-      details: { 
-        timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : 'Unknown error',
+
+    return NextResponse.json<ApiError>(
+      {
+        code: 'PUSH_SEND_ERROR',
+        message: 'Failed to send push notifications',
+        details: {
+          timestamp: new Date().toISOString(),
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
       },
-    }, { status: 500 });
+      { status: 500 }
+    );
   }
 }
 
 /**
  * GET /api/push/send
- * 
+ *
  * Send a test push notification
  */
-export async function GET(): Promise<NextResponse<{ 
-  success: boolean; 
-  sent: number; 
-  failed: number; 
-  message: string 
-} | ApiError>> {
+export async function GET(): Promise<
+  NextResponse<
+    | {
+        success: boolean;
+        sent: number;
+        failed: number;
+        message: string;
+      }
+    | ApiError
+  >
+> {
   try {
     const testNotification: PushNotificationPayload = {
       title: 'StockPulse Test',
@@ -171,8 +207,8 @@ export async function GET(): Promise<NextResponse<{
       badge: '/icons/icon-72x72.svg',
       data: {
         symbol: 'TEST',
-        price: 100.00,
-        timestamp: Date.now()
+        price: 100.0,
+        timestamp: Date.now(),
       },
       tag: 'test-notification',
       requireInteraction: false,
@@ -188,17 +224,19 @@ export async function GET(): Promise<NextResponse<{
     });
 
     return await POST(mockRequest);
-
   } catch (error) {
     console.error('Test push notification error:', error);
-    
-    return NextResponse.json<ApiError>({
-      code: 'TEST_PUSH_ERROR',
-      message: 'Failed to send test push notification',
-      details: { 
-        timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : 'Unknown error',
+
+    return NextResponse.json<ApiError>(
+      {
+        code: 'TEST_PUSH_ERROR',
+        message: 'Failed to send test push notification',
+        details: {
+          timestamp: new Date().toISOString(),
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
       },
-    }, { status: 500 });
+      { status: 500 }
+    );
   }
 }

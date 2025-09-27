@@ -47,7 +47,7 @@ export const ROUTES = {
 export const STORAGE_KEYS = {
   USER_PREFERENCES: 'stockpulse_user_preferences',
   PORTFOLIO_DATA: 'stockpulse_portfolio_data',
-  WATCHLIST_DATA: 'stockpulse_watchlist_data', 
+  WATCHLIST_DATA: 'stockpulse_watchlist_data',
   WATCHED_STOCKS: 'stockpulse_watched_stocks',
   THEME: 'stockpulse_theme',
   AUTH_TOKEN: 'stockpulse_auth_token',
@@ -101,7 +101,7 @@ export const CHART_CONFIG = {
     '6M': { days: 180, interval: '1d' },
     '1Y': { days: 365, interval: '1d' },
     '5Y': { days: 1825, interval: '1wk' },
-    'MAX': { days: null, interval: '1mo' },
+    MAX: { days: null, interval: '1mo' },
   },
 } as const;
 
@@ -160,14 +160,14 @@ export const DEFAULT_STOCK_OPTIONS = [
  * Stock color mapping for charts
  */
 export const STOCK_COLORS: Record<string, string> = {
-  AAPL: '#2563eb',  // blue-600 (Apple brand blue)
+  AAPL: '#2563eb', // blue-600 (Apple brand blue)
   GOOGL: '#ea4335', // Google brand red
-  MSFT: '#16a34a',  // green-600
-  AMZN: '#ff9900',  // Amazon orange
-  TSLA: '#dc2626',  // red-600
-  META: '#1877f2',  // Meta brand blue
-  NVDA: '#76b900',  // NVIDIA green
-  NFLX: '#e50914',  // Netflix red
+  MSFT: '#16a34a', // green-600
+  AMZN: '#ff9900', // Amazon orange
+  TSLA: '#dc2626', // red-600
+  META: '#1877f2', // Meta brand blue
+  NVDA: '#76b900', // NVIDIA green
+  NFLX: '#e50914', // Netflix red
 };
 
 /**

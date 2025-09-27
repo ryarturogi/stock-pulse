@@ -1,25 +1,29 @@
 /**
  * Unit Tests for SubscriptionStorageService
  * ========================================
- * 
+ *
  * Tests for the persistent subscription storage service
  */
 
 import { promises as fs } from 'fs';
 import path from 'path';
 
-import { SubscriptionStorageService, getSubscriptionStorage } from './subscriptionStorage';
+import {
+  SubscriptionStorageService,
+  getSubscriptionStorage,
+} from './subscriptionStorage';
 import type { PushSubscriptionData } from '@/core/types';
 
 // Mock PushSubscription for testing
-const createMockPushSubscription = (endpoint: string) => ({
-  endpoint,
-  expirationTime: null,
-  options: {},
-  getKey: jest.fn(),
-  toJSON: jest.fn(() => ({ endpoint })),
-  unsubscribe: jest.fn(),
-} as any);
+const createMockPushSubscription = (endpoint: string) =>
+  ({
+    endpoint,
+    expirationTime: null,
+    options: {},
+    getKey: jest.fn(),
+    toJSON: jest.fn(() => ({ endpoint })),
+    unsubscribe: jest.fn(),
+  }) as any;
 
 // Mock fs module
 jest.mock('fs', () => ({
@@ -43,17 +47,17 @@ describe('SubscriptionStorageService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup mocks
     mockStoragePath = '/tmp/test-subscriptions.json';
     mockDataDir = '/tmp';
-    
+
     (path.join as jest.Mock).mockReturnValue(mockStoragePath);
     (path.dirname as jest.Mock).mockReturnValue(mockDataDir);
-    
+
     // Reset singleton instance
     (SubscriptionStorageService as any).instance = null;
-    
+
     service = SubscriptionStorageService.getInstance();
   });
 
@@ -114,10 +118,10 @@ describe('SubscriptionStorageService', () => {
       await service.initialize();
 
       expect(await service.getSubscriptionCount()).toBe(2);
-      
+
       const subscription1 = await service.getSubscription('test-endpoint-1');
       expect(subscription1?.deviceType).toBe('desktop');
-      
+
       const subscription2 = await service.getSubscription('test-endpoint-2');
       expect(subscription2?.deviceType).toBe('mobile');
     });
@@ -162,7 +166,7 @@ describe('SubscriptionStorageService', () => {
 
       expect(fs.writeFile).toHaveBeenCalled();
       expect(await service.getSubscriptionCount()).toBe(1);
-      
+
       const retrieved = await service.getSubscription('test-endpoint');
       expect(retrieved).toEqual(subscriptionData);
     });
@@ -354,7 +358,7 @@ describe('SubscriptionStorageService', () => {
 
       expect(removedCount).toBe(2);
       expect(await service.getSubscriptionCount()).toBe(1);
-      
+
       // Only the recent subscription should remain
       const remaining = await service.getAllSubscriptions();
       expect(remaining.has('recent')).toBe(true);
@@ -398,8 +402,10 @@ describe('SubscriptionStorageService', () => {
       };
 
       // Should not throw, but continue with in-memory storage
-      await expect(service.storeSubscription('test-endpoint', subscriptionData)).resolves.not.toThrow();
-      
+      await expect(
+        service.storeSubscription('test-endpoint', subscriptionData)
+      ).resolves.not.toThrow();
+
       // Should still work in memory
       expect(await service.getSubscriptionCount()).toBe(1);
     });

@@ -1,7 +1,7 @@
 /**
  * Stock Components Index
  * ======================
- * 
+ *
  * Central export point for all stock-related components
  * following the React Developer test requirements.
  */

@@ -1,11 +1,11 @@
 /**
  * Notifications Feature Stores
  * ===========================
- * 
+ *
  * Central export point for all notification-related state management.
  */
 
-export { 
+export {
   useNotificationStore,
   useNotificationPermission,
   useNotificationHistory,

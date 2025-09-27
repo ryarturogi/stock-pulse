@@ -1,30 +1,31 @@
 /**
  * Unit Tests for Stock Store (Zustand)
  * ====================================
- * 
+ *
  * Comprehensive tests for stock state management
  */
 
 // Mock the stockWebSocketService BEFORE any imports
-jest.mock('@/features/stocks/services/stockWebSocketService', () => {
-  const mockService = {
-    connectWebSocket: jest.fn().mockResolvedValue(undefined),
-    disconnectWebSocket: jest.fn(),
-    subscribeToStock: jest.fn(),
-    unsubscribeFromStock: jest.fn(),
-    resetWebSocketState: jest.fn(),
-    cleanup: jest.fn(),
-  };
-  
-  return {
-    StockWebSocketService: jest.fn().mockImplementation(() => mockService),
-  };
-});
+const mockWebSocketService = {
+  connectWebSocket: jest.fn().mockResolvedValue(undefined),
+  disconnectWebSocket: jest.fn(),
+  subscribeToStock: jest.fn(),
+  unsubscribeFromStock: jest.fn(),
+  resetWebSocketState: jest.fn(),
+  cleanup: jest.fn(),
+};
+
+jest.mock('@/features/stocks/services/stockWebSocketService', () => ({
+  StockWebSocketService: jest
+    .fn()
+    .mockImplementation(() => mockWebSocketService),
+}));
 
 // Mock the notification service
 jest.mock('@/features/notifications', () => ({
   getNotificationService: () => ({
     showNotification: jest.fn(),
+    showPriceAlert: jest.fn(),
   }),
 }));
 
@@ -55,8 +56,13 @@ describe('Stock Store', () => {
   beforeEach(() => {
     // Clear all mocks
     jest.clearAllMocks();
-    
-    // Reset store state before each test
+
+    // Reset mock service methods
+    mockWebSocketService.connectWebSocket.mockResolvedValue(undefined);
+    mockWebSocketService.disconnectWebSocket.mockClear();
+    mockWebSocketService.resetWebSocketState.mockClear();
+
+    // Manually reset store state to avoid webSocketService issues
     useStockStore.setState({
       watchedStocks: [],
       webSocketStatus: 'disconnected',
@@ -66,9 +72,10 @@ describe('Stock Store', () => {
       isLoading: false,
       error: null,
       lastUpdateTimes: new Map(),
-      refreshTimeInterval: '2m',
+      refreshTimeInterval: '30s',
       isLiveDataEnabled: true,
       connectionAttempts: 0,
+      reconnectTimeout: null,
     });
   });
 
@@ -83,7 +90,7 @@ describe('Stock Store', () => {
       expect(state.isConnecting).toBe(false);
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
-      expect(state.refreshTimeInterval).toBe('2m');
+      expect(state.refreshTimeInterval).toBe('30s');
       expect(state.isLiveDataEnabled).toBe(true);
       expect(state.connectionAttempts).toBe(0);
     });
@@ -165,8 +172,8 @@ describe('Stock Store', () => {
   describe('Stock Price Updates', () => {
     const mockQuote: FinnhubStockQuote = {
       symbol: 'AAPL',
-      current: 155.50,
-      change: 5.50,
+      current: 155.5,
+      change: 5.5,
       percentChange: 3.67,
       high: 157.0,
       low: 153.0,
@@ -192,8 +199,8 @@ describe('Stock Store', () => {
       const state = useStockStore.getState();
       const stock = state.watchedStocks[0];
 
-      expect(stock.currentPrice).toBe(155.50);
-      expect(stock.change).toBe(5.50);
+      expect(stock.currentPrice).toBe(155.5);
+      expect(stock.change).toBe(5.5);
       expect(stock.percentChange).toBe(3.67);
       expect(stock.high).toBe(157.0);
       expect(stock.low).toBe(153.0);
@@ -213,7 +220,7 @@ describe('Stock Store', () => {
       });
 
       const firstStock = useStockStore.getState().watchedStocks[0];
-      expect(firstStock.currentPrice).toBe(155.50);
+      expect(firstStock.currentPrice).toBe(155.5);
 
       // Second update within throttle window should be ignored
       act(() => {
@@ -221,7 +228,7 @@ describe('Stock Store', () => {
       });
 
       const secondStock = useStockStore.getState().watchedStocks[0];
-      expect(secondStock.currentPrice).toBe(155.50); // Should not change
+      expect(secondStock.currentPrice).toBe(155.5); // Should not change
     });
 
     it('should trigger price alert when above alert price', () => {
@@ -247,7 +254,7 @@ describe('Stock Store', () => {
         // Use mock timers to bypass throttling for this test
         const originalGetTime = Date.now;
         Date.now = jest.fn(() => baseTime + i * 600); // 600ms apart to avoid throttling
-        
+
         act(() => {
           updateStockPrice('AAPL', {
             ...mockQuote,
@@ -255,7 +262,7 @@ describe('Stock Store', () => {
             timestamp: baseTime + i * 600,
           });
         });
-        
+
         Date.now = originalGetTime;
       }
 
@@ -350,7 +357,8 @@ describe('Stock Store', () => {
     });
 
     it('should not start periodic refresh when live data is disabled', () => {
-      const { setLiveDataEnabled, startPeriodicRefresh } = useStockStore.getState();
+      const { setLiveDataEnabled, startPeriodicRefresh } =
+        useStockStore.getState();
 
       act(() => {
         setLiveDataEnabled(false);
@@ -471,8 +479,8 @@ describe('Stock Store', () => {
 
       // Simulate connection failure increment
       act(() => {
-        useStockStore.setState(prevState => ({ 
-          connectionAttempts: prevState.connectionAttempts + 1 
+        useStockStore.setState(prevState => ({
+          connectionAttempts: prevState.connectionAttempts + 1,
         }));
       });
 

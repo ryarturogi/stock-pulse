@@ -1,7 +1,7 @@
 /**
  * Unit Tests for useNotifications Hook
  * ====================================
- * 
+ *
  * Tests for the notification management custom hook
  */
 
@@ -77,7 +77,9 @@ describe('useNotifications', () => {
 
       const { result } = renderHook(() => useNotificationPermission());
 
-      expect(mockLocalStorage.getItem).toHaveBeenCalledWith('stockpulse_notifications_enabled');
+      expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
+        'stockpulse_notifications_enabled'
+      );
       expect(result.current.isEnabled).toBe(false);
     });
 
@@ -110,7 +112,9 @@ describe('useNotifications', () => {
 
       expect(result.current.permission).toBe('default');
       expect(result.current.isEnabled).toBe(true);
-      expect(mockNotificationService.getPermissionStatus).not.toHaveBeenCalled();
+      expect(
+        mockNotificationService.getPermissionStatus
+      ).not.toHaveBeenCalled();
 
       global.window = originalWindow;
     });
@@ -131,7 +135,10 @@ describe('useNotifications', () => {
       expect(permissionResult).toBe('granted');
       expect(result.current.permission).toBe('granted');
       expect(result.current.isEnabled).toBe(true);
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_notifications_enabled', 'true');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_notifications_enabled',
+        'true'
+      );
     });
 
     it('should handle denied permission', async () => {
@@ -147,7 +154,10 @@ describe('useNotifications', () => {
       expect(permissionResult).toBe('denied');
       expect(result.current.permission).toBe('denied');
       expect(result.current.isEnabled).toBe(false);
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_notifications_enabled', 'false');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_notifications_enabled',
+        'false'
+      );
     });
 
     it('should handle permission request errors', async () => {
@@ -162,14 +172,17 @@ describe('useNotifications', () => {
       });
 
       expect(permissionResult).toBe('denied');
-      expect(console.error).toHaveBeenCalledWith('Failed to request notification permission:', error);
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to request notification permission:',
+        error
+      );
     });
 
     it('should handle window undefined during permission request', async () => {
       mockNotificationService.requestPermission.mockResolvedValue('granted');
-      
+
       const originalWindow = global.window;
-      
+
       const { result } = renderHook(() => useNotificationPermission());
 
       // Remove window after hook initialization
@@ -200,7 +213,10 @@ describe('useNotifications', () => {
       });
 
       expect(result.current.isEnabled).toBe(false);
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_notifications_enabled', 'false');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_notifications_enabled',
+        'false'
+      );
     });
 
     it('should enable notifications when currently disabled and permission is granted', async () => {
@@ -217,7 +233,10 @@ describe('useNotifications', () => {
       });
 
       expect(result.current.isEnabled).toBe(true);
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_notifications_enabled', 'true');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_notifications_enabled',
+        'true'
+      );
     });
 
     it('should request permission when enabling notifications without permission', async () => {
@@ -237,7 +256,10 @@ describe('useNotifications', () => {
       expect(mockNotificationService.requestPermission).toHaveBeenCalled();
       expect(result.current.permission).toBe('granted');
       expect(result.current.isEnabled).toBe(true);
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_notifications_enabled', 'true');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_notifications_enabled',
+        'true'
+      );
     });
 
     it('should not enable notifications when permission is denied during toggle', async () => {
@@ -256,7 +278,10 @@ describe('useNotifications', () => {
       expect(mockNotificationService.requestPermission).toHaveBeenCalled();
       expect(result.current.permission).toBe('denied');
       expect(result.current.isEnabled).toBe(false);
-      expect(mockLocalStorage.setItem).not.toHaveBeenCalledWith('stockpulse_notifications_enabled', 'true');
+      expect(mockLocalStorage.setItem).not.toHaveBeenCalledWith(
+        'stockpulse_notifications_enabled',
+        'true'
+      );
     });
 
     it('should handle toggle errors gracefully', async () => {
@@ -269,12 +294,15 @@ describe('useNotifications', () => {
         await result.current.toggleNotifications();
       });
 
-      expect(console.error).toHaveBeenCalledWith('Failed to toggle notifications:', error);
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to toggle notifications:',
+        error
+      );
     });
 
     it('should handle window undefined during toggle', async () => {
       const originalWindow = global.window;
-      
+
       const { result } = renderHook(() => useNotificationPermission());
 
       // Remove window after hook initialization
@@ -297,16 +325,19 @@ describe('useNotifications', () => {
       const { result } = renderHook(() => useNotificationPermission());
 
       act(() => {
-        result.current.setEnabled();
+        result.current.setEnabled(true);
       });
 
       expect(result.current.isEnabled).toBe(true);
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_notifications_enabled', 'true');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_notifications_enabled',
+        'true'
+      );
     });
 
     it('should handle window undefined during setEnabled', () => {
       const originalWindow = global.window;
-      
+
       const { result } = renderHook(() => useNotificationPermission());
 
       // Remove window after hook initialization
@@ -314,7 +345,7 @@ describe('useNotifications', () => {
       delete global.window;
 
       act(() => {
-        result.current.setEnabled();
+        result.current.setEnabled(true);
       });
 
       expect(result.current.isEnabled).toBe(true);
@@ -326,7 +357,9 @@ describe('useNotifications', () => {
 
   describe('Function Memoization', () => {
     it('should memoize functions with useCallback', () => {
-      const { result, rerender } = renderHook(() => useNotificationPermission());
+      const { result, rerender } = renderHook(() =>
+        useNotificationPermission()
+      );
 
       const originalFunctions = {
         requestPermission: result.current.requestPermission,
@@ -337,8 +370,12 @@ describe('useNotifications', () => {
       // Force re-render
       rerender();
 
-      expect(result.current.requestPermission).toBe(originalFunctions.requestPermission);
-      expect(result.current.toggleNotifications).toBe(originalFunctions.toggleNotifications);
+      expect(result.current.requestPermission).toBe(
+        originalFunctions.requestPermission
+      );
+      expect(result.current.toggleNotifications).toBe(
+        originalFunctions.toggleNotifications
+      );
       expect(result.current.setEnabled).toBe(originalFunctions.setEnabled);
     });
 
@@ -349,7 +386,7 @@ describe('useNotifications', () => {
 
       // Change state that affects toggleNotifications dependencies
       act(() => {
-        result.current.setEnabled();
+        result.current.setEnabled(true);
       });
 
       // Function should still be the same reference due to useCallback
@@ -373,9 +410,11 @@ describe('useNotifications', () => {
 
     it('should handle permission changes during toggles', async () => {
       mockNotificationService.getPermissionStatus.mockReturnValue('default');
-      
+
       // First toggle should request permission and get granted
-      mockNotificationService.requestPermission.mockResolvedValueOnce('granted');
+      mockNotificationService.requestPermission.mockResolvedValueOnce(
+        'granted'
+      );
 
       const { result } = renderHook(() => useNotificationPermission());
 
@@ -421,7 +460,7 @@ describe('useNotifications', () => {
 
       // Set enabled directly
       act(() => {
-        result.current.setEnabled();
+        result.current.setEnabled(true);
       });
 
       expect(result.current.isEnabled).toBe(true);
@@ -467,7 +506,7 @@ describe('useNotifications', () => {
 
       // Should not crash
       act(() => {
-        result.current.setEnabled();
+        result.current.setEnabled(true);
       });
 
       expect(result.current.isEnabled).toBe(true);
@@ -487,7 +526,9 @@ describe('useNotifications', () => {
 
   describe('Performance', () => {
     it('should not cause unnecessary re-renders', () => {
-      const { result, rerender } = renderHook(() => useNotificationPermission());
+      const { result, rerender } = renderHook(() =>
+        useNotificationPermission()
+      );
 
       const initialFunctions = {
         requestPermission: result.current.requestPermission,
@@ -500,8 +541,12 @@ describe('useNotifications', () => {
       rerender();
       rerender();
 
-      expect(result.current.requestPermission).toBe(initialFunctions.requestPermission);
-      expect(result.current.toggleNotifications).toBe(initialFunctions.toggleNotifications);
+      expect(result.current.requestPermission).toBe(
+        initialFunctions.requestPermission
+      );
+      expect(result.current.toggleNotifications).toBe(
+        initialFunctions.toggleNotifications
+      );
       expect(result.current.setEnabled).toBe(initialFunctions.setEnabled);
     });
   });

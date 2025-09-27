@@ -28,13 +28,13 @@ interface ApiHealthCheck {
 
 /**
  * Health check endpoint for monitoring and load balancer
- * 
+ *
  * @param request - The incoming request
  * @returns JSON response with health status
  */
 export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
   const startTime = Date.now();
-  
+
   try {
     // Basic health checks
     const checks = {
@@ -52,7 +52,7 @@ export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
 
     // Database connectivity check (if applicable)
     // const dbHealth = await checkDatabaseConnection();
-    
+
     // External API health checks
     const externalApis = {
       finnhub: await checkApiHealth('https://finnhub.io/api/v1/'),
@@ -74,27 +74,26 @@ export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
       status: 200,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
+        Pragma: 'no-cache',
+        Expires: '0',
       },
     });
-
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    
+
     const errorResponse: HealthCheckResponse = {
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
       responseTime: `${responseTime}ms`,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
-    
+
     return NextResponse.json<HealthCheckResponse>(errorResponse, {
       status: 503,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
+        Pragma: 'no-cache',
+        Expires: '0',
       },
     });
   }
@@ -105,7 +104,7 @@ export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
  */
 async function checkApiHealth(baseUrl: string): Promise<ApiHealthCheck> {
   const startTime = Date.now();
-  
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
@@ -124,7 +123,7 @@ async function checkApiHealth(baseUrl: string): Promise<ApiHealthCheck> {
     };
   } catch {
     const responseTime = Date.now() - startTime;
-    
+
     return {
       status: 'unhealthy',
       responseTime: `${responseTime}ms`,

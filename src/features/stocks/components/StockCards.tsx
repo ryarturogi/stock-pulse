@@ -22,18 +22,15 @@ import { StockCard } from './StockCard';
  * Displays a grid of stock cards with responsive layout.
  * Shows empty state when no stocks are being watched.
  */
-export const StockCards: React.FC<StockCardsProps & { 
-  'data-intro'?: string;
-  'data-title'?: string;
-  'data-step'?: string;
-  'data-desktop-step'?: string;
-  'data-mobile-step'?: string;
-}> = ({
-  stocks,
-  onRemoveStock,
-  className = '',
-  ...props
-}) => {
+export const StockCards: React.FC<
+  StockCardsProps & {
+    'data-intro'?: string;
+    'data-title'?: string;
+    'data-step'?: string;
+    'data-desktop-step'?: string;
+    'data-mobile-step'?: string;
+  }
+> = ({ stocks, onRemoveStock, className = '', ...props }) => {
   // Empty state when no stocks
   if (stocks.length === 0) {
     return (
@@ -42,12 +39,10 @@ export const StockCards: React.FC<StockCardsProps & {
         {...props}
       >
         <TrendingUp className='mx-auto mb-4 w-16 h-16 text-gray-400' />
-        <h3
-          className="mb-2 text-lg font-semibold text-gray-900 dark:text-white"
-        >
+        <h3 className='mb-2 text-lg font-semibold text-gray-900 dark:text-white'>
           No stocks being watched
         </h3>
-        <p className="text-gray-500 dark:text-gray-300">
+        <p className='text-gray-500 dark:text-gray-300'>
           Add a stock from the sidebar to get started with real-time tracking
         </p>
       </div>
@@ -60,9 +55,9 @@ export const StockCards: React.FC<StockCardsProps & {
       {...props}
     >
       {stocks.map(stock => (
-        <StockCard 
-          key={`${stock.id}-${stock.lastUpdated || 0}`} 
-          stock={stock} 
+        <StockCard
+          key={`${stock.id}-${stock.lastUpdated || 0}`}
+          stock={stock}
           onRemove={onRemoveStock}
         />
       ))}

@@ -63,16 +63,16 @@ export const SlideOutSidebar: React.FC<SlideOutSidebarProps> = ({
       {/* Overlay - only visible on mobile/tablet */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className='fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden'
           onClick={onClose}
-          onKeyDown={(e) => {
+          onKeyDown={e => {
             if (e.key === 'Escape') {
               onClose();
             }
           }}
-          role="button"
+          role='button'
           tabIndex={0}
-          aria-label="Close sidebar"
+          aria-label='Close sidebar'
         />
       )}
 
@@ -89,25 +89,22 @@ export const SlideOutSidebar: React.FC<SlideOutSidebarProps> = ({
         {...props}
       >
         {/* Close button - only visible on mobile/tablet */}
-        <div className="flex justify-end p-4 lg:hidden">
+        <div className='flex justify-end p-4 lg:hidden'>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Close sidebar"
-            data-tour="close-sidebar"
+            className='p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
+            aria-label='Close sidebar'
+            data-tour='close-sidebar'
           >
-            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <X className='w-5 h-5 text-gray-500 dark:text-gray-400' />
           </button>
         </div>
 
         {/* Sidebar content */}
-        <div className="h-full overflow-y-auto">
-          {children}
-        </div>
+        <div className='h-full overflow-y-auto'>{children}</div>
       </div>
     </>
   );
 };
 
 export default SlideOutSidebar;
-

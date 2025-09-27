@@ -1,6 +1,7 @@
 # StockPulse Testing Guide
 
-This document outlines the comprehensive testing strategy, guidelines, and review process for the StockPulse application.
+This document outlines the comprehensive testing strategy, guidelines, and review process for the
+StockPulse application.
 
 ## 🎯 Testing Philosophy
 
@@ -31,14 +32,14 @@ Our testing approach is built on these core principles:
 
 ### Test Types and Tools
 
-| Test Type | Tool | Purpose | Examples |
-|-----------|------|---------|----------|
-| Unit | Jest + RTL | Component logic, utilities | Button rendering, utility functions |
-| Integration | Jest + RTL | Component interactions | Form submission, API integration |
-| E2E | Playwright | User workflows | Portfolio management, stock search |
-| Visual | Playwright | UI consistency | Component screenshots |
-| Accessibility | Jest + jest-axe | A11y compliance | Screen reader support |
-| Performance | Lighthouse CI | Core Web Vitals | Page load times, metrics |
+| Test Type     | Tool            | Purpose                    | Examples                            |
+| ------------- | --------------- | -------------------------- | ----------------------------------- |
+| Unit          | Jest + RTL      | Component logic, utilities | Button rendering, utility functions |
+| Integration   | Jest + RTL      | Component interactions     | Form submission, API integration    |
+| E2E           | Playwright      | User workflows             | Portfolio management, stock search  |
+| Visual        | Playwright      | UI consistency             | Component screenshots               |
+| Accessibility | Jest + jest-axe | A11y compliance            | Screen reader support               |
+| Performance   | Lighthouse CI   | Core Web Vitals            | Page load times, metrics            |
 
 ## 🧪 Testing Standards
 
@@ -82,7 +83,7 @@ describe('ComponentName', () => {
     it('handles click events', async () => {
       const handleClick = jest.fn();
       renderComponent({ onClick: handleClick });
-      
+
       await user.click(screen.getByRole('button'));
       expect(handleClick).toHaveBeenCalledTimes(1);
     });
@@ -99,10 +100,10 @@ describe('ComponentName', () => {
     it('supports keyboard navigation', async () => {
       renderComponent();
       const button = screen.getByRole('button');
-      
+
       button.focus();
       expect(button).toHaveFocus();
-      
+
       await user.keyboard('{Enter}');
       // Assert expected behavior
     });
@@ -130,7 +131,7 @@ describe('useStock', () => {
 
   it('fetches stock data successfully', async () => {
     mockApiResponse({ price: 150.50, symbol: 'AAPL' });
-    
+
     const { result, waitForNextUpdate } = renderHook(
       () => useStock('AAPL'),
       { wrapper }
@@ -148,7 +149,7 @@ describe('useStock', () => {
 
   it('handles API errors gracefully', async () => {
     mockApiError('Network error');
-    
+
     const { result, waitForNextUpdate } = renderHook(
       () => useStock('INVALID'),
       { wrapper }
@@ -185,12 +186,14 @@ describe('StockService Integration', () => {
     // Mock API response
     server.use(
       rest.get('/api/quote/AAPL', (req, res, ctx) => {
-        return res(ctx.json({
-          c: 150.50,
-          h: 155.00,
-          l: 148.00,
-          // ... other fields
-        }));
+        return res(
+          ctx.json({
+            c: 150.5,
+            h: 155.0,
+            l: 148.0,
+            // ... other fields
+          })
+        );
       })
     );
 
@@ -199,9 +202,9 @@ describe('StockService Integration', () => {
 
     expect(quote).toEqual({
       symbol: 'AAPL',
-      price: 150.50,
-      high: 155.00,
-      low: 148.00,
+      price: 150.5,
+      high: 155.0,
+      low: 148.0,
       // ... transformed fields
     });
   });
@@ -234,13 +237,13 @@ describe('PortfolioPage Integration', () => {
 
     // Test adding new stock
     await user.click(screen.getByText('Add Stock'));
-    
+
     const symbolInput = screen.getByLabelText('Stock Symbol');
     await user.type(symbolInput, 'MSFT');
-    
+
     const sharesInput = screen.getByLabelText('Shares');
     await user.type(sharesInput, '5');
-    
+
     await user.click(screen.getByText('Add to Portfolio'));
 
     // Verify new stock is added
@@ -270,19 +273,19 @@ test.describe('Portfolio Management', () => {
   test('user can add stock to portfolio', async ({ page }) => {
     // Click add stock button
     await page.click('[data-testid="add-stock-button"]');
-    
+
     // Fill out the form
     await page.fill('[data-testid="symbol-input"]', 'AAPL');
     await page.fill('[data-testid="shares-input"]', '10');
     await page.fill('[data-testid="price-input"]', '150.00');
-    
+
     // Submit the form
     await page.click('[data-testid="submit-button"]');
-    
+
     // Verify the stock appears in portfolio
     await expect(page.locator('[data-testid="portfolio-holding"]')).toContainText('AAPL');
     await expect(page.locator('[data-testid="portfolio-holding"]')).toContainText('10 shares');
-    
+
     // Verify portfolio value updated
     await expect(page.locator('[data-testid="total-value"]')).toContainText('$1,500.00');
   });
@@ -290,10 +293,10 @@ test.describe('Portfolio Management', () => {
   test('user can remove stock from portfolio', async ({ page }) => {
     // Assuming stock exists, click remove button
     await page.click('[data-testid="remove-stock-AAPL"]');
-    
+
     // Confirm removal in modal
     await page.click('[data-testid="confirm-remove"]');
-    
+
     // Verify stock is removed
     await expect(page.locator('[data-testid="portfolio-holding"]')).not.toContainText('AAPL');
   });
@@ -303,13 +306,13 @@ test.describe('Portfolio Management', () => {
     await page.route('**/ws', route => {
       // Mock WebSocket data
     });
-    
+
     // Verify price updates
     await expect(page.locator('[data-testid="stock-price-AAPL"]')).toContainText('$150.50');
-    
+
     // Simulate price change
     // ... mock WebSocket message
-    
+
     // Verify UI updates
     await expect(page.locator('[data-testid="stock-price-AAPL"]')).toContainText('$151.25');
   });
@@ -323,14 +326,14 @@ test.describe('Portfolio Management', () => {
 test('portfolio page visual consistency', async ({ page }) => {
   await page.goto('/portfolio');
   await page.waitForLoadState('networkidle');
-  
+
   // Take full page screenshot
   await expect(page).toHaveScreenshot('portfolio-page.png');
-  
+
   // Test responsive design
   await page.setViewportSize({ width: 768, height: 1024 });
   await expect(page).toHaveScreenshot('portfolio-page-tablet.png');
-  
+
   await page.setViewportSize({ width: 375, height: 667 });
   await expect(page).toHaveScreenshot('portfolio-page-mobile.png');
 });
@@ -346,12 +349,12 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
-  
+
   // Module name mapping for path aliases
   moduleNameMapping: {
     '^@/(.*)$': '<rootDir>/$1',
   },
-  
+
   // Coverage configuration
   collectCoverageFrom: [
     'app/**/*.{ts,tsx}',
@@ -361,7 +364,7 @@ const config: Config = {
     '!**/*.d.ts',
     '!**/node_modules/**',
   ],
-  
+
   // Coverage thresholds
   coverageThreshold: {
     global: {
@@ -371,12 +374,9 @@ const config: Config = {
       statements: 80,
     },
   },
-  
+
   // Test match patterns
-  testMatch: [
-    '**/__tests__/**/*.(ts|tsx)',
-    '**/*.(test|spec).(ts|tsx)',
-  ],
+  testMatch: ['**/__tests__/**/*.(ts|tsx)', '**/*.(test|spec).(ts|tsx)'],
 };
 ```
 
@@ -436,7 +436,7 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
 export const mockStockQuote = {
   symbol: 'AAPL',
   name: 'Apple Inc.',
-  price: 150.50,
+  price: 150.5,
   change: 2.25,
   changePercent: 1.52,
   volume: 50000000,
@@ -446,18 +446,18 @@ export const mockStockQuote = {
 export const mockPortfolio = {
   id: '1',
   name: 'My Portfolio',
-  totalValue: 15050.00,
-  totalGainLoss: 550.00,
+  totalValue: 15050.0,
+  totalGainLoss: 550.0,
   totalGainLossPercent: 3.79,
   holdings: [
     {
       id: '1',
       symbol: 'AAPL',
       shares: 100,
-      averageCost: 145.00,
-      currentPrice: 150.50,
-      totalValue: 15050.00,
-      totalGainLoss: 550.00,
+      averageCost: 145.0,
+      currentPrice: 150.5,
+      totalValue: 15050.0,
+      totalGainLoss: 550.0,
       totalGainLossPercent: 3.79,
     },
   ],
@@ -476,11 +476,11 @@ export const handlers = [
       })
     );
   }),
-  
+
   rest.get('/api/portfolio', (req, res, ctx) => {
     return res(ctx.json(mockPortfolio));
   }),
-  
+
   rest.post('/api/portfolio/holdings', (req, res, ctx) => {
     return res(ctx.status(201), ctx.json({ success: true }));
   }),
@@ -492,11 +492,11 @@ export const handlers = [
 ### Coverage Requirements
 
 | Component Type | Line Coverage | Branch Coverage | Function Coverage |
-|----------------|---------------|-----------------|-------------------|
-| UI Components | 90%+ | 85%+ | 95%+ |
-| Hooks | 95%+ | 90%+ | 100% |
-| Services | 90%+ | 85%+ | 95%+ |
-| Utilities | 95%+ | 90%+ 100% |
+| -------------- | ------------- | --------------- | ----------------- |
+| UI Components  | 90%+          | 85%+            | 95%+              |
+| Hooks          | 95%+          | 90%+            | 100%              |
+| Services       | 90%+          | 85%+            | 95%+              |
+| Utilities      | 95%+          | 90%+ 100%       |
 
 ### Quality Gates
 
@@ -515,27 +515,27 @@ Before code can be merged, it must pass:
 describe('Performance Tests', () => {
   it('renders large portfolio within performance budget', async () => {
     const largePortfolio = generateMockPortfolio(1000); // 1000 holdings
-    
+
     const startTime = performance.now();
     render(<PortfolioPage portfolio={largePortfolio} />);
     const renderTime = performance.now() - startTime;
-    
+
     // Should render within 100ms
     expect(renderTime).toBeLessThan(100);
   });
-  
+
   it('handles rapid price updates efficiently', async () => {
     const { rerender } = render(<StockCard {...mockProps} />);
-    
+
     const updates = Array.from({ length: 100 }, (_, i) => ({
       ...mockProps,
       price: 150 + i * 0.1,
     }));
-    
+
     const startTime = performance.now();
     updates.forEach(props => rerender(<StockCard {...props} />));
     const updateTime = performance.now() - startTime;
-    
+
     // Should handle 100 updates within 50ms
     expect(updateTime).toBeLessThan(50);
   });
@@ -554,39 +554,39 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Run type checking
         run: pnpm run type-check
-        
+
       - name: Run linting
         run: pnpm run lint
-        
+
       - name: Run unit tests
         run: pnpm run test:coverage
-        
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
-        
+
       - name: Build application
         run: pnpm run build
-        
+
       - name: Run E2E tests
         run: pnpm run test:e2e
-        
+
       - name: Run accessibility tests
         run: pnpm run test:a11y
-        
+
       - name: Performance audit
         run: pnpm run lighthouse:ci
 ```
@@ -598,30 +598,35 @@ jobs:
 When reviewing code changes, ensure:
 
 #### Test Coverage
+
 - [ ] New features have comprehensive test coverage
 - [ ] Edge cases and error conditions are tested
 - [ ] Tests are readable and maintainable
 - [ ] Mock data is realistic and comprehensive
 
 #### Test Quality
+
 - [ ] Tests focus on behavior, not implementation
 - [ ] Assertions are specific and meaningful
 - [ ] Test names clearly describe what is being tested
 - [ ] Tests are isolated and don't depend on external state
 
 #### Accessibility
+
 - [ ] Components are tested with screen readers
 - [ ] Keyboard navigation is verified
 - [ ] Color contrast and visual indicators are tested
 - [ ] ARIA attributes are properly implemented
 
 #### Performance
+
 - [ ] Large datasets are tested
 - [ ] Memory leaks are prevented
 - [ ] Render performance is verified
 - [ ] API call efficiency is tested
 
 #### E2E Coverage
+
 - [ ] Critical user paths are covered
 - [ ] Cross-browser compatibility is verified
 - [ ] Mobile responsiveness is tested
@@ -680,7 +685,7 @@ export const mockApiError = (message: string, status = 500) => {
 export const createMockStock = (overrides: Partial<StockQuote> = {}): StockQuote => ({
   symbol: 'AAPL',
   name: 'Apple Inc.',
-  price: 150.50,
+  price: 150.5,
   change: 2.25,
   changePercent: 1.52,
   volume: 50000000,
@@ -691,8 +696,8 @@ export const createMockStock = (overrides: Partial<StockQuote> = {}): StockQuote
 export const createMockPortfolio = (overrides: Partial<Portfolio> = {}): Portfolio => ({
   id: '1',
   name: 'Test Portfolio',
-  totalValue: 15050.00,
-  totalGainLoss: 550.00,
+  totalValue: 15050.0,
+  totalGainLoss: 550.0,
   totalGainLossPercent: 3.79,
   holdings: [createMockHolding()],
   createdAt: new Date().toISOString(),
@@ -706,6 +711,7 @@ export const createMockPortfolio = (overrides: Partial<Portfolio> = {}): Portfol
 ### Testing Metrics Dashboard
 
 Track and monitor:
+
 - Test execution time trends
 - Coverage percentage over time
 - Flaky test identification
@@ -715,10 +721,12 @@ Track and monitor:
 ### Regular Testing Reviews
 
 Monthly reviews should cover:
+
 - Test suite performance optimization
 - Coverage gaps identification
 - Flaky test investigation
 - Tool and framework updates
 - Testing strategy refinements
 
-This comprehensive testing strategy ensures high-quality, reliable, and maintainable code while providing confidence in the application's functionality and user experience.
+This comprehensive testing strategy ensures high-quality, reliable, and maintainable code while
+providing confidence in the application's functionality and user experience.

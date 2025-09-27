@@ -1,7 +1,7 @@
 /**
  * Unit Tests for Push Subscription API Route
  * ==========================================
- * 
+ *
  * Tests for the push subscription endpoint (no VAPID required)
  */
 
@@ -14,8 +14,8 @@ const mockSubscription = {
   endpoint: 'https://fcm.googleapis.com/fcm/send/test-endpoint',
   keys: {
     p256dh: 'test-p256dh-key',
-    auth: 'test-auth-key'
-  }
+    auth: 'test-auth-key',
+  },
 };
 
 describe('/api/push/subscribe', () => {
@@ -23,7 +23,7 @@ describe('/api/push/subscribe', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset environment
     process.env = {
       ...originalEnv,
@@ -54,19 +54,23 @@ describe('/api/push/subscribe', () => {
     it('should successfully store a push subscription', async () => {
       const requestBody = {
         subscription: mockSubscription,
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         deviceType: 'desktop',
         browserType: 'desktop-chrome',
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/subscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/subscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -87,13 +91,16 @@ describe('/api/push/subscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/subscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/subscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -105,19 +112,23 @@ describe('/api/push/subscribe', () => {
     it('should handle Android device subscriptions', async () => {
       const requestBody = {
         subscription: mockSubscription,
-        userAgent: 'Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36',
+        userAgent:
+          'Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36',
         deviceType: 'mobile',
         browserType: 'android-chrome',
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/subscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/subscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -133,13 +144,16 @@ describe('/api/push/subscribe', () => {
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/subscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/subscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -157,20 +171,23 @@ describe('/api/push/subscribe', () => {
         subscription: {
           keys: {
             p256dh: 'test-p256dh-key',
-            auth: 'test-auth-key'
-          }
+            auth: 'test-auth-key',
+          },
         },
         userAgent: 'Chrome/100.0',
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/subscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/subscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -187,13 +204,16 @@ describe('/api/push/subscribe', () => {
         // Missing deviceType and browserType
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/subscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/subscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -203,13 +223,16 @@ describe('/api/push/subscribe', () => {
     });
 
     it('should handle malformed JSON', async () => {
-      const request = new NextRequest('http://localhost:3000/api/push/subscribe', {
-        method: 'POST',
-        body: 'invalid json',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/subscribe',
+        {
+          method: 'POST',
+          body: 'invalid json',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -219,12 +242,15 @@ describe('/api/push/subscribe', () => {
     });
 
     it('should handle missing request body', async () => {
-      const request = new NextRequest('http://localhost:3000/api/push/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/subscribe',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -246,19 +272,23 @@ describe('/api/push/subscribe', () => {
 
       const requestBody = {
         subscription: mockSubscription,
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         deviceType: 'desktop',
         browserType: 'desktop-chrome',
         timestamp: Date.now(),
       };
 
-      const request = new NextRequest('http://localhost:3000/api/push/subscribe', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/push/subscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify(requestBody),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -292,42 +322,48 @@ describe('/api/push/subscribe', () => {
 
       const subscription1 = {
         ...mockSubscription,
-        endpoint: 'https://fcm.googleapis.com/fcm/send/endpoint1'
+        endpoint: 'https://fcm.googleapis.com/fcm/send/endpoint1',
       };
-      
+
       const subscription2 = {
         ...mockSubscription,
-        endpoint: 'https://fcm.googleapis.com/fcm/send/endpoint2'
+        endpoint: 'https://fcm.googleapis.com/fcm/send/endpoint2',
       };
 
       // First subscription
-      const request1 = new NextRequest('http://localhost:3000/api/push/subscribe', {
-        method: 'POST',
-        body: JSON.stringify({
-          subscription: subscription1,
-          userAgent: 'Chrome/100.0',
-          deviceType: 'desktop',
-          browserType: 'desktop-chrome',
-          timestamp: Date.now(),
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request1 = new NextRequest(
+        'http://localhost:3000/api/push/subscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            subscription: subscription1,
+            userAgent: 'Chrome/100.0',
+            deviceType: 'desktop',
+            browserType: 'desktop-chrome',
+            timestamp: Date.now(),
+          }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response1 = await POST(request1);
       expect(response1.status).toBe(200);
 
       // Second subscription
-      const request2 = new NextRequest('http://localhost:3000/api/push/subscribe', {
-        method: 'POST',
-        body: JSON.stringify({
-          subscription: subscription2,
-          userAgent: 'Safari/100.0',
-          deviceType: 'mobile',
-          browserType: 'ios-safari',
-          timestamp: Date.now(),
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request2 = new NextRequest(
+        'http://localhost:3000/api/push/subscribe',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            subscription: subscription2,
+            userAgent: 'Safari/100.0',
+            deviceType: 'mobile',
+            browserType: 'ios-safari',
+            timestamp: Date.now(),
+          }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response2 = await POST(request2);
       expect(response2.status).toBe(200);

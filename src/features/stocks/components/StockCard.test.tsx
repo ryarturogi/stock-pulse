@@ -1,7 +1,7 @@
 /**
  * Unit Tests for StockCard Component
  * ==================================
- * 
+ *
  * Tests for stock card display and interactions
  */
 
@@ -27,8 +27,8 @@ describe('StockCard', () => {
     symbol: 'AAPL',
     name: 'Apple Inc.',
     alertPrice: 150.0,
-    currentPrice: 155.50,
-    change: 5.50,
+    currentPrice: 155.5,
+    change: 5.5,
     percentChange: 3.67,
     high: 157.0,
     low: 153.0,
@@ -38,7 +38,7 @@ describe('StockCard', () => {
     lastUpdated: Date.now(),
     priceHistory: [
       { time: Date.now() - 1000, price: 154.0 },
-      { time: Date.now(), price: 155.50 },
+      { time: Date.now(), price: 155.5 },
     ],
   };
 
@@ -103,7 +103,7 @@ describe('StockCard', () => {
     it('should show negative change in red', () => {
       const negativeStock = {
         ...mockStock,
-        change: -2.50,
+        change: -2.5,
         changePercent: -1.61,
         percentChange: -1.61,
       };
@@ -114,7 +114,8 @@ describe('StockCard', () => {
     });
 
     it('should handle missing price data gracefully', () => {
-      const { currentPrice, change, percentChange, ...stockWithoutPrices } = mockStock;
+      const { currentPrice, change, percentChange, ...stockWithoutPrices } =
+        mockStock;
       const incompleteStock: WatchedStock = stockWithoutPrices;
       render(<StockCard stock={incompleteStock} onRemove={mockOnRemove} />);
 
@@ -146,7 +147,9 @@ describe('StockCard', () => {
     });
 
     it('should show correct border color based on alert status', () => {
-      const { container } = render(<StockCard stock={mockStock} onRemove={mockOnRemove} />);
+      const { container } = render(
+        <StockCard stock={mockStock} onRemove={mockOnRemove} />
+      );
 
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('border-green-500');
@@ -280,11 +283,14 @@ describe('StockCard', () => {
         ...mockStock,
         lastUpdated: Date.now() - 500, // 500ms ago
       };
-      render(<StockCard stock={recentlyUpdatedStock} onRemove={mockOnRemove} />);
+      render(
+        <StockCard stock={recentlyUpdatedStock} onRemove={mockOnRemove} />
+      );
 
       // Should have ring effect for just updated
-      const card = screen.getByRole('article') || 
-                   document.querySelector('[class*="ring-2"]');
+      const card =
+        screen.getByRole('article') ||
+        document.querySelector('[class*="ring-2"]');
       expect(card).toBeTruthy();
     });
 
@@ -349,7 +355,9 @@ describe('StockCard', () => {
 
   describe('Dark Mode', () => {
     it('should apply dark mode classes', () => {
-      const { container } = render(<StockCard stock={mockStock} onRemove={mockOnRemove} />);
+      const { container } = render(
+        <StockCard stock={mockStock} onRemove={mockOnRemove} />
+      );
 
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('dark:bg-gray-800');
@@ -358,7 +366,9 @@ describe('StockCard', () => {
 
   describe('Responsive Design', () => {
     it('should have responsive classes for different screen sizes', () => {
-      const { container } = render(<StockCard stock={mockStock} onRemove={mockOnRemove} />);
+      const { container } = render(
+        <StockCard stock={mockStock} onRemove={mockOnRemove} />
+      );
 
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('p-4', 'lg:p-6');

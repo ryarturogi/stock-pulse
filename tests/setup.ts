@@ -25,16 +25,25 @@ if (typeof document !== 'undefined') {
 
   // Patch document.documentElement
   if (document.documentElement) {
-    document.documentElement.appendChild = originalAppendChild.bind(document.documentElement);
-    document.documentElement.removeChild = originalRemoveChild.bind(document.documentElement);
-    document.documentElement.insertBefore = originalInsertBefore.bind(document.documentElement);
+    document.documentElement.appendChild = originalAppendChild.bind(
+      document.documentElement
+    );
+    document.documentElement.removeChild = originalRemoveChild.bind(
+      document.documentElement
+    );
+    document.documentElement.insertBefore = originalInsertBefore.bind(
+      document.documentElement
+    );
   }
 
   // Patch document.createElement to ensure created elements have methods
   const originalCreateElement = document.createElement.bind(document);
-  document.createElement = function(tagName: string, options?: ElementCreationOptions) {
+  document.createElement = function (
+    tagName: string,
+    options?: ElementCreationOptions
+  ) {
     const element = originalCreateElement(tagName, options);
-    
+
     if (!element.appendChild) {
       element.appendChild = originalAppendChild.bind(element);
     }
@@ -44,7 +53,7 @@ if (typeof document !== 'undefined') {
     if (!element.insertBefore) {
       element.insertBefore = originalInsertBefore.bind(element);
     }
-    
+
     return element;
   };
 }
@@ -101,7 +110,7 @@ Object.defineProperty(navigator, 'serviceWorker', {
 // Mock window.crypto for React 19
 Object.defineProperty(window, 'crypto', {
   value: {
-    getRandomValues: jest.fn().mockImplementation((arr) => {
+    getRandomValues: jest.fn().mockImplementation(arr => {
       for (let i = 0; i < arr.length; i++) {
         arr[i] = Math.floor(Math.random() * 256);
       }
@@ -112,7 +121,7 @@ Object.defineProperty(window, 'crypto', {
 });
 
 // Mock RequestIdleCallback for React 19 concurrent features
-global.requestIdleCallback = jest.fn().mockImplementation((callback) => {
+global.requestIdleCallback = jest.fn().mockImplementation(callback => {
   return setTimeout(() => {
     callback({
       didTimeout: false,
@@ -121,7 +130,7 @@ global.requestIdleCallback = jest.fn().mockImplementation((callback) => {
   }, 0);
 });
 
-global.cancelIdleCallback = jest.fn().mockImplementation((id) => {
+global.cancelIdleCallback = jest.fn().mockImplementation(id => {
   clearTimeout(id);
 });
 
@@ -133,11 +142,10 @@ beforeAll(() => {
   console.error = (...args: any[]) => {
     const message = args[0];
     if (
-      typeof message === 'string' && (
-        message.includes('Warning: ReactDOM.render is no longer supported') ||
+      typeof message === 'string' &&
+      (message.includes('Warning: ReactDOM.render is no longer supported') ||
         message.includes('Warning: React.createFactory() is deprecated') ||
-        message.includes('Warning: componentWillReceiveProps has been renamed')
-      )
+        message.includes('Warning: componentWillReceiveProps has been renamed'))
     ) {
       return;
     }
@@ -147,10 +155,9 @@ beforeAll(() => {
   console.warn = (...args: any[]) => {
     const message = args[0];
     if (
-      typeof message === 'string' && (
-        message.includes('React Router Future Flag Warning') ||
-        message.includes('Async rendering in React 19')
-      )
+      typeof message === 'string' &&
+      (message.includes('React Router Future Flag Warning') ||
+        message.includes('Async rendering in React 19'))
     ) {
       return;
     }
@@ -167,18 +174,32 @@ afterAll(() => {
 // Only define if they don't exist (allow tests to override)
 if (typeof global.Request === 'undefined') {
   global.Request = class Request {
-    constructor(public url: string, public init?: any) {}
-    async json() { return this.init?.body ? JSON.parse(this.init.body) : {}; }
-    async text() { return this.init?.body || ''; }
+    constructor(
+      public url: string,
+      public init?: any
+    ) {}
+    async json() {
+      return this.init?.body ? JSON.parse(this.init.body) : {};
+    }
+    async text() {
+      return this.init?.body || '';
+    }
   } as any;
 }
 
 if (typeof global.Response === 'undefined') {
   global.Response = class Response {
-    constructor(public body?: any, public init?: any) {}
-    get status() { return this.init?.status || 200; }
-    get ok() { return this.status >= 200 && this.status < 300; }
-    async json() { 
+    constructor(
+      public body?: any,
+      public init?: any
+    ) {}
+    get status() {
+      return this.init?.status || 200;
+    }
+    get ok() {
+      return this.status >= 200 && this.status < 300;
+    }
+    async json() {
       if (typeof this.body === 'string') {
         try {
           return JSON.parse(this.body);
@@ -186,25 +207,31 @@ if (typeof global.Response === 'undefined') {
           return this.body;
         }
       }
-      return this.body; 
+      return this.body;
     }
-    async text() { return typeof this.body === 'string' ? this.body : JSON.stringify(this.body); }
-    get headers() { 
+    async text() {
+      return typeof this.body === 'string'
+        ? this.body
+        : JSON.stringify(this.body);
+    }
+    get headers() {
       const headers = new Headers(this.init?.headers || {});
       headers.get = (name: string): string | null => {
         const entries = Object.entries(this.init?.headers || {});
-        const entry = entries.find(([key]) => key.toLowerCase() === name.toLowerCase());
+        const entry = entries.find(
+          ([key]) => key.toLowerCase() === name.toLowerCase()
+        );
         return entry ? String(entry[1]) : null;
       };
       return headers;
     }
-    
+
     // Add static json method for NextResponse compatibility
     static json(data: any, init?: ResponseInit) {
       const body = JSON.stringify(data);
       const headers = {
         'content-type': 'application/json',
-        ...(init?.headers || {})
+        ...(init?.headers || {}),
       };
       return new Response(body, { ...init, headers });
     }
@@ -270,11 +297,19 @@ if (typeof global.Headers === 'undefined') {
         }
       }
     }
-    get(name: string) { return this.headers[name.toLowerCase()] || null; }
-    set(name: string, value: string) { this.headers[name.toLowerCase()] = value; }
-    has(name: string) { return name.toLowerCase() in this.headers; }
+    get(name: string) {
+      return this.headers[name.toLowerCase()] || null;
+    }
+    set(name: string, value: string) {
+      this.headers[name.toLowerCase()] = value;
+    }
+    has(name: string) {
+      return name.toLowerCase() in this.headers;
+    }
     forEach(callback: (value: string, key: string) => void) {
-      Object.entries(this.headers).forEach(([key, value]) => callback(value, key));
+      Object.entries(this.headers).forEach(([key, value]) =>
+        callback(value, key)
+      );
     }
   } as any;
 }
@@ -296,13 +331,22 @@ if (typeof global.URLSearchParams === 'undefined') {
       if (init) {
         init.split('&').forEach(pair => {
           const [key, value] = pair.split('=');
-          if (key) this.params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+          if (key)
+            this.params[decodeURIComponent(key)] = decodeURIComponent(
+              value || ''
+            );
         });
       }
     }
-    get(name: string) { return this.params[name] || null; }
-    set(name: string, value: string) { this.params[name] = value; }
-    has(name: string) { return name in this.params; }
+    get(name: string) {
+      return this.params[name] || null;
+    }
+    set(name: string, value: string) {
+      this.params[name] = value;
+    }
+    has(name: string) {
+      return name in this.params;
+    }
   } as any;
 }
 
@@ -319,11 +363,11 @@ if (typeof global.TextEncoder === 'undefined') {
 if (typeof global.AbortController === 'undefined') {
   global.AbortController = class AbortController {
     public signal: AbortSignal;
-    
+
     constructor() {
       this.signal = new AbortSignal();
     }
-    
+
     abort() {
       (this.signal as any).aborted = true;
     }
@@ -333,7 +377,7 @@ if (typeof global.AbortController === 'undefined') {
 if (typeof global.AbortSignal === 'undefined') {
   global.AbortSignal = class AbortSignal {
     public aborted = false;
-    
+
     static timeout(delay: number) {
       const signal = new AbortSignal();
       setTimeout(() => {
@@ -351,24 +395,24 @@ if (typeof (global as any).NextResponse === 'undefined') {
   (global as any).NextResponse = class NextResponse extends Response {
     private _headers: Headers;
     private _status: number;
-    
+
     constructor(body?: any, init?: any) {
       super(body, init);
       this._status = init?.status || 200;
       this._headers = new Headers({
         'content-type': 'application/json',
-        ...(init?.headers || {})
+        ...(init?.headers || {}),
       });
     }
-    
+
     override get headers() {
       return this._headers;
     }
-    
+
     override get status() {
       return this._status;
     }
-    
+
     static override json(data: any, init?: ResponseInit) {
       const body = JSON.stringify(data);
       return new NextResponse(body, init);

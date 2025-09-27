@@ -9,4 +9,3 @@ export { useStockForm } from './useStockForm';
 
 // Re-export types
 export type { StockFormState } from './useStockForm';
-

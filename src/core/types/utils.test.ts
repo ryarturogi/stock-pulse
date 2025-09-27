@@ -1,7 +1,7 @@
 /**
  * Unit Tests for Core Type Utilities
  * ==================================
- * 
+ *
  * Tests for type guards and utility functions
  */
 
@@ -86,7 +86,8 @@ describe('Core Type Utilities', () => {
     });
 
     it('should act as type guard', () => {
-      const value: string | null | undefined = Math.random() > 0.5 ? 'test' : null;
+      const value: string | null | undefined =
+        Math.random() > 0.5 ? 'test' : null;
       if (isDefined(value)) {
         // TypeScript should infer value as string here
         expect(typeof value).toBe('string');
@@ -232,16 +233,22 @@ describe('Core Type Utilities', () => {
     it('should throw error when guard fails', () => {
       expect(() => assertIs(123, isString)).toThrow('Type assertion failed');
       expect(() => assertIs(null, isString)).toThrow('Type assertion failed');
-      expect(() => assertIs(undefined, isString)).toThrow('Type assertion failed');
+      expect(() => assertIs(undefined, isString)).toThrow(
+        'Type assertion failed'
+      );
     });
 
     it('should work with custom type guards', () => {
-      const isPositiveNumber = (value: unknown): value is number => 
+      const isPositiveNumber = (value: unknown): value is number =>
         isNumber(value) && value > 0;
-      
+
       expect(assertIs(5, isPositiveNumber)).toBe(5);
-      expect(() => assertIs(-5, isPositiveNumber)).toThrow('Type assertion failed');
-      expect(() => assertIs('5', isPositiveNumber)).toThrow('Type assertion failed');
+      expect(() => assertIs(-5, isPositiveNumber)).toThrow(
+        'Type assertion failed'
+      );
+      expect(() => assertIs('5', isPositiveNumber)).toThrow(
+        'Type assertion failed'
+      );
     });
   });
 
@@ -259,10 +266,10 @@ describe('Core Type Utilities', () => {
     it('should work with different types', () => {
       expect(safeCast(42, isNumber, 0)).toBe(42);
       expect(safeCast('42', isNumber, 0)).toBe(0);
-      
+
       expect(safeCast(true, isBoolean, false)).toBe(true);
       expect(safeCast('true', isBoolean, false)).toBe(false);
-      
+
       expect(safeCast([1, 2, 3], isArray, [])).toEqual([1, 2, 3]);
       expect(safeCast('not array', isArray, [])).toEqual([]);
     });
@@ -270,10 +277,10 @@ describe('Core Type Utilities', () => {
     it('should work with complex fallbacks', () => {
       const defaultUser = { name: 'Anonymous', id: 0 };
       const validUser = { name: 'John', id: 123 };
-      
-      const isUser = (value: unknown): value is typeof validUser => 
+
+      const isUser = (value: unknown): value is typeof validUser =>
         isObject(value) && 'name' in value && 'id' in value;
-      
+
       expect(safeCast(validUser, isUser, defaultUser)).toEqual(validUser);
       expect(safeCast('invalid', isUser, defaultUser)).toEqual(defaultUser);
     });
@@ -303,7 +310,7 @@ describe('Core Type Utilities', () => {
     it('should handle circular references', () => {
       const circular: Record<string, unknown> = {};
       circular.self = circular;
-      
+
       expect(isObject(circular)).toBe(true);
       expect(isArray(circular)).toBe(false);
     });
@@ -311,7 +318,7 @@ describe('Core Type Utilities', () => {
     it('should handle frozen and sealed objects', () => {
       const frozen = Object.freeze({ test: 'value' });
       const sealed = Object.seal({ test: 'value' });
-      
+
       expect(isObject(frozen)).toBe(true);
       expect(isObject(sealed)).toBe(true);
     });

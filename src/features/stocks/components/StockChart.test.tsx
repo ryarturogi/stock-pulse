@@ -285,7 +285,9 @@ describe('StockChart', () => {
     it('should have responsive padding', () => {
       render(<StockChart stocks={mockStocks} />);
 
-      const headerContainer = screen.getByText('Stock Price Chart').closest('.p-3');
+      const headerContainer = screen
+        .getByText('Stock Price Chart')
+        .closest('.p-3');
       expect(headerContainer).toHaveClass('p-3');
       expect(headerContainer).toHaveClass('lg:p-4');
     });

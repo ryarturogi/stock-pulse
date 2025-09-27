@@ -1,7 +1,7 @@
 /**
  * Unit Tests for Application Constants
  * ===================================
- * 
+ *
  * Tests for all application-wide constants and configuration
  */
 
@@ -66,15 +66,25 @@ describe('Application Constants', () => {
     });
 
     it('should have valid Finnhub URL format', () => {
-      expect(EXTERNAL_APIS.FINNHUB.BASE_URL).toMatch(/^https:\/\/finnhub\.io\/api\/v\d+$/);
+      expect(EXTERNAL_APIS.FINNHUB.BASE_URL).toMatch(
+        /^https:\/\/finnhub\.io\/api\/v\d+$/
+      );
     });
   });
 
   describe('ROUTES', () => {
     it('should have all expected route properties', () => {
       const expectedRoutes = [
-        'HOME', 'PORTFOLIO', 'WATCHLIST', 'ALERTS', 'NEWS', 'SEARCH',
-        'STOCK_DETAIL', 'SETTINGS', 'LOGIN', 'REGISTER'
+        'HOME',
+        'PORTFOLIO',
+        'WATCHLIST',
+        'ALERTS',
+        'NEWS',
+        'SEARCH',
+        'STOCK_DETAIL',
+        'SETTINGS',
+        'LOGIN',
+        'REGISTER',
       ];
 
       expectedRoutes.forEach(route => {
@@ -108,13 +118,19 @@ describe('Application Constants', () => {
   describe('STORAGE_KEYS', () => {
     it('should have all expected storage key properties', () => {
       const expectedKeys = [
-        'USER_PREFERENCES', 'PORTFOLIO_DATA', 'WATCHLIST_DATA',
-        'THEME', 'AUTH_TOKEN', 'REFRESH_TOKEN'
+        'USER_PREFERENCES',
+        'PORTFOLIO_DATA',
+        'WATCHLIST_DATA',
+        'THEME',
+        'AUTH_TOKEN',
+        'REFRESH_TOKEN',
       ];
 
       expectedKeys.forEach(key => {
         expect(STORAGE_KEYS[key as keyof typeof STORAGE_KEYS]).toBeDefined();
-        expect(typeof STORAGE_KEYS[key as keyof typeof STORAGE_KEYS]).toBe('string');
+        expect(typeof STORAGE_KEYS[key as keyof typeof STORAGE_KEYS]).toBe(
+          'string'
+        );
       });
     });
 
@@ -141,9 +157,13 @@ describe('Application Constants', () => {
   describe('DEFAULTS', () => {
     it('should have all expected default properties', () => {
       const expectedDefaults = [
-        'CHART_POINTS', 'PAGINATION_LIMIT',
-        'PRICE_DECIMAL_PLACES', 'PERCENTAGE_DECIMAL_PLACES',
-        'CURRENCY', 'LANGUAGE', 'THEME'
+        'CHART_POINTS',
+        'PAGINATION_LIMIT',
+        'PRICE_DECIMAL_PLACES',
+        'PERCENTAGE_DECIMAL_PLACES',
+        'CURRENCY',
+        'LANGUAGE',
+        'THEME',
       ];
 
       expectedDefaults.forEach(defaultKey => {
@@ -205,7 +225,8 @@ describe('Application Constants', () => {
 
     it('should have market close after market open', () => {
       const openTime = MARKET_HOURS.OPEN_HOUR * 60 + MARKET_HOURS.OPEN_MINUTE;
-      const closeTime = MARKET_HOURS.CLOSE_HOUR * 60 + MARKET_HOURS.CLOSE_MINUTE;
+      const closeTime =
+        MARKET_HOURS.CLOSE_HOUR * 60 + MARKET_HOURS.CLOSE_MINUTE;
       expect(closeTime).toBeGreaterThan(openTime);
     });
   });
@@ -229,9 +250,13 @@ describe('Application Constants', () => {
     it('should have time ranges configuration', () => {
       expect(CHART_CONFIG.TIME_RANGES).toBeDefined();
       const expectedRanges = ['1D', '5D', '1M', '3M', '6M', '1Y', '5Y', 'MAX'];
-      
+
       expectedRanges.forEach(range => {
-        expect(CHART_CONFIG.TIME_RANGES[range as keyof typeof CHART_CONFIG.TIME_RANGES]).toBeDefined();
+        expect(
+          CHART_CONFIG.TIME_RANGES[
+            range as keyof typeof CHART_CONFIG.TIME_RANGES
+          ]
+        ).toBeDefined();
       });
     });
 
@@ -266,18 +291,35 @@ describe('Application Constants', () => {
     });
 
     it('should have expected notification types', () => {
-      const expectedTypes = ['PRICE_ALERT', 'NEWS', 'PORTFOLIO_UPDATE', 'SYSTEM'];
+      const expectedTypes = [
+        'PRICE_ALERT',
+        'NEWS',
+        'PORTFOLIO_UPDATE',
+        'SYSTEM',
+      ];
       expectedTypes.forEach(type => {
-        expect(NOTIFICATIONS.TYPES[type as keyof typeof NOTIFICATIONS.TYPES]).toBeDefined();
-        expect(typeof NOTIFICATIONS.TYPES[type as keyof typeof NOTIFICATIONS.TYPES]).toBe('string');
+        expect(
+          NOTIFICATIONS.TYPES[type as keyof typeof NOTIFICATIONS.TYPES]
+        ).toBeDefined();
+        expect(
+          typeof NOTIFICATIONS.TYPES[type as keyof typeof NOTIFICATIONS.TYPES]
+        ).toBe('string');
       });
     });
 
     it('should have expected priority levels', () => {
       const expectedPriorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
       expectedPriorities.forEach(priority => {
-        expect(NOTIFICATIONS.PRIORITIES[priority as keyof typeof NOTIFICATIONS.PRIORITIES]).toBeDefined();
-        expect(typeof NOTIFICATIONS.PRIORITIES[priority as keyof typeof NOTIFICATIONS.PRIORITIES]).toBe('string');
+        expect(
+          NOTIFICATIONS.PRIORITIES[
+            priority as keyof typeof NOTIFICATIONS.PRIORITIES
+          ]
+        ).toBeDefined();
+        expect(
+          typeof NOTIFICATIONS.PRIORITIES[
+            priority as keyof typeof NOTIFICATIONS.PRIORITIES
+          ]
+        ).toBe('string');
       });
     });
 
@@ -291,18 +333,34 @@ describe('Application Constants', () => {
     });
 
     it('should have ascending display durations by severity', () => {
-      expect(NOTIFICATIONS.DISPLAY_DURATION.SUCCESS).toBeLessThan(NOTIFICATIONS.DISPLAY_DURATION.INFO);
-      expect(NOTIFICATIONS.DISPLAY_DURATION.INFO).toBeLessThan(NOTIFICATIONS.DISPLAY_DURATION.WARNING);
-      expect(NOTIFICATIONS.DISPLAY_DURATION.WARNING).toBeLessThan(NOTIFICATIONS.DISPLAY_DURATION.ERROR);
+      expect(NOTIFICATIONS.DISPLAY_DURATION.SUCCESS).toBeLessThan(
+        NOTIFICATIONS.DISPLAY_DURATION.INFO
+      );
+      expect(NOTIFICATIONS.DISPLAY_DURATION.INFO).toBeLessThan(
+        NOTIFICATIONS.DISPLAY_DURATION.WARNING
+      );
+      expect(NOTIFICATIONS.DISPLAY_DURATION.WARNING).toBeLessThan(
+        NOTIFICATIONS.DISPLAY_DURATION.ERROR
+      );
     });
   });
 
   describe('EXCHANGES', () => {
     it('should have expected stock exchanges', () => {
-      const expectedExchanges = ['NYSE', 'NASDAQ', 'AMEX', 'OTC', 'LSE', 'TSE', 'TSX'];
+      const expectedExchanges = [
+        'NYSE',
+        'NASDAQ',
+        'AMEX',
+        'OTC',
+        'LSE',
+        'TSE',
+        'TSX',
+      ];
       expectedExchanges.forEach(exchange => {
         expect(EXCHANGES[exchange as keyof typeof EXCHANGES]).toBeDefined();
-        expect(typeof EXCHANGES[exchange as keyof typeof EXCHANGES]).toBe('string');
+        expect(typeof EXCHANGES[exchange as keyof typeof EXCHANGES]).toBe(
+          'string'
+        );
       });
     });
 
@@ -338,8 +396,17 @@ describe('Application Constants', () => {
 
     it('should contain expected major stocks', () => {
       const symbols = POPULAR_STOCKS.map(stock => stock.symbol);
-      const expectedSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX'];
-      
+      const expectedSymbols = [
+        'AAPL',
+        'MSFT',
+        'GOOGL',
+        'AMZN',
+        'TSLA',
+        'META',
+        'NVDA',
+        'NFLX',
+      ];
+
       expectedSymbols.forEach(symbol => {
         expect(symbols).toContain(symbol);
       });
@@ -366,13 +433,23 @@ describe('Application Constants', () => {
   describe('ERROR_MESSAGES', () => {
     it('should have all expected error message types', () => {
       const expectedErrors = [
-        'NETWORK_ERROR', 'API_ERROR', 'INVALID_SYMBOL', 'UNAUTHORIZED',
-        'NOT_FOUND', 'RATE_LIMITED', 'VALIDATION_ERROR', 'UNKNOWN_ERROR'
+        'NETWORK_ERROR',
+        'API_ERROR',
+        'INVALID_SYMBOL',
+        'UNAUTHORIZED',
+        'NOT_FOUND',
+        'RATE_LIMITED',
+        'VALIDATION_ERROR',
+        'UNKNOWN_ERROR',
       ];
 
       expectedErrors.forEach(errorType => {
-        expect(ERROR_MESSAGES[errorType as keyof typeof ERROR_MESSAGES]).toBeDefined();
-        expect(typeof ERROR_MESSAGES[errorType as keyof typeof ERROR_MESSAGES]).toBe('string');
+        expect(
+          ERROR_MESSAGES[errorType as keyof typeof ERROR_MESSAGES]
+        ).toBeDefined();
+        expect(
+          typeof ERROR_MESSAGES[errorType as keyof typeof ERROR_MESSAGES]
+        ).toBe('string');
       });
     });
 
@@ -395,13 +472,21 @@ describe('Application Constants', () => {
   describe('SUCCESS_MESSAGES', () => {
     it('should have all expected success message types', () => {
       const expectedSuccess = [
-        'PORTFOLIO_UPDATED', 'STOCK_ADDED', 'STOCK_REMOVED',
-        'ALERT_CREATED', 'ALERT_DELETED', 'PREFERENCES_SAVED'
+        'PORTFOLIO_UPDATED',
+        'STOCK_ADDED',
+        'STOCK_REMOVED',
+        'ALERT_CREATED',
+        'ALERT_DELETED',
+        'PREFERENCES_SAVED',
       ];
 
       expectedSuccess.forEach(successType => {
-        expect(SUCCESS_MESSAGES[successType as keyof typeof SUCCESS_MESSAGES]).toBeDefined();
-        expect(typeof SUCCESS_MESSAGES[successType as keyof typeof SUCCESS_MESSAGES]).toBe('string');
+        expect(
+          SUCCESS_MESSAGES[successType as keyof typeof SUCCESS_MESSAGES]
+        ).toBeDefined();
+        expect(
+          typeof SUCCESS_MESSAGES[successType as keyof typeof SUCCESS_MESSAGES]
+        ).toBe('string');
       });
     });
 
@@ -415,8 +500,16 @@ describe('Application Constants', () => {
 
     it('should contain positive language', () => {
       Object.values(SUCCESS_MESSAGES).forEach(message => {
-        const positiveWords = ['successfully', 'added', 'updated', 'created', 'saved', 'removed', 'deleted'];
-        const hasPositiveWord = positiveWords.some(word => 
+        const positiveWords = [
+          'successfully',
+          'added',
+          'updated',
+          'created',
+          'saved',
+          'removed',
+          'deleted',
+        ];
+        const hasPositiveWord = positiveWords.some(word =>
           message.toLowerCase().includes(word)
         );
         expect(hasPositiveWord).toBe(true);

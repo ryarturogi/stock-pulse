@@ -1,7 +1,7 @@
 /**
  * Unit Tests for Stock Service
  * ============================
- * 
+ *
  * Tests for API integration and request deduplication
  */
 
@@ -24,7 +24,7 @@ describe('StockService', () => {
     mockFetch.mockClear();
     jest.clearAllTimers();
     jest.useFakeTimers();
-    
+
     // Clear request cache before each test
     stockService.clearRequestCache();
   });
@@ -101,8 +101,12 @@ describe('StockService', () => {
     });
 
     it('should throw error for invalid symbol', async () => {
-      await expect(stockService.fetchStockQuote('')).rejects.toThrow('Invalid stock symbol');
-      await expect(stockService.fetchStockQuote(null as any)).rejects.toThrow('Invalid stock symbol');
+      await expect(stockService.fetchStockQuote('')).rejects.toThrow(
+        'Invalid stock symbol'
+      );
+      await expect(stockService.fetchStockQuote(null as any)).rejects.toThrow(
+        'Invalid stock symbol'
+      );
     });
 
     it('should handle API error responses', async () => {
@@ -113,25 +117,31 @@ describe('StockService', () => {
         json: async () => ({ error: 'Stock not found' }),
       });
 
-      await expect(stockService.fetchStockQuote('INVALID')).rejects.toThrow('Stock not found');
+      await expect(stockService.fetchStockQuote('INVALID')).rejects.toThrow(
+        'Stock not found'
+      );
     });
 
     it('should handle network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(stockService.fetchStockQuote('AAPL')).rejects.toThrow('Network error');
+      await expect(stockService.fetchStockQuote('AAPL')).rejects.toThrow(
+        'Network error'
+      );
     });
 
     it('should validate quote data format', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ 
-          success: true, 
-          data: { invalid: 'data' }  // This will pass initial check but fail validation
+        json: async () => ({
+          success: true,
+          data: { invalid: 'data' }, // This will pass initial check but fail validation
         }),
       });
 
-      await expect(stockService.fetchStockQuote('AAPL')).rejects.toThrow('Invalid symbol in quote data for AAPL');
+      await expect(stockService.fetchStockQuote('AAPL')).rejects.toThrow(
+        'Invalid symbol in quote data for AAPL'
+      );
     });
 
     it('should deduplicate concurrent requests', async () => {
@@ -190,7 +200,7 @@ describe('StockService', () => {
   describe('fetchMultipleQuotes', () => {
     it('should fetch multiple quotes in batches', async () => {
       const symbols = ['AAPL', 'GOOGL', 'MSFT'];
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
         json: async () => ({
@@ -227,12 +237,20 @@ describe('StockService', () => {
           ok: true,
           json: async () => ({
             success: true,
-            data: { symbol: 'AAPL', current: 150.25, change: 2.5, percentChange: 1.69 },
+            data: {
+              symbol: 'AAPL',
+              current: 150.25,
+              change: 2.5,
+              percentChange: 1.69,
+            },
           }),
         })
         .mockRejectedValueOnce(new Error('Network error'));
 
-      const results = await stockService.fetchMultipleQuotes(['AAPL', 'INVALID']);
+      const results = await stockService.fetchMultipleQuotes([
+        'AAPL',
+        'INVALID',
+      ]);
 
       expect(Object.keys(results)).toHaveLength(1);
       expect(results.AAPL).toBeDefined();
@@ -242,9 +260,9 @@ describe('StockService', () => {
     it('should batch requests correctly', async () => {
       // Use real timers for this test to avoid timer conflicts
       jest.useRealTimers();
-      
+
       const symbols = Array.from({ length: 12 }, (_, i) => `STOCK${i}`);
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
         json: async () => ({
@@ -257,7 +275,7 @@ describe('StockService', () => {
 
       // Should batch in groups of 3 (dynamic batch size for 12 symbols: Math.min(Math.max(3, Math.floor(12/4)), 8) = 3)
       expect(mockFetch).toHaveBeenCalledTimes(12);
-      
+
       // Restore fake timers for other tests
       jest.useFakeTimers();
     });
@@ -353,7 +371,9 @@ describe('StockService', () => {
       expect(stockService.getPriceChangeColor(2.5)).toBe('text-green-600');
       expect(stockService.getPriceChangeColor(-1.75)).toBe('text-red-600');
       expect(stockService.getPriceChangeColor(0)).toBe('text-gray-500');
-      expect(stockService.getPriceChangeColor(null as any)).toBe('text-gray-500');
+      expect(stockService.getPriceChangeColor(null as any)).toBe(
+        'text-gray-500'
+      );
     });
   });
 
@@ -409,7 +429,9 @@ describe('StockService', () => {
 
     it('should throw error if API key is missing', () => {
       delete process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
-      expect(() => stockService.getWebSocketUrl()).toThrow('Finnhub API key not configured');
+      expect(() => stockService.getWebSocketUrl()).toThrow(
+        'Finnhub API key not configured'
+      );
     });
 
     it('should create subscription message', () => {
@@ -480,14 +502,14 @@ describe('StockService', () => {
     it('should clear request cache manually', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ 
-          success: true, 
+        json: async () => ({
+          success: true,
           data: {
             symbol: 'AAPL',
-            current: 150.00,
-            change: 1.50,
-            percentChange: 1.0
-          }
+            current: 150.0,
+            change: 1.5,
+            percentChange: 1.0,
+          },
         }),
       });
 

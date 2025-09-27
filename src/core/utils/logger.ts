@@ -1,7 +1,7 @@
 /**
  * Logger Utility for Production-Safe Logging
  * ==========================================
- * 
+ *
  * Provides environment-aware logging that removes debug information in production.
  */
 
@@ -37,15 +37,15 @@ class Logger {
 
   private shouldLog(level: LogLevel): boolean {
     const config = LOG_CONFIG[level];
-    
+
     if (this.isDevelopment) {
       return config.enableInDevelopment;
     }
-    
+
     if (this.isProduction) {
       return config.enableInProduction;
     }
-    
+
     // Default to development behavior for other environments
     return config.enableInDevelopment;
   }
