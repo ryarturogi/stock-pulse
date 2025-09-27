@@ -21,7 +21,15 @@
       "Bash(curl:*)",
       "Bash(pnpm list:*)",
       "Bash(sed:*)",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "Bash(grep:*)",
+      "Bash(timeout:*)",
+      "WebFetch(domain:introjs.com)",
+      "Bash(grep:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node:*)",
+      "Bash(npx tsc:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

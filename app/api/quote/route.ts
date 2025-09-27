@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server';
 
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
-  handleApiError, 
-  validateApiKey, 
-  validateRequiredParam 
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  handleApiError,
+  validateApiKey,
+  validateRequiredParam,
 } from '@/core/utils/apiResponse';
 import { isValidSymbol } from '@/core/utils/validation';
 
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get('symbol');
-    
+
     // Validate required parameters
     const paramError = validateRequiredParam(symbol, 'symbol');
     if (paramError) return paramError;
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     // Sanitize symbol for URL encoding
     const sanitizedSymbol = encodeURIComponent(symbol!);
-    
+
     const response = await fetch(
       `https://finnhub.io/api/v1/quote?symbol=${sanitizedSymbol}&token=${apiKey}`,
       {
@@ -49,21 +49,22 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       // Don't expose internal error details
-      const errorMessage = response.status === 401 
-        ? 'API authentication failed' 
-        : response.status === 429 
-        ? 'Rate limit exceeded' 
-        : 'External API error';
+      const errorMessage =
+        response.status === 401
+          ? 'API authentication failed'
+          : response.status === 429
+            ? 'Rate limit exceeded'
+            : 'External API error';
       throw new Error(errorMessage);
     }
 
     const data = await response.json();
-    
+
     // Remove debug logging in production
     if (process.env.NODE_ENV === 'development') {
       console.debug('Finnhub response for', symbol, ':', data);
     }
-    
+
     // Check if we have valid data from Finnhub
     if (data.c === null || data.c === undefined) {
       return createErrorResponse(
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
         'Symbol not found or market data unavailable'
       );
     }
-    
+
     const quoteData = {
       symbol: symbol!,
       current: data.c,
@@ -82,14 +83,13 @@ export async function GET(request: NextRequest) {
       low: data.l || data.c,
       open: data.o || data.c,
       previousClose: data.pc || data.c,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
-    
+
     return createSuccessResponse(
       quoteData,
       `Quote data retrieved for ${symbol}`
     );
-    
   } catch (error) {
     return handleApiError(error, 'quote API');
   }

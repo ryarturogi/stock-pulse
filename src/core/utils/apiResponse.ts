@@ -1,7 +1,7 @@
 /**
  * Shared API Response Utilities
  * ============================
- * 
+ *
  * Standardized response formatting and error handling for all API routes
  */
 
@@ -14,20 +14,20 @@ import { ErrorHandler } from './errorHandler';
  * Create a successful API response
  */
 export function createSuccessResponse<T>(
-  data: T, 
+  data: T,
   message?: string,
   status: number = 200
 ): NextResponse<ApiResponse<T>> {
   const response: ApiResponse<T> = {
     success: true,
     data,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
-  
+
   if (message) {
     response.message = message;
   }
-  
+
   return NextResponse.json(response, { status });
 }
 
@@ -42,32 +42,37 @@ export function createErrorResponse(
   const response: ApiResponse<never> = {
     success: false,
     error,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
-  
+
   if (message) {
     response.message = message;
   }
-  
+
   return NextResponse.json(response, { status });
 }
 
 /**
  * Handle common API errors with standardized messages
  */
-export function handleApiError(error: unknown, context?: string): NextResponse<ApiResponse<never>> {
+export function handleApiError(
+  error: unknown,
+  context?: string
+): NextResponse<ApiResponse<never>> {
   const appError = ErrorHandler.handleError(error, context);
-  
-  return NextResponse.json(
-    ErrorHandler.getErrorResponse(appError),
-    { status: appError.statusCode }
-  );
+
+  return NextResponse.json(ErrorHandler.getErrorResponse(appError), {
+    status: appError.statusCode,
+  });
 }
 
 /**
  * Validate required environment variables
  */
-export function validateApiKey(apiKey: string | undefined, keyName: string): NextResponse<ApiResponse<never>> | null {
+export function validateApiKey(
+  apiKey: string | undefined,
+  keyName: string
+): NextResponse<ApiResponse<never>> | null {
   if (!apiKey) {
     return createErrorResponse(
       `${keyName} API key not configured`,
@@ -82,7 +87,7 @@ export function validateApiKey(apiKey: string | undefined, keyName: string): Nex
  * Validate request parameters
  */
 export function validateRequiredParam(
-  value: string | null, 
+  value: string | null,
   paramName: string
 ): NextResponse<ApiResponse<never>> | null {
   if (!value || value.trim() === '') {
@@ -108,12 +113,17 @@ export function createPaginatedResponse<T>(
     hasMore: boolean;
   },
   message?: string
-): NextResponse<ApiResponse<{
-  items: T[];
-  pagination: typeof pagination;
-}>> {
-  return createSuccessResponse({
-    items: data,
-    pagination
-  }, message);
+): NextResponse<
+  ApiResponse<{
+    items: T[];
+    pagination: typeof pagination;
+  }>
+> {
+  return createSuccessResponse(
+    {
+      items: data,
+      pagination,
+    },
+    message
+  );
 }

@@ -26,30 +26,32 @@ export interface RefreshIntervalSelectorProps {
  * Displays a dropdown to select the refresh interval for live data updates.
  * Shows the current interval and allows changing it.
  */
-export const RefreshIntervalSelector: React.FC<RefreshIntervalSelectorProps> = ({
-  currentInterval,
-  onIntervalChange,
-  className = '',
-}) => {
+export const RefreshIntervalSelector: React.FC<
+  RefreshIntervalSelectorProps
+> = ({ currentInterval, onIntervalChange, className = '' }) => {
   const handleIntervalChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newInterval = e.target.value as RefreshInterval;
-    console.log(`🔄 RefreshIntervalSelector: Changing interval to ${newInterval}`);
+    console.log(
+      `🔄 RefreshIntervalSelector: Changing interval to ${newInterval}`
+    );
     onIntervalChange(newInterval);
   };
 
-
   return (
     <div className={`flex items-center space-x-1 lg:space-x-2 ${className}`}>
-      <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-gray-500 dark:text-gray-400" />
-      <label htmlFor="refresh-interval" className="text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300">
-        <span className="hidden sm:inline">Refresh:</span>
-        <span className="sm:hidden">R:</span>
+      <Clock className='w-3 h-3 lg:w-4 lg:h-4 text-gray-500 dark:text-gray-400' />
+      <label
+        htmlFor='refresh-interval'
+        className='text-xs lg:text-sm font-medium text-gray-700 dark:text-gray-300'
+      >
+        <span className='hidden sm:inline'>Refresh:</span>
+        <span className='sm:hidden'>R:</span>
       </label>
       <select
-        id="refresh-interval"
+        id='refresh-interval'
         value={currentInterval}
         onChange={handleIntervalChange}
-        className="min-w-28 lg:min-w-32 pl-1 lg:pl-2 pr-6 lg:pr-8 py-1 text-xs lg:text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+        className='min-w-28 lg:min-w-32 pl-1 lg:pl-2 pr-6 lg:pr-8 py-1 text-xs lg:text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white'
       >
         {REFRESH_INTERVALS.map(config => (
           <option key={config.value} value={config.value}>

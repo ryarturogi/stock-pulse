@@ -1,7 +1,7 @@
 /**
  * Stock Service for API Integration
  * =================================
- * 
+ *
  * Service layer for handling stock data API calls and WebSocket connections
  * following the React Developer test requirements with Finnhub integration.
  */
@@ -12,7 +12,7 @@ import {
   type StockOption,
   isFinnhubStockQuote,
   isString,
-  isNumber
+  isNumber,
 } from '@/core/types';
 import { isValidSymbol, isValidAlertPrice } from '@/core/utils/validation';
 import { logger } from '@/core/utils/logger';
@@ -32,7 +32,12 @@ export class StockService {
   private readonly STOCK_LIST_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   private readonly TIMEOUT_MS = 60000; // 1 minute
   // Performance optimization: request queue with priority
-  private requestQueue: Array<{ symbol: string; priority: number; resolve: (value: FinnhubStockQuote) => void; reject: (error: Error) => void }> = [];
+  private requestQueue: Array<{
+    symbol: string;
+    priority: number;
+    resolve: (value: FinnhubStockQuote) => void;
+    reject: (error: Error) => void;
+  }> = [];
   private isProcessingQueue = false;
 
   private constructor() {
@@ -96,7 +101,7 @@ export class StockService {
     }
 
     const cacheKey = `quote_${symbol.toUpperCase()}`;
-    
+
     // Check if there's already a pending request for this symbol
     if (this.requestCache.has(cacheKey)) {
       console.log(`📦 [API] Using cached request for ${symbol}`, { symbol });
@@ -124,7 +129,9 @@ export class StockService {
   /**
    * Internal method for actual API call
    */
-  private async _fetchStockQuoteInternal(symbol: string): Promise<FinnhubStockQuote> {
+  private async _fetchStockQuoteInternal(
+    symbol: string
+  ): Promise<FinnhubStockQuote> {
     try {
       // Create abort controller for timeout
       const controller = new AbortController();
@@ -142,7 +149,9 @@ export class StockService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -160,7 +169,10 @@ export class StockService {
       }
 
       // Debug logging (development only)
-      logger.api(`Quote data received for ${symbol}`, { symbol, quote: quoteData });
+      logger.api(`Quote data received for ${symbol}`, {
+        symbol,
+        quote: quoteData,
+      });
 
       // Validate the quote data with better error handling
       if (!isFinnhubStockQuote(quoteData)) {
@@ -170,36 +182,50 @@ export class StockService {
           change: quoteData?.change,
           percentChange: quoteData?.percentChange,
           hasSymbol: typeof quoteData?.symbol === 'string',
-          hasCurrent: typeof quoteData?.current === 'number' && !isNaN(quoteData?.current),
-          hasChange: typeof quoteData?.change === 'number' && !isNaN(quoteData?.change),
-          hasPercentChange: typeof quoteData?.percentChange === 'number' && !isNaN(quoteData?.percentChange)
+          hasCurrent:
+            typeof quoteData?.current === 'number' &&
+            !isNaN(quoteData?.current),
+          hasChange:
+            typeof quoteData?.change === 'number' && !isNaN(quoteData?.change),
+          hasPercentChange:
+            typeof quoteData?.percentChange === 'number' &&
+            !isNaN(quoteData?.percentChange),
         };
-        
-        console.warn(`❌ [Validation] Quote validation failed for ${symbol}`, { symbol, errorDetails });
-        
+
+        console.warn(`❌ [Validation] Quote validation failed for ${symbol}`, {
+          symbol,
+          errorDetails,
+        });
+
         // Try to provide a more helpful error message
         if (!errorDetails.hasSymbol) {
           throw new Error(`Invalid symbol in quote data for ${symbol}`);
         }
         if (!errorDetails.hasCurrent) {
-          throw new Error(`Invalid current price data for ${symbol}. Market may be closed or symbol not found.`);
+          throw new Error(
+            `Invalid current price data for ${symbol}. Market may be closed or symbol not found.`
+          );
         }
         if (!errorDetails.hasChange || !errorDetails.hasPercentChange) {
-          throw new Error(`Incomplete quote data for ${symbol}. Some values may be missing.`);
+          throw new Error(
+            `Incomplete quote data for ${symbol}. Some values may be missing.`
+          );
         }
-        
+
         throw new Error(`Invalid quote data structure received for ${symbol}`);
       }
 
       return quoteData;
-
     } catch (error) {
-      console.error(`❌ [API] Failed to fetch quote for ${symbol}`, { symbol, error });
-      
+      console.error(`❌ [API] Failed to fetch quote for ${symbol}`, {
+        symbol,
+        error,
+      });
+
       if (error instanceof Error) {
         throw error;
       }
-      
+
       throw new Error(`Failed to fetch quote for ${symbol}`);
     }
   }
@@ -207,7 +233,9 @@ export class StockService {
   /**
    * Fetch multiple stock quotes in parallel
    */
-  async fetchMultipleQuotes(symbols: string[]): Promise<Record<string, FinnhubStockQuote>> {
+  async fetchMultipleQuotes(
+    symbols: string[]
+  ): Promise<Record<string, FinnhubStockQuote>> {
     if (!Array.isArray(symbols) || symbols.length === 0) {
       return {};
     }
@@ -218,19 +246,22 @@ export class StockService {
 
     for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
       const batch = symbols.slice(i, i + BATCH_SIZE);
-      
-      const promises = batch.map(async (symbol) => {
+
+      const promises = batch.map(async symbol => {
         try {
           const quote = await this.fetchStockQuote(symbol);
           return { symbol, quote };
         } catch (error) {
-          console.error(`❌ [API] Failed to fetch quote for ${symbol}`, { symbol, error });
+          console.error(`❌ [API] Failed to fetch quote for ${symbol}`, {
+            symbol,
+            error,
+          });
           return { symbol, quote: null };
         }
       });
 
       const batchResults = await Promise.all(promises);
-      
+
       batchResults.forEach(({ symbol, quote }) => {
         if (quote) {
           results[symbol] = quote;
@@ -239,7 +270,7 @@ export class StockService {
 
       // Add dynamic delay between batches based on batch size and rate limits
       if (i + BATCH_SIZE < symbols.length) {
-        const delay = Math.min(50 + (batch.length * 10), 200); // Dynamic delay: 50-200ms
+        const delay = Math.min(50 + batch.length * 10, 200); // Dynamic delay: 50-200ms
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -250,12 +281,14 @@ export class StockService {
   /**
    * Get available stock options from Finnhub API with pagination
    */
-  async getAvailableStocks(options: {
-    exchange?: string;
-    page?: number;
-    limit?: number;
-    search?: string;
-  } = {}): Promise<{
+  async getAvailableStocks(
+    options: {
+      exchange?: string;
+      page?: number;
+      limit?: number;
+      search?: string;
+    } = {}
+  ): Promise<{
     data: StockOption[];
     pagination: {
       page: number;
@@ -268,32 +301,45 @@ export class StockService {
   }> {
     const { exchange = 'US', page = 1, limit = 50, search = '' } = options;
     const requestId = Math.random().toString(36).substr(2, 9);
-    
+
     // Create cache key
     const cacheKey = `${exchange}-${page}-${limit}-${search}`;
-    
+
     // Check cache first
     const cached = this.stockListCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp < this.STOCK_LIST_CACHE_TTL)) {
-      console.log(`📋 [API] [${requestId}] Using cached stock list for ${cacheKey}`);
+    if (cached && Date.now() - cached.timestamp < this.STOCK_LIST_CACHE_TTL) {
+      console.log(
+        `📋 [API] [${requestId}] Using cached stock list for ${cacheKey}`
+      );
       return cached.data;
     }
-    
+
     // Check if there's already a pending request for this exact query
     const pendingRequest = this.stockListPendingRequests.get(cacheKey);
     if (pendingRequest) {
-      console.log(`⏳ [API] [${requestId}] Waiting for pending request ${cacheKey}`);
+      console.log(
+        `⏳ [API] [${requestId}] Waiting for pending request ${cacheKey}`
+      );
       return pendingRequest;
     }
-    
+
     // Create new request and cache the promise
-    const requestPromise = this._fetchStockList(exchange, page, limit, search, requestId);
+    const requestPromise = this._fetchStockList(
+      exchange,
+      page,
+      limit,
+      search,
+      requestId
+    );
     this.stockListPendingRequests.set(cacheKey, requestPromise);
-    
+
     try {
       const result = await requestPromise;
       // Cache the result
-      this.stockListCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      this.stockListCache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now(),
+      });
       return result;
     } finally {
       // Remove from pending requests
@@ -301,7 +347,13 @@ export class StockService {
     }
   }
 
-  private async _fetchStockList(exchange: string, page: number, limit: number, search: string, requestId: string): Promise<{
+  private async _fetchStockList(
+    exchange: string,
+    page: number,
+    limit: number,
+    search: string,
+    requestId: string
+  ): Promise<{
     data: StockOption[];
     pagination: {
       page: number;
@@ -318,7 +370,7 @@ export class StockService {
         page: page.toString(),
         limit: limit.toString(),
       });
-      
+
       if (search) {
         params.append('search', search);
       }
@@ -329,7 +381,9 @@ export class StockService {
       // Create abort controller for timeout - 1 minute for very slow external APIs
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
-        console.warn(`⏰ [API] [${requestId}] Request timeout after ${this.TIMEOUT_MS/1000}s, aborting...`);
+        console.warn(
+          `⏰ [API] [${requestId}] Request timeout after ${this.TIMEOUT_MS / 1000}s, aborting...`
+        );
         controller.abort();
       }, this.TIMEOUT_MS);
 
@@ -347,7 +401,10 @@ export class StockService {
       }
 
       if (!response.ok) {
-        console.error('❌ [API] Failed to fetch stock symbols', { status: response.status, statusText: response.statusText });
+        console.error('❌ [API] Failed to fetch stock symbols', {
+          status: response.status,
+          statusText: response.statusText,
+        });
         // Fallback to default options
         return {
           data: this.getDefaultStockOptions(),
@@ -356,13 +413,13 @@ export class StockService {
             limit: 8,
             total: 8,
             totalPages: 1,
-            hasMore: false
-          }
+            hasMore: false,
+          },
         };
       }
 
       const data = await response.json();
-      
+
       // Add debugging to understand response structure
       if (process.env.NODE_ENV === 'development') {
         console.log('📄 [API] Raw response data:', {
@@ -370,17 +427,21 @@ export class StockService {
           hasData: !!data.data,
           dataType: typeof data.data,
           dataKeys: data.data ? Object.keys(data.data) : [],
-          dataStructure: data.data
+          dataStructure: data.data,
         });
       }
-      
+
       if (data.success && data.data) {
         // Handle new standardized response format
         const responseData = data.data;
-        
+
         if (responseData.items && Array.isArray(responseData.items)) {
           // New paginated response format
-          console.log(`✅ [API] [${requestId}] Using paginated response format with`, responseData.items.length, 'items');
+          console.log(
+            `✅ [API] [${requestId}] Using paginated response format with`,
+            responseData.items.length,
+            'items'
+          );
           return {
             data: responseData.items,
             pagination: responseData.pagination || {
@@ -388,13 +449,17 @@ export class StockService {
               limit: responseData.items.length,
               total: responseData.items.length,
               totalPages: 1,
-              hasMore: false
+              hasMore: false,
             },
-            search: responseData.search
+            search: responseData.search,
           };
         } else if (Array.isArray(responseData)) {
           // Legacy array format
-          console.log('✅ [API] Using legacy array format with', responseData.length, 'items');
+          console.log(
+            '✅ [API] Using legacy array format with',
+            responseData.length,
+            'items'
+          );
           return {
             data: responseData,
             pagination: {
@@ -402,20 +467,23 @@ export class StockService {
               limit: responseData.length,
               total: responseData.length,
               totalPages: 1,
-              hasMore: false
-            }
+              hasMore: false,
+            },
           };
         } else {
-          console.warn('⚠️ [API] Unexpected response data structure:', responseData);
+          console.warn(
+            '⚠️ [API] Unexpected response data structure:',
+            responseData
+          );
         }
       } else {
         console.warn('⚠️ [API] Response not successful or missing data:', {
           success: data.success,
           hasData: !!data.data,
-          message: data.message
+          message: data.message,
         });
       }
-      
+
       // Fallback to default options
       console.log('🔄 [API] Using fallback stock options');
       return {
@@ -425,34 +493,42 @@ export class StockService {
           limit: 8,
           total: 8,
           totalPages: 1,
-          hasMore: false
-        }
+          hasMore: false,
+        },
       };
-      
     } catch (error) {
       // Handle AbortError specifically
       if (error instanceof Error && error.name === 'AbortError') {
-        console.warn(`⏰ [API] [${requestId}] Request timed out after ${this.TIMEOUT_MS/1000}s - using fallback data:`, {
-          url: `${this.baseUrl}/stock-symbols?${new URLSearchParams({ exchange, page: page.toString(), limit: limit.toString() })}`,
-          options: { exchange, page, limit, search }
-        });
+        console.warn(
+          `⏰ [API] [${requestId}] Request timed out after ${this.TIMEOUT_MS / 1000}s - using fallback data:`,
+          {
+            url: `${this.baseUrl}/stock-symbols?${new URLSearchParams({ exchange, page: page.toString(), limit: limit.toString() })}`,
+            options: { exchange, page, limit, search },
+          }
+        );
         // Don't log this as an error since timeout is expected with slow APIs
       } else {
-        console.error(`❌ [API] [${requestId}] Error fetching available stocks:`, error);
-        console.error(`❌ [API] [${requestId}] Error details:`, { 
+        console.error(
+          `❌ [API] [${requestId}] Error fetching available stocks:`,
+          error
+        );
+        console.error(`❌ [API] [${requestId}] Error details:`, {
           error: error instanceof Error ? error.message : 'Unknown error',
-          errorType: error instanceof Error ? error.constructor.name : typeof error,
+          errorType:
+            error instanceof Error ? error.constructor.name : typeof error,
           stack: error instanceof Error ? error.stack : undefined,
           url: `${this.baseUrl}/stock-symbols?${new URLSearchParams({ exchange, page: page.toString(), limit: limit.toString() })}`,
-          options: { exchange, page, limit, search }
+          options: { exchange, page, limit, search },
         });
       }
-      
+
       // Check if it's a network error
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.warn('🌐 [API] Network error - likely development server not running');
+        console.warn(
+          '🌐 [API] Network error - likely development server not running'
+        );
       }
-      
+
       // Fallback to default options
       return {
         data: this.getDefaultStockOptions(),
@@ -461,8 +537,8 @@ export class StockService {
           limit: 8,
           total: 8,
           totalPages: 1,
-          hasMore: false
-        }
+          hasMore: false,
+        },
       };
     }
   }
@@ -470,7 +546,9 @@ export class StockService {
   /**
    * Legacy method for backward compatibility
    */
-  async getAvailableStocksLegacy(exchange: string = 'US'): Promise<StockOption[]> {
+  async getAvailableStocksLegacy(
+    exchange: string = 'US'
+  ): Promise<StockOption[]> {
     // Reduced limit to prevent timeouts - use pagination if more data is needed
     const result = await this.getAvailableStocks({ exchange, limit: 200 });
     return result.data;
@@ -496,13 +574,16 @@ export class StockService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const response = await fetch(`${this.baseUrl}/symbol-search?q=${encodeURIComponent(query)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal,
-      });
+      const response = await fetch(
+        `${this.baseUrl}/symbol-search?q=${encodeURIComponent(query)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
+        }
+      );
 
       clearTimeout(timeoutId);
 
@@ -513,14 +594,13 @@ export class StockService {
       }
 
       const data = await response.json();
-      
+
       if (data.success && Array.isArray(data.data)) {
         return data.data;
       }
-      
+
       // Fallback to local search
       return this.searchStocksLocally(query);
-      
     } catch (error) {
       console.error('Error searching stocks:', error);
       // Fallback to local search
@@ -536,9 +616,10 @@ export class StockService {
       const availableStocks = this.getDefaultStockOptions();
       const searchTerm = query.toLowerCase().trim();
 
-      return availableStocks.filter(stock => 
-        stock.symbol.toLowerCase().includes(searchTerm) ||
-        stock.name.toLowerCase().includes(searchTerm)
+      return availableStocks.filter(
+        stock =>
+          stock.symbol.toLowerCase().includes(searchTerm) ||
+          stock.name.toLowerCase().includes(searchTerm)
       );
     } catch (error) {
       console.error('Failed local stock search:', error);
@@ -565,7 +646,7 @@ export class StockService {
    */
   formatPrice(price: number): string {
     if (!isNumber(price)) return '---.--';
-    
+
     return price.toFixed(2);
   }
 
@@ -574,7 +655,7 @@ export class StockService {
    */
   formatPercentageChange(change: number): string {
     if (!isNumber(change)) return '--.--%';
-    
+
     const sign = change >= 0 ? '+' : '';
     return `${sign}${change.toFixed(2)}%`;
   }
@@ -584,7 +665,7 @@ export class StockService {
    */
   getPriceChangeColor(change: number): string {
     if (!isNumber(change)) return 'text-gray-500';
-    
+
     if (change > 0) return 'text-green-600';
     if (change < 0) return 'text-red-600';
     return 'text-gray-500';
@@ -595,7 +676,7 @@ export class StockService {
    */
   isPriceAboveAlert(currentPrice: number, alertPrice: number): boolean {
     if (!isNumber(currentPrice) || !isNumber(alertPrice)) return false;
-    
+
     return currentPrice >= alertPrice;
   }
 
@@ -604,16 +685,19 @@ export class StockService {
    */
   isPriceBelowAlert(currentPrice: number, alertPrice: number): boolean {
     if (!isNumber(currentPrice) || !isNumber(alertPrice)) return false;
-    
+
     return currentPrice < alertPrice;
   }
 
   /**
    * Get alert status
    */
-  getAlertStatus(currentPrice: number, alertPrice: number): 'above' | 'below' | 'neutral' {
+  getAlertStatus(
+    currentPrice: number,
+    alertPrice: number
+  ): 'above' | 'below' | 'neutral' {
     if (!isNumber(currentPrice) || !isNumber(alertPrice)) return 'neutral';
-    
+
     if (currentPrice >= alertPrice) return 'above';
     return 'below';
   }
@@ -621,11 +705,18 @@ export class StockService {
   /**
    * Calculate price change from previous close
    */
-  calculatePriceChange(currentPrice: number, previousClose: number): {
+  calculatePriceChange(
+    currentPrice: number,
+    previousClose: number
+  ): {
     change: number;
     percentChange: number;
   } {
-    if (!isNumber(currentPrice) || !isNumber(previousClose) || previousClose === 0) {
+    if (
+      !isNumber(currentPrice) ||
+      !isNumber(previousClose) ||
+      previousClose === 0
+    ) {
       return { change: 0, percentChange: 0 };
     }
 
@@ -642,7 +733,11 @@ export class StockService {
   /**
    * Health check for API connectivity (detailed version)
    */
-  async healthCheckDetailed(): Promise<{ status: 'ok' | 'error'; message: string; timestamp: number }> {
+  async healthCheckDetailed(): Promise<{
+    status: 'ok' | 'error';
+    message: string;
+    timestamp: number;
+  }> {
     try {
       // Create abort controller for timeout
       const controller = new AbortController();
@@ -663,21 +758,22 @@ export class StockService {
         return {
           status: 'ok',
           message: data.message || 'API is healthy',
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
       } else {
         return {
           status: 'error',
           message: `API health check failed: ${response.status} ${response.statusText}`,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown health check error';
+      const message =
+        error instanceof Error ? error.message : 'Unknown health check error';
       return {
         status: 'error',
         message: `API health check failed: ${message}`,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
     }
   }
@@ -699,7 +795,10 @@ export class StockService {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        console.error('Health check failed:', new Error(`HTTP ${response.status}`));
+        console.error(
+          'Health check failed:',
+          new Error(`HTTP ${response.status}`)
+        );
         return false;
       }
 
@@ -714,7 +813,9 @@ export class StockService {
    * Clear request cache manually (debug utility)
    */
   clearRequestCache(): void {
-    console.log(`🧹 [API] Clearing ${this.requestCache.size} cached requests`, { cacheSize: this.requestCache.size });
+    console.log(`🧹 [API] Clearing ${this.requestCache.size} cached requests`, {
+      cacheSize: this.requestCache.size,
+    });
     this.requestCache.clear();
   }
 
@@ -724,7 +825,7 @@ export class StockService {
   getCacheStats(): { size: number; keys: string[] } {
     return {
       size: this.requestCache.size,
-      keys: Array.from(this.requestCache.keys())
+      keys: Array.from(this.requestCache.keys()),
     };
   }
 
@@ -745,7 +846,7 @@ export class StockService {
   createSubscriptionMessage(symbol: string): string {
     return JSON.stringify({
       type: 'subscribe',
-      symbol: symbol.toUpperCase()
+      symbol: symbol.toUpperCase(),
     });
   }
 
@@ -755,38 +856,44 @@ export class StockService {
   createUnsubscriptionMessage(symbol: string): string {
     return JSON.stringify({
       type: 'unsubscribe',
-      symbol: symbol.toUpperCase()
+      symbol: symbol.toUpperCase(),
     });
   }
 
   /**
    * Parse WebSocket trade message
    */
-  parseTradeMessage(message: string | object | null | undefined): { symbol: string; price: number; timestamp: number } | null {
+  parseTradeMessage(
+    message: string | object | null | undefined
+  ): { symbol: string; price: number; timestamp: number } | null {
     try {
       if (message === null || message === undefined) {
         return null;
       }
-      
+
       let data;
       if (typeof message === 'string') {
         data = JSON.parse(message);
       } else {
         data = message;
       }
-      
+
       if (data.type === 'trade' && data.data && data.data.length > 0) {
         const trade = data.data[0];
-        
+
         // Check if all required fields are present
-        if (!trade.s || typeof trade.p !== 'number' || typeof trade.t !== 'number') {
+        if (
+          !trade.s ||
+          typeof trade.p !== 'number' ||
+          typeof trade.t !== 'number'
+        ) {
           return null;
         }
-        
+
         return {
           symbol: trade.s,
           price: trade.p,
-          timestamp: trade.t
+          timestamp: trade.t,
         };
       }
       return null;
@@ -801,4 +908,3 @@ export class StockService {
  * Export singleton instance
  */
 export const stockService = StockService.getInstance();
-

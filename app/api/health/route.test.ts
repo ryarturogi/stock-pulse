@@ -1,7 +1,7 @@
 /**
  * Integration Tests for Health Check API Route
  * ===========================================
- * 
+ *
  * Tests for the application health monitoring endpoint
  */
 
@@ -11,10 +11,14 @@ const mockJsonResponse = (data: any, init: any = {}) => {
   const mockHeaders = {
     get: (name: string) => headers[name] || null,
     has: (name: string) => name in headers,
-    set: (name: string, value: string) => { headers[name] = value; },
+    set: (name: string, value: string) => {
+      headers[name] = value;
+    },
     delete: (name: string) => delete headers[name],
     forEach: (callback: (value: string, key: string) => void) => {
-      Object.entries(headers).forEach(([key, value]) => callback(value as string, key));
+      Object.entries(headers).forEach(([key, value]) =>
+        callback(value as string, key)
+      );
     },
     entries: () => Object.entries(headers)[Symbol.iterator](),
     keys: () => Object.keys(headers)[Symbol.iterator](),
@@ -74,7 +78,9 @@ global.AbortController = jest.fn().mockImplementation(() => ({
 // Keep original setTimeout and clearTimeout for basic functionality
 const originalSetTimeout = setTimeout;
 const originalClearTimeout = clearTimeout;
-global.setTimeout = jest.fn().mockImplementation((fn, delay) => originalSetTimeout(fn, delay));
+global.setTimeout = jest
+  .fn()
+  .mockImplementation((fn, delay) => originalSetTimeout(fn, delay)) as any;
 global.clearTimeout = jest.fn().mockImplementation(originalClearTimeout);
 
 describe('/api/health', () => {
@@ -82,7 +88,7 @@ describe('/api/health', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset environment variables
     process.env = {
       ...originalEnv,
@@ -117,17 +123,19 @@ describe('/api/health', () => {
   describe('Successful Health Checks', () => {
     it('should return healthy status with all checks', async () => {
       const response = await GET();
-      
+
       expect(response).toBeDefined();
       expect(response.status).toBe(200);
-      
+
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.status).toBe('healthy');
-      expect(data.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(data.timestamp).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+      );
       expect(data.responseTime).toMatch(/^\d+ms$/);
-      
+
       expect(data.checks).toBeDefined();
       expect(data.checks.uptime).toBe(12345);
       expect(data.checks.memory).toEqual({
@@ -139,13 +147,13 @@ describe('/api/health', () => {
       });
       expect(data.checks.environment).toBe('test');
       expect(data.checks.version).toBe('1.2.3');
-      
+
       expect(data.checks.vercel).toEqual({
         env: 'development',
         region: 'iad1',
         url: 'test.vercel.app',
       });
-      
+
       expect(data.checks.externalApis.finnhub.status).toBe('healthy');
       expect(data.checks.externalApis.finnhub.responseTime).toMatch(/^\d+ms$/);
     });
@@ -153,7 +161,9 @@ describe('/api/health', () => {
     it('should include correct cache headers', async () => {
       const response = await GET();
 
-      expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate');
+      expect(response.headers.get('Cache-Control')).toBe(
+        'no-cache, no-store, must-revalidate'
+      );
       expect(response.headers.get('Pragma')).toBe('no-cache');
       expect(response.headers.get('Expires')).toBe('0');
     });
@@ -162,7 +172,9 @@ describe('/api/health', () => {
       const response = await GET();
       const data = await response.json();
 
-      const reportedResponseTime = parseInt(data.responseTime.replace('ms', ''));
+      const reportedResponseTime = parseInt(
+        data.responseTime.replace('ms', '')
+      );
 
       // Response time should be reasonable (within 1 second for tests)
       expect(reportedResponseTime).toBeLessThan(1000);
@@ -231,7 +243,7 @@ describe('/api/health', () => {
     it('should handle external API timeout', async () => {
       // Mock fetch to never resolve (simulating timeout)
       (fetch as jest.Mock).mockImplementation(() => new Promise(() => {}));
-      
+
       // Mock AbortController to simulate timeout
       const mockAbort = jest.fn();
       (global.AbortController as jest.Mock).mockImplementation(() => ({
@@ -240,7 +252,7 @@ describe('/api/health', () => {
       }));
 
       // Mock setTimeout to immediately call the abort function
-      const mockSetTimeout = jest.fn().mockImplementation((fn) => {
+      const mockSetTimeout = jest.fn().mockImplementation(fn => {
         if (typeof fn === 'function') {
           fn(); // Immediately call to simulate timeout
         }
@@ -257,17 +269,20 @@ describe('/api/health', () => {
     }, 15000);
 
     it('should include response time for external API checks', async () => {
-      (fetch as jest.Mock).mockImplementation(() => 
-        new Promise(resolve => 
-          setTimeout(() => resolve({ ok: true, status: 200 }), 100)
-        )
+      (fetch as jest.Mock).mockImplementation(
+        () =>
+          new Promise(resolve =>
+            setTimeout(() => resolve({ ok: true, status: 200 }), 100)
+          )
       );
 
       const response = await GET();
       const data = await response.json();
 
       expect(data.checks.externalApis.finnhub.responseTime).toMatch(/^\d+ms$/);
-      const responseTime = parseInt(data.checks.externalApis.finnhub.responseTime.replace('ms', ''));
+      const responseTime = parseInt(
+        data.checks.externalApis.finnhub.responseTime.replace('ms', '')
+      );
       expect(responseTime).toBeGreaterThanOrEqual(0);
     });
   });
@@ -303,8 +318,11 @@ describe('/api/health', () => {
     it('should include correct environment information', async () => {
       const originalEnv = process.env.NODE_ENV;
       const originalVersion = process.env.NEXT_PUBLIC_APP_VERSION;
-      
-      Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        writable: true,
+      });
       process.env.NEXT_PUBLIC_APP_VERSION = '2.1.0';
 
       const response = await GET();
@@ -312,9 +330,12 @@ describe('/api/health', () => {
 
       expect(data.checks.environment).toBe('production');
       expect(data.checks.version).toBe('2.1.0');
-      
+
       // Restore original values
-      Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, writable: true });
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: originalEnv,
+        writable: true,
+      });
       process.env.NEXT_PUBLIC_APP_VERSION = originalVersion;
     });
 
@@ -347,7 +368,9 @@ describe('/api/health', () => {
       expect(data.status).toBe('unhealthy');
       expect(data.error).toBe('Process uptime error');
       expect(data.responseTime).toMatch(/^\d+ms$/);
-      expect(data.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(data.timestamp).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+      );
     });
 
     it('should handle process.memoryUsage() throwing error', async () => {
@@ -365,7 +388,7 @@ describe('/api/health', () => {
 
     it('should handle non-Error exceptions', async () => {
       mockProcess.uptime.mockImplementation(() => {
-        throw 'String error';  
+        throw 'String error';
       });
 
       const response = await GET();
@@ -398,7 +421,9 @@ describe('/api/health', () => {
       const response = await GET();
 
       expect(response.status).toBe(503);
-      expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate');
+      expect(response.headers.get('Cache-Control')).toBe(
+        'no-cache, no-store, must-revalidate'
+      );
       expect(response.headers.get('Pragma')).toBe('no-cache');
       expect(response.headers.get('Expires')).toBe('0');
     });
@@ -436,8 +461,10 @@ describe('/api/health', () => {
       const data = await response.json();
 
       // ISO 8601 format
-      expect(data.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-      
+      expect(data.timestamp).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+      );
+
       // Should be a valid date
       const date = new Date(data.timestamp);
       expect(date.getTime()).not.toBeNaN();
@@ -448,7 +475,7 @@ describe('/api/health', () => {
       const data = await response.json();
 
       expect(data.responseTime).toMatch(/^\d+ms$/);
-      
+
       const timeValue = parseInt(data.responseTime.replace('ms', ''));
       expect(timeValue).toBeGreaterThanOrEqual(0);
     });
@@ -456,7 +483,9 @@ describe('/api/health', () => {
     it('should have correct Content-Type header', async () => {
       const response = await GET();
 
-      expect(response.headers.get('Content-Type')).toContain('application/json');
+      expect(response.headers.get('Content-Type')).toContain(
+        'application/json'
+      );
     });
   });
 
@@ -473,9 +502,9 @@ describe('/api/health', () => {
 
     it('should handle concurrent health check requests', async () => {
       const requests = Array.from({ length: 5 }, () => GET());
-      
+
       const responses = await Promise.all(requests);
-      
+
       responses.forEach(response => {
         expect(response.status).toBe(200);
       });
@@ -485,8 +514,9 @@ describe('/api/health', () => {
   describe('External API Health Check Function', () => {
     it('should timeout external API calls appropriately', async () => {
       // Mock a slow response that should be aborted
-      (fetch as jest.Mock).mockImplementation(() => 
-        new Promise(resolve => setTimeout(() => resolve({ ok: true }), 10000))
+      (fetch as jest.Mock).mockImplementation(
+        () =>
+          new Promise(resolve => setTimeout(() => resolve({ ok: true }), 10000))
       );
 
       const mockAbort = jest.fn();

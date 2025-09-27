@@ -1,7 +1,7 @@
 /**
  * Stock-Specific Types for React Developer Test Requirements
  * =========================================================
- * 
+ *
  * Enhanced types specifically for the stock tracking application
  * following the test requirements with Finnhub API integration.
  */
@@ -93,7 +93,14 @@ export interface ChartDataPoint {
 /**
  * WebSocket connection status
  */
-export type WebSocketStatus = 'disconnected' | 'connecting' | 'connected' | 'error' | 'disconnecting' | 'reconnecting' | 'offline';
+export type WebSocketStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'error'
+  | 'disconnecting'
+  | 'reconnecting'
+  | 'offline';
 
 /**
  * Refresh time intervals for live data
@@ -198,29 +205,29 @@ export type WebSocketStatusProps = ComponentProps<{
 export interface StockStoreState {
   // Watched stocks
   watchedStocks: WatchedStock[];
-  
+
   // WebSocket connection
   webSocketStatus: WebSocketStatus;
   webSocketConnection: EventSource | null;
   refreshInterval: NodeJS.Timeout | number | null;
   isConnecting: boolean;
   lastUpdateTimes: Map<string, number>;
-  
+
   // Refresh configuration
   refreshTimeInterval: RefreshInterval;
-  
+
   // Live data toggle
   isLiveDataEnabled: boolean;
-  
+
   // Connection management
   connectionAttempts: number;
   lastConnectionAttempt?: number;
   reconnectTimeout?: NodeJS.Timeout | null;
-  
+
   // UI state
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   addStock: (symbol: string, name: string, alertPrice: number) => void;
   removeStock: (symbol: string) => void;
@@ -231,19 +238,18 @@ export interface StockStoreState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
-  
-  
+
   // WebSocket actions
   connectWebSocket: () => void;
   disconnectWebSocket: () => void;
   resetWebSocketState: () => void;
   clearReconnectTimeout: () => void;
-  
+
   // Periodic refresh actions
   startPeriodicRefresh: () => void;
   stopPeriodicRefresh: () => void;
   setRefreshTimeInterval: (interval: RefreshInterval) => void;
-  
+
   // Live data toggle actions
   setLiveDataEnabled: (enabled: boolean) => void;
 
@@ -259,14 +265,14 @@ export interface StockStoreState {
  * Finnhub quote API response
  */
 export interface FinnhubQuoteResponse {
-  c: number;  // current price
-  d: number;  // change
+  c: number; // current price
+  d: number; // change
   dp: number; // percent change
-  h: number;  // high
-  l: number;  // low
-  o: number;  // open
+  h: number; // high
+  l: number; // low
+  o: number; // open
   pc: number; // previous close
-  t: number;  // timestamp
+  t: number; // timestamp
 }
 
 /**
@@ -353,19 +359,25 @@ export type MarketStatus = 'open' | 'closed' | 'pre-market' | 'after-hours';
 /**
  * Type guard for FinnhubStockQuote
  */
-export const isFinnhubStockQuote = (value: unknown): value is FinnhubStockQuote => {
+export const isFinnhubStockQuote = (
+  value: unknown
+): value is FinnhubStockQuote => {
   if (typeof value !== 'object' || value === null) {
     return false;
   }
-  
+
   const quote = value as FinnhubStockQuote;
-  
+
   // Check required fields exist and have valid values
   const hasSymbol = typeof quote.symbol === 'string' && quote.symbol.length > 0;
-  const hasCurrent = typeof quote.current === 'number' && !isNaN(quote.current) && quote.current >= 0;
+  const hasCurrent =
+    typeof quote.current === 'number' &&
+    !isNaN(quote.current) &&
+    quote.current >= 0;
   const hasChange = typeof quote.change === 'number' && !isNaN(quote.change);
-  const hasPercentChange = typeof quote.percentChange === 'number' && !isNaN(quote.percentChange);
-  
+  const hasPercentChange =
+    typeof quote.percentChange === 'number' && !isNaN(quote.percentChange);
+
   // For debugging: log validation details
   if (!hasSymbol || !hasCurrent || !hasChange || !hasPercentChange) {
     if (process.env.NODE_ENV === 'development') {
@@ -377,11 +389,11 @@ export const isFinnhubStockQuote = (value: unknown): value is FinnhubStockQuote 
         symbol: quote.symbol,
         current: quote.current,
         change: quote.change,
-        percentChange: quote.percentChange
+        percentChange: quote.percentChange,
       });
     }
   }
-  
+
   return hasSymbol && hasCurrent && hasChange && hasPercentChange;
 };
 
@@ -490,10 +502,10 @@ export interface PushServiceConfig {
 /**
  * Push notification error types
  */
-export type PushNotificationError = 
+export type PushNotificationError =
   | 'PERMISSION_DENIED'
   | 'SERVICE_WORKER_FAILED'
-  | 'SUBSCRIPTION_FAILED' 
+  | 'SUBSCRIPTION_FAILED'
   | 'NETWORK_ERROR'
   | 'QUOTA_EXCEEDED'
   | 'UNSUPPORTED_BROWSER'

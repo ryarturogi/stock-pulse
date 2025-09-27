@@ -1,7 +1,7 @@
 /**
  * Unit Tests for UI Components Index
  * ==================================
- * 
+ *
  * Tests for UI components export file
  */
 
@@ -24,7 +24,7 @@ describe('UI Components Index', () => {
   describe('Export Structure', () => {
     it('should have exactly the expected exports', () => {
       const expectedExports = ['Button'];
-      
+
       expectedExports.forEach(exportName => {
         expect(UIIndex).toHaveProperty(exportName);
         expect(typeof (UIIndex as any)[exportName]).toBe('function');

@@ -1,7 +1,7 @@
 /**
  * Stocks Feature Module
  * =====================
- * 
+ *
  * Main export point for the entire stocks feature module.
  */
 

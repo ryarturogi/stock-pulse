@@ -54,7 +54,8 @@ export const useTheme = (initialDark: boolean = false): ThemeState => {
       } else {
         // Check system preference if available
         try {
-          const prefersDark = window.matchMedia &&
+          const prefersDark =
+            window.matchMedia &&
             window.matchMedia('(prefers-color-scheme: dark)').matches;
           const themeValue = prefersDark || initialDark;
           setIsDarkMode(themeValue);
@@ -87,20 +88,17 @@ export const useTheme = (initialDark: boolean = false): ThemeState => {
   }, [isDarkMode]);
 
   // Set specific theme
-  const setDarkMode = useCallback(
-    (isDark: boolean) => {
-      setIsDarkMode(isDark);
-      updateDOMTheme(isDark);
-      try {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('stockpulse_theme', isDark ? 'dark' : 'light');
-        }
-      } catch {
-        // Ignore localStorage errors
+  const setDarkMode = useCallback((isDark: boolean) => {
+    setIsDarkMode(isDark);
+    updateDOMTheme(isDark);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('stockpulse_theme', isDark ? 'dark' : 'light');
       }
-    },
-    []
-  );
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, []);
 
   return {
     isDarkMode,

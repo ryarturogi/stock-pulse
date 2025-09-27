@@ -55,7 +55,7 @@ describe('Button Component', () => {
       const user = userEvent.setup();
       const handleClick = jest.fn();
       renderComponent({ onClick: handleClick, children: 'Clickable Button' });
-      
+
       await user.click(screen.getByRole('button'));
       expect(handleClick).toHaveBeenCalledTimes(1);
     });
@@ -77,16 +77,16 @@ describe('Button Component', () => {
     });
 
     it('does not render icons when loading', () => {
-      const leftIcon = <span data-testid="left-icon">←</span>;
-      const rightIcon = <span data-testid="right-icon">→</span>;
-      
+      const leftIcon = <span data-testid='left-icon'>←</span>;
+      const rightIcon = <span data-testid='right-icon'>→</span>;
+
       renderComponent({
         loading: true,
         leftIcon,
         rightIcon,
-        children: 'Loading Button'
+        children: 'Loading Button',
       });
-      
+
       expect(screen.queryByTestId('left-icon')).not.toBeInTheDocument();
       expect(screen.queryByTestId('right-icon')).not.toBeInTheDocument();
     });
@@ -104,16 +104,16 @@ describe('Button Component', () => {
   // Icon tests
   describe('Icons', () => {
     it('renders left icon when provided', () => {
-      const leftIcon = <span data-testid="left-icon">←</span>;
+      const leftIcon = <span data-testid='left-icon'>←</span>;
       renderComponent({ leftIcon, children: 'Button with Left Icon' });
-      
+
       expect(screen.getByTestId('left-icon')).toBeInTheDocument();
     });
 
     it('renders right icon when provided', () => {
-      const rightIcon = <span data-testid="right-icon">→</span>;
+      const rightIcon = <span data-testid='right-icon'>→</span>;
       renderComponent({ rightIcon, children: 'Button with Right Icon' });
-      
+
       expect(screen.getByTestId('right-icon')).toBeInTheDocument();
     });
   });
@@ -127,10 +127,10 @@ describe('Button Component', () => {
     });
 
     it('forwards other props to button element', () => {
-      renderComponent({ 
-        'data-testid': 'custom-button', 
+      renderComponent({
+        'data-testid': 'custom-button',
         type: 'submit',
-        children: 'Submit Button'
+        children: 'Submit Button',
       });
       const button = screen.getByTestId('custom-button');
       expect(button).toHaveAttribute('type', 'submit');

@@ -4,10 +4,10 @@ export async function GET() {
   try {
     // Generate a simple token for websocket authentication
     const token = generateWebSocketToken();
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       token,
-      expiresIn: 3600 // 1 hour
+      expiresIn: 3600, // 1 hour
     });
   } catch (error) {
     console.error('Failed to generate websocket token:', error);

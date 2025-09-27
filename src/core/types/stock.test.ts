@@ -1,7 +1,7 @@
 /**
  * Unit Tests for Stock Types
  * ==========================
- * 
+ *
  * Tests for type guards, constants, and type utilities
  */
 
@@ -10,12 +10,12 @@ import {
   isFinnhubStockQuote,
   isWatchedStock,
   isTradeData,
-  
+
   // Constants from constants file
   WEBSOCKET_CONFIG,
   PWA_CONFIG,
   REFRESH_INTERVALS,
-  
+
   // Types for testing
   type FinnhubStockQuote,
   type WatchedStock,
@@ -41,13 +41,13 @@ describe('Stock Types', () => {
       it('should return true for valid FinnhubStockQuote', () => {
         const validQuote: FinnhubStockQuote = {
           symbol: 'AAPL',
-          current: 150.00,
-          change: 2.50,
+          current: 150.0,
+          change: 2.5,
           percentChange: 1.67,
-          high: 152.00,
-          low: 148.00,
-          open: 149.00,
-          previousClose: 147.50,
+          high: 152.0,
+          low: 148.0,
+          open: 149.0,
+          previousClose: 147.5,
           timestamp: Date.now(),
         };
 
@@ -67,7 +67,7 @@ describe('Stock Types', () => {
           [],
         ];
 
-        invalidCases.forEach((testCase) => {
+        invalidCases.forEach(testCase => {
           expect(isFinnhubStockQuote(testCase)).toBe(false);
         });
       });
@@ -75,10 +75,10 @@ describe('Stock Types', () => {
       it('should require all core numeric fields', () => {
         const baseQuote = {
           symbol: 'AAPL',
-          high: 152.00,
-          low: 148.00,
-          open: 149.00,
-          previousClose: 147.50,
+          high: 152.0,
+          low: 148.0,
+          open: 149.0,
+          previousClose: 147.5,
           timestamp: Date.now(),
         };
 
@@ -89,19 +89,23 @@ describe('Stock Types', () => {
         expect(isFinnhubStockQuote({ ...baseQuote, current: 150 })).toBe(false);
 
         // Missing percentChange
-        expect(isFinnhubStockQuote({ 
-          ...baseQuote, 
-          current: 150, 
-          change: 2.50 
-        })).toBe(false);
+        expect(
+          isFinnhubStockQuote({
+            ...baseQuote,
+            current: 150,
+            change: 2.5,
+          })
+        ).toBe(false);
 
         // All required fields present
-        expect(isFinnhubStockQuote({ 
-          ...baseQuote, 
-          current: 150, 
-          change: 2.50,
-          percentChange: 1.67
-        })).toBe(true);
+        expect(
+          isFinnhubStockQuote({
+            ...baseQuote,
+            current: 150,
+            change: 2.5,
+            percentChange: 1.67,
+          })
+        ).toBe(true);
       });
     });
 
@@ -111,7 +115,7 @@ describe('Stock Types', () => {
           id: 'stock-1',
           symbol: 'AAPL',
           name: 'Apple Inc.',
-          alertPrice: 150.00,
+          alertPrice: 150.0,
         };
 
         expect(isWatchedStock(validStock)).toBe(true);
@@ -122,9 +126,9 @@ describe('Stock Types', () => {
           id: 'stock-1',
           symbol: 'AAPL',
           name: 'Apple Inc.',
-          alertPrice: 150.00,
-          currentPrice: 152.00,
-          change: 2.00,
+          alertPrice: 150.0,
+          currentPrice: 152.0,
+          change: 2.0,
           percentChange: 1.33,
           isLoading: false,
           lastUpdated: Date.now(),
@@ -145,7 +149,7 @@ describe('Stock Types', () => {
           [],
         ];
 
-        invalidCases.forEach((testCase) => {
+        invalidCases.forEach(testCase => {
           expect(isWatchedStock(testCase)).toBe(false);
         });
       });
@@ -155,29 +159,35 @@ describe('Stock Types', () => {
 
         // Add fields one by one
         expect(isWatchedStock(baseStock)).toBe(false);
-        
+
         expect(isWatchedStock({ ...baseStock, id: 'stock-1' })).toBe(false);
-        
-        expect(isWatchedStock({ 
-          ...baseStock, 
-          id: 'stock-1', 
-          symbol: 'AAPL' 
-        })).toBe(false);
-        
-        expect(isWatchedStock({ 
-          ...baseStock, 
-          id: 'stock-1', 
-          symbol: 'AAPL',
-          name: 'Apple Inc.'
-        })).toBe(false);
-        
-        expect(isWatchedStock({ 
-          ...baseStock, 
-          id: 'stock-1', 
-          symbol: 'AAPL',
-          name: 'Apple Inc.',
-          alertPrice: 150.00
-        })).toBe(true);
+
+        expect(
+          isWatchedStock({
+            ...baseStock,
+            id: 'stock-1',
+            symbol: 'AAPL',
+          })
+        ).toBe(false);
+
+        expect(
+          isWatchedStock({
+            ...baseStock,
+            id: 'stock-1',
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+          })
+        ).toBe(false);
+
+        expect(
+          isWatchedStock({
+            ...baseStock,
+            id: 'stock-1',
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+            alertPrice: 150.0,
+          })
+        ).toBe(true);
       });
     });
 
@@ -185,7 +195,7 @@ describe('Stock Types', () => {
       it('should return true for valid TradeData', () => {
         const validTrade: TradeData = {
           s: 'AAPL',
-          p: 150.00,
+          p: 150.0,
           t: Date.now(),
         };
 
@@ -195,7 +205,7 @@ describe('Stock Types', () => {
       it('should accept optional volume field', () => {
         const tradeWithVolume: TradeData = {
           s: 'AAPL',
-          p: 150.00,
+          p: 150.0,
           t: Date.now(),
           v: 1000,
         };
@@ -215,7 +225,7 @@ describe('Stock Types', () => {
           [],
         ];
 
-        invalidCases.forEach((testCase) => {
+        invalidCases.forEach(testCase => {
           expect(isTradeData(testCase)).toBe(false);
         });
       });
@@ -232,7 +242,7 @@ describe('Stock Types', () => {
     describe('DEFAULT_STOCK_OPTIONS', () => {
       it('should contain expected stock symbols', () => {
         const symbols = DEFAULT_STOCK_OPTIONS.map(stock => stock.symbol);
-        
+
         expect(symbols).toContain('AAPL');
         expect(symbols).toContain('GOOGL');
         expect(symbols).toContain('MSFT');
@@ -244,12 +254,12 @@ describe('Stock Types', () => {
       });
 
       it('should have valid structure for each stock option', () => {
-        DEFAULT_STOCK_OPTIONS.forEach((stock) => {
+        DEFAULT_STOCK_OPTIONS.forEach(stock => {
           expect(typeof stock.symbol).toBe('string');
           expect(typeof stock.name).toBe('string');
           expect(stock.symbol.length).toBeGreaterThan(0);
           expect(stock.name.length).toBeGreaterThan(0);
-          
+
           if (stock.exchange) {
             expect(typeof stock.exchange).toBe('string');
           }
@@ -257,7 +267,7 @@ describe('Stock Types', () => {
       });
 
       it('should have all stocks from NASDAQ exchange', () => {
-        DEFAULT_STOCK_OPTIONS.forEach((stock) => {
+        DEFAULT_STOCK_OPTIONS.forEach(stock => {
           expect(stock.exchange).toBe('NASDAQ');
         });
       });
@@ -265,9 +275,18 @@ describe('Stock Types', () => {
 
     describe('STOCK_COLORS', () => {
       it('should have colors for default stock symbols', () => {
-        const expectedSymbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX'];
-        
-        expectedSymbols.forEach((symbol) => {
+        const expectedSymbols = [
+          'AAPL',
+          'GOOGL',
+          'MSFT',
+          'AMZN',
+          'TSLA',
+          'META',
+          'NVDA',
+          'NFLX',
+        ];
+
+        expectedSymbols.forEach(symbol => {
           expect(STOCK_COLORS[symbol]).toBeDefined();
           expect(typeof STOCK_COLORS[symbol]).toBe('string');
           expect(STOCK_COLORS[symbol]).toMatch(/^#[0-9a-fA-F]{6}$/); // Valid hex color
@@ -277,7 +296,7 @@ describe('Stock Types', () => {
       it('should have unique colors for each stock', () => {
         const colors = Object.values(STOCK_COLORS);
         const uniqueColors = [...new Set(colors)];
-        
+
         expect(uniqueColors.length).toBe(colors.length);
       });
     });
@@ -304,13 +323,13 @@ describe('Stock Types', () => {
         expect(WEBSOCKET_CONFIG.MAX_RECONNECT_ATTEMPTS).toBe(5);
         expect(WEBSOCKET_CONFIG.PING_INTERVAL).toBe(30000);
         expect(WEBSOCKET_CONFIG.SUBSCRIPTION_LIMIT).toBe(50);
-        
+
         // TypeScript should prevent modification in compiled code, but runtime allows it
         // This demonstrates that 'as const' is primarily a TypeScript feature
         const originalValue = WEBSOCKET_CONFIG.RECONNECT_INTERVAL;
         (WEBSOCKET_CONFIG as any).RECONNECT_INTERVAL = 1000;
         expect(WEBSOCKET_CONFIG.RECONNECT_INTERVAL).toBe(1000); // Runtime allows modification
-        
+
         // Restore original value for other tests
         (WEBSOCKET_CONFIG as any).RECONNECT_INTERVAL = originalValue;
         expect(WEBSOCKET_CONFIG.RECONNECT_INTERVAL).toBe(5000);
@@ -325,7 +344,7 @@ describe('Stock Types', () => {
       });
 
       it('should have stockpulse prefixed keys', () => {
-        Object.values(STORAGE_KEYS).forEach((key) => {
+        Object.values(STORAGE_KEYS).forEach(key => {
           expect(key).toMatch(/^stockpulse_/);
         });
       });
@@ -355,16 +374,26 @@ describe('Stock Types', () => {
 
     describe('REFRESH_INTERVALS', () => {
       it('should contain expected interval options', () => {
-        const expectedValues: RefreshInterval[] = ['30s', '1m', '2m', '5m', '10m', '30m', '1h'];
-        
-        expectedValues.forEach((value) => {
-          const config = REFRESH_INTERVALS.find(interval => interval.value === value);
+        const expectedValues: RefreshInterval[] = [
+          '30s',
+          '1m',
+          '2m',
+          '5m',
+          '10m',
+          '30m',
+          '1h',
+        ];
+
+        expectedValues.forEach(value => {
+          const config = REFRESH_INTERVALS.find(
+            interval => interval.value === value
+          );
           expect(config).toBeDefined();
         });
       });
 
       it('should have valid structure for each interval', () => {
-        REFRESH_INTERVALS.forEach((interval) => {
+        REFRESH_INTERVALS.forEach(interval => {
           expect(typeof interval.value).toBe('string');
           expect(typeof interval.label).toBe('string');
           expect(typeof interval.milliseconds).toBe('number');
@@ -392,7 +421,9 @@ describe('Stock Types', () => {
         ];
 
         expectations.forEach(({ value, ms }) => {
-          const config = REFRESH_INTERVALS.find(interval => interval.value === value);
+          const config = REFRESH_INTERVALS.find(
+            interval => interval.value === value
+          );
           expect(config?.milliseconds).toBe(ms);
         });
       });
@@ -402,10 +433,15 @@ describe('Stock Types', () => {
   describe('Type Definitions', () => {
     describe('WebSocketStatus', () => {
       it('should accept valid status values', () => {
-        const validStatuses: WebSocketStatus[] = ['disconnected', 'connecting', 'connected', 'error'];
-        
+        const validStatuses: WebSocketStatus[] = [
+          'disconnected',
+          'connecting',
+          'connected',
+          'error',
+        ];
+
         // This test verifies TypeScript compilation more than runtime behavior
-        validStatuses.forEach((status) => {
+        validStatuses.forEach(status => {
           const testStatus: WebSocketStatus = status;
           expect(testStatus).toBe(status);
         });
@@ -414,9 +450,17 @@ describe('Stock Types', () => {
 
     describe('RefreshInterval', () => {
       it('should accept valid interval values', () => {
-        const validIntervals: RefreshInterval[] = ['30s', '1m', '2m', '5m', '10m', '30m', '1h'];
-        
-        validIntervals.forEach((interval) => {
+        const validIntervals: RefreshInterval[] = [
+          '30s',
+          '1m',
+          '2m',
+          '5m',
+          '10m',
+          '30m',
+          '1h',
+        ];
+
+        validIntervals.forEach(interval => {
           const testInterval: RefreshInterval = interval;
           expect(testInterval).toBe(interval);
         });
@@ -426,8 +470,8 @@ describe('Stock Types', () => {
     describe('AlertCondition', () => {
       it('should accept valid condition values', () => {
         const validConditions: AlertCondition[] = ['above', 'below'];
-        
-        validConditions.forEach((condition) => {
+
+        validConditions.forEach(condition => {
           const testCondition: AlertCondition = condition;
           expect(testCondition).toBe(condition);
         });
@@ -437,8 +481,8 @@ describe('Stock Types', () => {
     describe('PriceDirection', () => {
       it('should accept valid direction values', () => {
         const validDirections: PriceDirection[] = ['up', 'down', 'neutral'];
-        
-        validDirections.forEach((direction) => {
+
+        validDirections.forEach(direction => {
           const testDirection: PriceDirection = direction;
           expect(testDirection).toBe(direction);
         });
@@ -447,9 +491,14 @@ describe('Stock Types', () => {
 
     describe('MarketStatus', () => {
       it('should accept valid market status values', () => {
-        const validStatuses: MarketStatus[] = ['open', 'closed', 'pre-market', 'after-hours'];
-        
-        validStatuses.forEach((status) => {
+        const validStatuses: MarketStatus[] = [
+          'open',
+          'closed',
+          'pre-market',
+          'after-hours',
+        ];
+
+        validStatuses.forEach(status => {
           const testStatus: MarketStatus = status;
           expect(testStatus).toBe(status);
         });
@@ -458,9 +507,16 @@ describe('Stock Types', () => {
 
     describe('ChartTimeRange', () => {
       it('should accept valid time range values', () => {
-        const validRanges: ChartTimeRange[] = ['1H', '1D', '1W', '1M', '3M', '1Y'];
-        
-        validRanges.forEach((range) => {
+        const validRanges: ChartTimeRange[] = [
+          '1H',
+          '1D',
+          '1W',
+          '1M',
+          '3M',
+          '1Y',
+        ];
+
+        validRanges.forEach(range => {
           const testRange: ChartTimeRange = range;
           expect(testRange).toBe(range);
         });
@@ -474,19 +530,19 @@ describe('Stock Types', () => {
         id: 'stock-1',
         symbol: 'AAPL',
         name: 'Apple Inc.',
-        alertPrice: 150.00,
-        currentPrice: 152.50,
-        change: 2.50,
+        alertPrice: 150.0,
+        currentPrice: 152.5,
+        change: 2.5,
         percentChange: 1.67,
-        high: 155.00,
-        low: 148.00,
-        open: 149.00,
-        previousClose: 147.50,
+        high: 155.0,
+        low: 148.0,
+        open: 149.0,
+        previousClose: 147.5,
         isLoading: false,
         lastUpdated: Date.now(),
         priceHistory: [
-          { time: Date.now() - 60000, price: 149.00 },
-          { time: Date.now(), price: 152.50 },
+          { time: Date.now() - 60000, price: 149.0 },
+          { time: Date.now(), price: 152.5 },
         ],
         isAlertTriggered: true,
         alertTriggeredAt: Date.now(),
@@ -513,10 +569,10 @@ describe('Stock Types', () => {
         current: 150.25,
         change: 2.15,
         percentChange: 1.45,
-        high: 152.00,
-        low: 148.50,
-        open: 149.00,
-        previousClose: 148.10,
+        high: 152.0,
+        low: 148.5,
+        open: 149.0,
+        previousClose: 148.1,
         timestamp: 1640995200000,
         // Extra fields that shouldn't break the type guard
         extraField: 'should be ignored',

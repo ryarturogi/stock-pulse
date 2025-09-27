@@ -10,16 +10,17 @@ const config = {
     '!**/tests/e2e/**/*.(spec|test).(ts|tsx|js)', // Exclude Playwright e2e tests
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: {
-        jsx: 'react-jsx',
-        noImplicitOverride: false,
-      }
-    }],
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          jsx: 'react-jsx',
+          noImplicitOverride: false,
+        },
+      },
+    ],
   },
-  transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$))',
-  ],
+  transformIgnorePatterns: ['node_modules/(?!(.*\\.mjs$))'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

@@ -1,11 +1,14 @@
 /**
  * Tests for NotificationService
  * =============================
- * 
+ *
  * Tests for the stock price alert notification service.
  */
 
-import { NotificationService, getNotificationService } from './notificationService';
+import {
+  NotificationService,
+  getNotificationService,
+} from './notificationService';
 import type { WatchedStock } from '@/core/types';
 import { jest } from '@jest/globals';
 
@@ -16,12 +19,32 @@ interface MockNotification extends Notification {
   onerror: ((this: Notification, ev: Event) => any) | null;
 }
 
-interface MockServiceWorkerRegistration extends ServiceWorkerRegistration {
+interface MockServiceWorkerRegistration {
   installing: ServiceWorker | null;
   waiting: ServiceWorker | null;
   active: ServiceWorker | null;
-  showNotification: jest.MockedFunction<(...args: any[]) => any>;
+  showNotification: jest.MockedFunction<
+    (title: string, options?: NotificationOptions) => Promise<void>
+  >;
   getNotifications: jest.MockedFunction<() => Promise<Notification[]>>;
+  scope: string;
+  updateViaCache: ServiceWorkerUpdateViaCache;
+  onupdatefound:
+    | ((this: ServiceWorkerRegistration, ev: Event) => unknown)
+    | null;
+  addEventListener: jest.MockedFunction<
+    (type: string, listener: EventListener) => void
+  >;
+  removeEventListener: jest.MockedFunction<
+    (type: string, listener: EventListener) => void
+  >;
+  dispatchEvent: jest.MockedFunction<(event: Event) => boolean>;
+  unregister: jest.MockedFunction<() => Promise<boolean>>;
+  update: jest.MockedFunction<() => Promise<ServiceWorkerRegistration>>;
+  pushManager: unknown;
+  sync: unknown;
+  cookies: unknown;
+  navigationPreload: unknown;
 }
 
 // Global test setup
@@ -38,20 +61,20 @@ describe('NotificationService', () => {
     id: 'test-stock-1',
     symbol: 'AAPL',
     name: 'Apple Inc.',
-    alertPrice: 150.00,
-    currentPrice: 155.50,
-    change: 5.50,
+    alertPrice: 150.0,
+    currentPrice: 155.5,
+    change: 5.5,
     percentChange: 3.67,
-    lastUpdated: Date.now()
+    lastUpdated: Date.now(),
   };
 
   beforeEach(() => {
     // Reset singleton instance
     NotificationService.resetInstance();
-    
+
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Save original globals
     originalWindow = global.window;
     originalNavigator = global.navigator;
@@ -71,7 +94,7 @@ describe('NotificationService', () => {
       };
       return notification as MockNotification;
     });
-    
+
     // Setup service worker mock
     mockServiceWorkerRegistration = {
       installing: null,
@@ -80,10 +103,48 @@ describe('NotificationService', () => {
         state: 'activated',
         postMessage: jest.fn(),
         addEventListener: jest.fn(),
-      } as any,
-      showNotification: jest.fn(),
-      getNotifications: jest.fn().mockResolvedValue([]) as jest.MockedFunction<() => Promise<Notification[]>>,
-    } as MockServiceWorkerRegistration;
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+        onstatechange: null,
+        scriptURL: 'http://localhost:3000/sw.js',
+        onerror: null,
+      } as ServiceWorker,
+      showNotification: jest.fn() as jest.MockedFunction<
+        (title: string, options?: NotificationOptions) => Promise<void>
+      >,
+      getNotifications: jest.fn() as jest.MockedFunction<
+        () => Promise<Notification[]>
+      >,
+      scope: 'http://localhost:3000/',
+      updateViaCache: 'imports' as ServiceWorkerUpdateViaCache,
+      onupdatefound: null,
+      addEventListener: jest.fn() as jest.MockedFunction<
+        (type: string, listener: EventListener) => void
+      >,
+      removeEventListener: jest.fn() as jest.MockedFunction<
+        (type: string, listener: EventListener) => void
+      >,
+      dispatchEvent: jest.fn() as jest.MockedFunction<
+        (event: Event) => boolean
+      >,
+      unregister: jest.fn() as jest.MockedFunction<() => Promise<boolean>>,
+      update: jest.fn() as jest.MockedFunction<
+        () => Promise<ServiceWorkerRegistration>
+      >,
+      pushManager: {},
+      sync: {},
+      cookies: {},
+      navigationPreload: {},
+    };
+
+    // Set up mock return values
+    mockServiceWorkerRegistration.showNotification.mockResolvedValue(undefined);
+    mockServiceWorkerRegistration.getNotifications.mockResolvedValue([]);
+    mockServiceWorkerRegistration.dispatchEvent.mockReturnValue(true);
+    mockServiceWorkerRegistration.unregister.mockResolvedValue(true);
+    mockServiceWorkerRegistration.update.mockResolvedValue(
+      mockServiceWorkerRegistration as ServiceWorkerRegistration
+    );
 
     // Setup global mocks
     global.Notification = mockNotification as any;
@@ -95,9 +156,16 @@ describe('NotificationService', () => {
       value: {
         Notification: mockNotification,
         navigator: {
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          userAgent:
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           serviceWorker: {
-            register: jest.fn().mockResolvedValue(mockServiceWorkerRegistration),
+            register: jest
+              .fn()
+              .mockImplementation(() =>
+                Promise.resolve(
+                  mockServiceWorkerRegistration as unknown as ServiceWorkerRegistration
+                )
+              ),
             addEventListener: jest.fn(),
           },
         },
@@ -110,9 +178,16 @@ describe('NotificationService', () => {
 
     Object.defineProperty(global, 'navigator', {
       value: {
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         serviceWorker: {
-          register: jest.fn().mockResolvedValue(mockServiceWorkerRegistration),
+          register: jest
+            .fn()
+            .mockImplementation(() =>
+              Promise.resolve(
+                mockServiceWorkerRegistration as unknown as ServiceWorkerRegistration
+              )
+            ),
           addEventListener: jest.fn(),
         },
       },
@@ -129,10 +204,10 @@ describe('NotificationService', () => {
     if (service) {
       service.destroy();
     }
-    
+
     // Reset singleton
     NotificationService.resetInstance();
-    
+
     // Restore globals
     global.window = originalWindow;
     global.navigator = originalNavigator;
@@ -148,7 +223,7 @@ describe('NotificationService', () => {
       const instance1 = NotificationService.getInstance();
       const instance2 = NotificationService.getInstance();
       const instance3 = getNotificationService();
-      
+
       expect(instance1).toBe(instance2);
       expect(instance1).toBe(instance3);
     });
@@ -170,26 +245,28 @@ describe('NotificationService', () => {
   describe('Permission Management', () => {
     test('should request permission successfully', async () => {
       mockRequestPermission.mockResolvedValue('granted');
-      
+
       const result = await service.requestPermission();
-      
+
       expect(result).toBe('granted');
       expect(mockRequestPermission).toHaveBeenCalled();
     });
 
     test('should handle permission denied', async () => {
       mockRequestPermission.mockResolvedValue('denied');
-      
+
       const result = await service.requestPermission();
-      
+
       expect(result).toBe('denied');
     });
 
     test('should handle permission request errors', async () => {
-      mockRequestPermission.mockRejectedValue(new Error('Permission request failed'));
-      
+      mockRequestPermission.mockRejectedValue(
+        'denied' as NotificationPermission
+      );
+
       const result = await service.requestPermission();
-      
+
       expect(result).toBe('denied');
     });
   });
@@ -197,19 +274,23 @@ describe('NotificationService', () => {
   describe('Service Worker Management', () => {
     test('should register service worker successfully', async () => {
       mockRequestPermission.mockResolvedValue('granted');
-      
+
       await service.requestPermission();
-      
-      expect(global.navigator.serviceWorker.register).toHaveBeenCalledWith('/sw-custom.js');
+
+      expect(global.navigator.serviceWorker.register).toHaveBeenCalledWith(
+        '/sw-custom.js'
+      );
     });
 
     test('should handle service worker registration failure gracefully', async () => {
       const mockError = new Error('Service worker registration failed');
-      (global.navigator.serviceWorker.register as jest.Mock).mockRejectedValue(mockError);
+      (global.navigator.serviceWorker.register as jest.Mock).mockImplementation(
+        () => Promise.reject(mockError)
+      );
       mockRequestPermission.mockResolvedValue('granted');
-      
+
       const result = await service.requestPermission();
-      
+
       expect(result).toBe('granted');
       // Should not fail even if service worker fails
     });
@@ -223,33 +304,35 @@ describe('NotificationService', () => {
     });
 
     test('should send price alert notification successfully', async () => {
-      service.showPriceAlert(mockStock, 155.50);
-      
+      service.showPriceAlert(mockStock, 155.5);
+
       // Wait a bit for async operations
       await new Promise(resolve => setTimeout(resolve, 10));
-      
+
       // Should be called (either service worker or regular notification)
       expect(mockServiceWorkerRegistration.showNotification).toHaveBeenCalled();
     });
 
     test('should enforce rate limiting', () => {
       // First notification should succeed
-      service.showPriceAlert(mockStock, 155.50);
-      
+      service.showPriceAlert(mockStock, 155.5);
+
       // Immediate second notification should be rate limited (no additional calls)
-      const initialCallCount = mockServiceWorkerRegistration.showNotification.mock.calls.length;
-      service.showPriceAlert(mockStock, 156.00);
-      const finalCallCount = mockServiceWorkerRegistration.showNotification.mock.calls.length;
-      
+      const initialCallCount =
+        mockServiceWorkerRegistration.showNotification.mock.calls.length;
+      service.showPriceAlert(mockStock, 156.0);
+      const finalCallCount =
+        mockServiceWorkerRegistration.showNotification.mock.calls.length;
+
       expect(finalCallCount).toBe(initialCallCount);
     });
 
     test('should handle invalid stock data', () => {
       const invalidStock = { ...mockStock, symbol: '' };
-      
+
       // Should not throw error
       expect(() => {
-        service.showPriceAlert(invalidStock as WatchedStock, 155.50);
+        service.showPriceAlert(invalidStock as WatchedStock, 155.5);
       }).not.toThrow();
     });
   });
@@ -263,32 +346,32 @@ describe('NotificationService', () => {
 
     test('should show connection status notification', async () => {
       await service.showConnectionStatus(true);
-      
+
       expect(mockServiceWorkerRegistration.showNotification).toHaveBeenCalled();
     });
 
     test('should show error notification', async () => {
       await service.showError('Test error message');
-      
+
       expect(mockServiceWorkerRegistration.showNotification).toHaveBeenCalled();
     });
 
     test('should show success notification', async () => {
       await service.showSuccess('Test success message');
-      
+
       expect(mockServiceWorkerRegistration.showNotification).toHaveBeenCalled();
     });
 
     test('should clear all notifications', () => {
       service.clearAllNotifications();
-      
+
       // Should call getNotifications to get list for clearing
       expect(mockServiceWorkerRegistration.getNotifications).toHaveBeenCalled();
     });
 
     test('should clear stock notifications', () => {
       service.clearStockNotifications('AAPL');
-      
+
       // Should call getNotifications to get list for clearing
       expect(mockServiceWorkerRegistration.getNotifications).toHaveBeenCalled();
     });
@@ -297,27 +380,27 @@ describe('NotificationService', () => {
   describe('Cleanup and Resource Management', () => {
     test('should clear all notifications on destroy', async () => {
       mockServiceWorkerRegistration.getNotifications.mockResolvedValue([
-        { close: jest.fn() },
-        { close: jest.fn() },
+        { close: jest.fn() } as unknown as Notification,
+        { close: jest.fn() } as unknown as Notification,
       ]);
-      
+
       // First enable the service so it has a service worker registration
       mockRequestPermission.mockResolvedValue('granted');
       (global.Notification as any).permission = 'granted';
       await service.requestPermission();
-      
+
       service.destroy();
-      
+
       // Wait a bit for async operations
       await new Promise(resolve => setTimeout(resolve, 10));
-      
+
       // Verify cleanup was attempted
       expect(mockServiceWorkerRegistration.getNotifications).toHaveBeenCalled();
     });
 
     test('should handle cleanup gracefully when service worker unavailable', () => {
       service.destroy();
-      
+
       // Should not throw
       expect(() => service.destroy()).not.toThrow();
     });
@@ -329,14 +412,13 @@ describe('NotificationService', () => {
       mockRequestPermission.mockResolvedValue('granted');
       (global.Notification as any).permission = 'granted';
       await service.requestPermission();
-      
+
       service.setupClickHandlers();
-      
+
       // Should add event listener for service worker messages
-      expect(global.navigator.serviceWorker.addEventListener).toHaveBeenCalledWith(
-        'message',
-        expect.any(Function)
-      );
+      expect(
+        global.navigator.serviceWorker.addEventListener
+      ).toHaveBeenCalledWith('message', expect.any(Function));
     });
   });
 
@@ -344,7 +426,7 @@ describe('NotificationService', () => {
     test('should handle unsupported environment gracefully', () => {
       // Reset to unsupported environment
       NotificationService.resetInstance();
-      
+
       Object.defineProperty(global, 'window', {
         value: {
           navigator: global.navigator,
@@ -352,12 +434,12 @@ describe('NotificationService', () => {
         writable: true,
         configurable: true,
       });
-      
+
       const unsupportedService = NotificationService.getInstance();
-      
+
       expect(unsupportedService.isEnabled()).toBe(false);
       expect(unsupportedService.canRequestPermission()).toBe(false);
-      
+
       unsupportedService.destroy();
     });
   });

@@ -1,7 +1,7 @@
 /**
  * Unit Tests for useSearch Hook
  * =============================
- * 
+ *
  * Tests for the search functionality custom hook
  */
 
@@ -23,15 +23,13 @@ describe('useSearch', () => {
     { id: 5, name: 'Adidas Sneakers', category: 'Clothing' },
   ];
 
-  const mockFilterFn = (item: TestItem, query: string) => 
-    item.name.toLowerCase().includes(query) || 
+  const mockFilterFn = (item: TestItem, query: string) =>
+    item.name.toLowerCase().includes(query) ||
     item.category.toLowerCase().includes(query);
 
   describe('Initial State', () => {
     it('should have correct default initial state', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       expect(result.current.query).toBe('');
       expect(result.current.filteredItems).toEqual(mockItems);
@@ -41,7 +39,7 @@ describe('useSearch', () => {
     });
 
     it('should use provided initial query', () => {
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useSearch(mockItems, mockFilterFn, 'apple')
       );
 
@@ -51,16 +49,14 @@ describe('useSearch', () => {
     });
 
     it('should handle empty items array', () => {
-      const { result } = renderHook(() => 
-        useSearch([], mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch([], mockFilterFn));
 
       expect(result.current.filteredItems).toEqual([]);
       expect(result.current.isSearching).toBe(false);
     });
 
     it('should handle null/undefined initial query', () => {
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useSearch(mockItems, mockFilterFn, undefined as any)
       );
 
@@ -71,9 +67,7 @@ describe('useSearch', () => {
 
   describe('Query Management', () => {
     it('should update query when setQuery is called', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery('apple');
@@ -84,7 +78,7 @@ describe('useSearch', () => {
     });
 
     it('should clear query when clearQuery is called', () => {
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useSearch(mockItems, mockFilterFn, 'apple')
       );
 
@@ -99,9 +93,7 @@ describe('useSearch', () => {
     });
 
     it('should handle empty string queries', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery('');
@@ -113,9 +105,7 @@ describe('useSearch', () => {
     });
 
     it('should handle whitespace-only queries', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery('   ');
@@ -129,9 +119,7 @@ describe('useSearch', () => {
 
   describe('Filtering', () => {
     it('should filter items based on search query', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery('apple');
@@ -143,9 +131,7 @@ describe('useSearch', () => {
     });
 
     it('should be case insensitive', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery('APPLE');
@@ -155,9 +141,7 @@ describe('useSearch', () => {
     });
 
     it('should filter by category', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery('clothing');
@@ -169,9 +153,7 @@ describe('useSearch', () => {
     });
 
     it('should return empty array when no matches', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery('nonexistent');
@@ -181,9 +163,7 @@ describe('useSearch', () => {
     });
 
     it('should handle partial matches', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery('app');
@@ -199,7 +179,7 @@ describe('useSearch', () => {
         { id: 3, name: 'Item@3', category: 'Test' },
       ];
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useSearch(itemsWithSpecialChars, mockFilterFn)
       );
 
@@ -214,12 +194,10 @@ describe('useSearch', () => {
 
   describe('Custom Filter Function', () => {
     it('should use custom filter function', () => {
-      const customFilterFn = (item: TestItem, query: string) => 
+      const customFilterFn = (item: TestItem, query: string) =>
         item.id.toString() === query;
 
-      const { result } = renderHook(() => 
-        useSearch(mockItems, customFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, customFilterFn));
 
       act(() => {
         result.current.setQuery('1');
@@ -232,7 +210,7 @@ describe('useSearch', () => {
     it('should handle filter function that always returns true', () => {
       const alwaysTrueFilter = () => true;
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useSearch(mockItems, alwaysTrueFilter)
       );
 
@@ -246,7 +224,7 @@ describe('useSearch', () => {
     it('should handle filter function that always returns false', () => {
       const alwaysFalseFilter = () => false;
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useSearch(mockItems, alwaysFalseFilter)
       );
 
@@ -260,15 +238,14 @@ describe('useSearch', () => {
     it('should handle complex filter logic', () => {
       const complexFilter = (item: TestItem, query: string) => {
         const words = query.split(' ');
-        return words.every(word => 
-          item.name.toLowerCase().includes(word) || 
-          item.category.toLowerCase().includes(word)
+        return words.every(
+          word =>
+            item.name.toLowerCase().includes(word) ||
+            item.category.toLowerCase().includes(word)
         );
       };
 
-      const { result } = renderHook(() => 
-        useSearch(mockItems, complexFilter)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, complexFilter));
 
       act(() => {
         result.current.setQuery('apple electronics');
@@ -280,17 +257,13 @@ describe('useSearch', () => {
 
   describe('isSearching State', () => {
     it('should return false when query is empty', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       expect(result.current.isSearching).toBe(false);
     });
 
     it('should return true when query has content', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery('apple');
@@ -300,9 +273,7 @@ describe('useSearch', () => {
     });
 
     it('should return false when query is only whitespace', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery('   ');
@@ -312,9 +283,7 @@ describe('useSearch', () => {
     });
 
     it('should update correctly when query changes', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       // Start not searching
       expect(result.current.isSearching).toBe(false);
@@ -384,10 +353,10 @@ describe('useSearch', () => {
 
   describe('Filter Function Changes', () => {
     it('should update filtered results when filter function changes', () => {
-      const filterFn1 = (item: TestItem, query: string) => 
+      const filterFn1 = (item: TestItem, query: string) =>
         item.name.toLowerCase().includes(query);
 
-      const filterFn2 = (item: TestItem, query: string) => 
+      const filterFn2 = (item: TestItem, query: string) =>
         item.category.toLowerCase().includes(query);
 
       const { result, rerender } = renderHook(
@@ -406,7 +375,7 @@ describe('useSearch', () => {
 
   describe('Performance and Memoization', () => {
     it('should memoize clearQuery function', () => {
-      const { result, rerender } = renderHook(() => 
+      const { result, rerender } = renderHook(() =>
         useSearch(mockItems, mockFilterFn)
       );
 
@@ -418,7 +387,7 @@ describe('useSearch', () => {
     });
 
     it('should memoize filtered results', () => {
-      const { result, rerender } = renderHook(() => 
+      const { result, rerender } = renderHook(() =>
         useSearch(mockItems, mockFilterFn, 'apple')
       );
 
@@ -431,9 +400,7 @@ describe('useSearch', () => {
     });
 
     it('should recalculate filtered results when dependencies change', () => {
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       const originalFilteredItems = result.current.filteredItems;
 
@@ -447,9 +414,7 @@ describe('useSearch', () => {
 
   describe('Edge Cases', () => {
     it('should handle null items', () => {
-      const { result } = renderHook(() => 
-        useSearch(null as any, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(null as any, mockFilterFn));
 
       act(() => {
         result.current.setQuery('test');
@@ -460,7 +425,7 @@ describe('useSearch', () => {
     });
 
     it('should handle undefined items', () => {
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useSearch(undefined as any, mockFilterFn)
       );
 
@@ -477,9 +442,7 @@ describe('useSearch', () => {
         throw new Error('Filter error');
       };
 
-      const { result } = renderHook(() => 
-        useSearch(mockItems, errorFilter)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, errorFilter));
 
       // Should handle the error gracefully
       act(() => {
@@ -493,9 +456,7 @@ describe('useSearch', () => {
     it('should handle very long queries', () => {
       const longQuery = 'a'.repeat(1000);
 
-      const { result } = renderHook(() => 
-        useSearch(mockItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(mockItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery(longQuery);
@@ -512,9 +473,7 @@ describe('useSearch', () => {
         category: i % 2 === 0 ? 'Even' : 'Odd',
       }));
 
-      const { result } = renderHook(() => 
-        useSearch(largeItems, mockFilterFn)
-      );
+      const { result } = renderHook(() => useSearch(largeItems, mockFilterFn));
 
       act(() => {
         result.current.setQuery('Even');
@@ -527,12 +486,10 @@ describe('useSearch', () => {
   describe('Integration Scenarios', () => {
     it('should work with different data types', () => {
       const numberItems = [1, 2, 3, 4, 5];
-      const numberFilter = (item: number, query: string) => 
+      const numberFilter = (item: number, query: string) =>
         item.toString().includes(query);
 
-      const { result } = renderHook(() => 
-        useSearch(numberItems, numberFilter)
-      );
+      const { result } = renderHook(() => useSearch(numberItems, numberFilter));
 
       act(() => {
         result.current.setQuery('1');
@@ -557,11 +514,11 @@ describe('useSearch', () => {
         { id: 2, data: { name: 'Another', nested: { value: 'shallow' } } },
       ];
 
-      const complexFilter = (item: ComplexItem, query: string) => 
+      const complexFilter = (item: ComplexItem, query: string) =>
         item.data.name.toLowerCase().includes(query) ||
         item.data.nested.value.toLowerCase().includes(query);
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useSearch(complexItems, complexFilter)
       );
 

@@ -1,7 +1,7 @@
 /**
  * Integration Tests for WebSocket Service
  * ======================================
- * 
+ *
  * Tests for WebSocket connection management and real-time data handling
  */
 
@@ -133,7 +133,7 @@ describe('WebSocket Service Integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset environment
     process.env = {
       ...originalEnv,
@@ -155,19 +155,23 @@ describe('WebSocket Service Integration', () => {
 
     it('should throw error when API key is not configured', () => {
       delete process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
-      
+
       // Create new service instance to pick up env change
       const service = new (stockService.constructor as any)();
-      
-      expect(() => service.getWebSocketUrl()).toThrow('Finnhub API key not configured');
+
+      expect(() => service.getWebSocketUrl()).toThrow(
+        'Finnhub API key not configured'
+      );
     });
 
     it('should handle empty API key', () => {
       process.env.NEXT_PUBLIC_FINNHUB_API_KEY = '';
-      
+
       const service = new (stockService.constructor as any)();
-      
-      expect(() => service.getWebSocketUrl()).toThrow('Finnhub API key not configured');
+
+      expect(() => service.getWebSocketUrl()).toThrow(
+        'Finnhub API key not configured'
+      );
     });
   });
 
@@ -175,7 +179,7 @@ describe('WebSocket Service Integration', () => {
     it('should create valid subscription message', () => {
       const message = stockService.createSubscriptionMessage('AAPL');
       const parsed = JSON.parse(message);
-      
+
       expect(parsed).toEqual({
         type: 'subscribe',
         symbol: 'AAPL',
@@ -185,7 +189,7 @@ describe('WebSocket Service Integration', () => {
     it('should create valid unsubscription message', () => {
       const message = stockService.createUnsubscriptionMessage('googl');
       const parsed = JSON.parse(message);
-      
+
       expect(parsed).toEqual({
         type: 'unsubscribe',
         symbol: 'GOOGL',
@@ -195,7 +199,7 @@ describe('WebSocket Service Integration', () => {
     it('should uppercase symbols in messages', () => {
       const subMessage = stockService.createSubscriptionMessage('msft');
       const unsubMessage = stockService.createUnsubscriptionMessage('tsla');
-      
+
       expect(JSON.parse(subMessage).symbol).toBe('MSFT');
       expect(JSON.parse(unsubMessage).symbol).toBe('TSLA');
     });
@@ -203,7 +207,7 @@ describe('WebSocket Service Integration', () => {
     it('should handle symbols with special characters', () => {
       const message = stockService.createSubscriptionMessage('BRK.A');
       const parsed = JSON.parse(message);
-      
+
       expect(parsed.symbol).toBe('BRK.A');
     });
   });
@@ -212,19 +216,21 @@ describe('WebSocket Service Integration', () => {
     it('should parse valid trade message', () => {
       const tradeData = {
         type: 'trade',
-        data: [{
-          s: 'AAPL',
-          p: 155.50,
-          t: 1640995200,
-          v: 1000,
-        }],
+        data: [
+          {
+            s: 'AAPL',
+            p: 155.5,
+            t: 1640995200,
+            v: 1000,
+          },
+        ],
       };
 
       const result = stockService.parseTradeMessage(tradeData);
-      
+
       expect(result).toEqual({
         symbol: 'AAPL',
-        price: 155.50,
+        price: 155.5,
         timestamp: 1640995200,
       });
     });
@@ -242,10 +248,12 @@ describe('WebSocket Service Integration', () => {
     it('should return null for trade message without required fields', () => {
       const incompleteData = {
         type: 'trade',
-        data: [{
-          s: 'AAPL',
-          // Missing price and timestamp
-        }],
+        data: [
+          {
+            s: 'AAPL',
+            // Missing price and timestamp
+          },
+        ],
       };
 
       const result = stockService.parseTradeMessage(incompleteData);
@@ -276,16 +284,16 @@ describe('WebSocket Service Integration', () => {
       const multipleTradesData = {
         type: 'trade',
         data: [
-          { s: 'AAPL', p: 155.50, t: 1640995200 },
+          { s: 'AAPL', p: 155.5, t: 1640995200 },
           { s: 'AAPL', p: 155.75, t: 1640995210 },
         ],
       };
 
       const result = stockService.parseTradeMessage(multipleTradesData);
-      
+
       expect(result).toEqual({
         symbol: 'AAPL',
-        price: 155.50,
+        price: 155.5,
         timestamp: 1640995200,
       });
     });
@@ -298,9 +306,12 @@ describe('WebSocket Service Integration', () => {
       });
 
       const result = stockService.parseTradeMessage('invalid');
-      
+
       expect(result).toBeNull();
-      expect(console.error).toHaveBeenCalledWith('Failed to parse trade message:', expect.any(Error));
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to parse trade message:',
+        expect.any(Error)
+      );
 
       // Restore original JSON.parse
       JSON.parse = originalParse;
@@ -311,11 +322,11 @@ describe('WebSocket Service Integration', () => {
     let mockWebSocket: MockWebSocket;
 
     beforeEach(() => {
-      const MockedWebSocket = jest.fn().mockImplementation((url) => {
+      const MockedWebSocket = jest.fn().mockImplementation(url => {
         mockWebSocket = new MockWebSocket(url);
         return mockWebSocket;
       });
-      
+
       // Assign static properties to the mock function
       Object.assign(MockedWebSocket, {
         CONNECTING: MockWebSocket.CONNECTING,
@@ -323,81 +334,87 @@ describe('WebSocket Service Integration', () => {
         CLOSING: MockWebSocket.CLOSING,
         CLOSED: MockWebSocket.CLOSED,
       });
-      
+
       global.WebSocket = MockedWebSocket as any;
     });
 
     it('should create WebSocket connection with correct URL', () => {
       const url = stockService.getWebSocketUrl();
       const ws = new WebSocket(url);
-      
-      expect(global.WebSocket).toHaveBeenCalledWith('wss://ws.finnhub.io?token=test-api-key');
+
+      expect(global.WebSocket).toHaveBeenCalledWith(
+        'wss://ws.finnhub.io?token=test-api-key'
+      );
       expect(ws.url).toBe('wss://ws.finnhub.io?token=test-api-key');
     });
 
-    it('should handle WebSocket connection lifecycle', (done) => {
+    it('should handle WebSocket connection lifecycle', done => {
       const url = stockService.getWebSocketUrl();
       const ws = new WebSocket(url);
-      
-      ws.onopen = (event) => {
+
+      ws.onopen = event => {
         expect(event.type).toBe('open');
         expect(ws.readyState).toBe(WebSocket.OPEN);
         done();
       };
     });
 
-    it('should send subscription messages correctly', (done) => {
+    it('should send subscription messages correctly', done => {
       const url = stockService.getWebSocketUrl();
       const ws = new WebSocket(url);
-      
+
       const sendSpy = jest.spyOn(ws, 'send');
-      
+
       ws.onopen = () => {
         const message = stockService.createSubscriptionMessage('AAPL');
         ws.send(message);
-        
-        expect(sendSpy).toHaveBeenCalledWith(JSON.stringify({
-          type: 'subscribe',
-          symbol: 'AAPL',
-        }));
+
+        expect(sendSpy).toHaveBeenCalledWith(
+          JSON.stringify({
+            type: 'subscribe',
+            symbol: 'AAPL',
+          })
+        );
         done();
       };
     });
 
-    it('should receive and parse trade messages', (done) => {
+    it('should receive and parse trade messages', done => {
       const url = stockService.getWebSocketUrl();
       const ws = new WebSocket(url);
-      
+
       ws.onopen = () => {
         // Simulate receiving a trade message
         mockWebSocket.simulateMessage({
           type: 'trade',
-          data: [{
-            s: 'AAPL',
-            p: 155.50,
-            t: 1640995200,
-          }],
+          data: [
+            {
+              s: 'AAPL',
+              p: 155.5,
+              t: 1640995200,
+            },
+          ],
         });
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = event => {
         const data = JSON.parse(event.data);
         const trade = stockService.parseTradeMessage(data);
-        
+
         expect(trade).toEqual({
           symbol: 'AAPL',
-          price: 155.50,
+          price: 155.5,
           timestamp: 1640995200,
         });
         done();
       };
     });
 
-    it('should handle WebSocket errors gracefully', (done) => {
+    it('should handle WebSocket errors gracefully', done => {
       const url = stockService.getWebSocketUrl();
       const ws = new WebSocket(url);
-      
-      ws.onerror = (error) => {
+
+      ws.onerror = error => {
         expect(error.type).toBe('error');
         done();
       };
@@ -407,11 +424,11 @@ describe('WebSocket Service Integration', () => {
       };
     });
 
-    it('should handle WebSocket close events', (done) => {
+    it('should handle WebSocket close events', done => {
       const url = stockService.getWebSocketUrl();
       const ws = new WebSocket(url);
-      
-      ws.onclose = (event) => {
+
+      ws.onclose = event => {
         expect(event.code).toBe(1000);
         expect(event.reason).toBe('Normal closure');
         expect(ws.readyState).toBe(WebSocket.CLOSED);
@@ -428,18 +445,18 @@ describe('WebSocket Service Integration', () => {
     let mockEventSource: MockEventSource;
 
     beforeEach(() => {
-      const MockedEventSource = jest.fn().mockImplementation((url) => {
+      const MockedEventSource = jest.fn().mockImplementation(url => {
         mockEventSource = new MockEventSource(url);
         return mockEventSource;
       });
-      
+
       // Assign static properties to the mock function
       Object.assign(MockedEventSource, {
         CONNECTING: MockEventSource.CONNECTING,
         OPEN: MockEventSource.OPEN,
         CLOSED: MockEventSource.CLOSED,
       });
-      
+
       global.EventSource = MockedEventSource as any;
     });
 
@@ -447,50 +464,50 @@ describe('WebSocket Service Integration', () => {
       const symbols = 'AAPL,GOOGL';
       const url = `/api/websocket-proxy?symbols=${symbols}`;
       const eventSource = new EventSource(url);
-      
+
       expect(global.EventSource).toHaveBeenCalledWith(url);
       expect(eventSource.url).toBe(url);
     });
 
-    it('should handle EventSource connection events', (done) => {
+    it('should handle EventSource connection events', done => {
       const eventSource = new EventSource('/api/websocket-proxy?symbols=AAPL');
-      
-      eventSource.onopen = (event) => {
+
+      eventSource.onopen = event => {
         expect(event.type).toBe('open');
         expect(eventSource.readyState).toBe(EventSource.OPEN);
         done();
       };
     });
 
-    it('should receive trade messages from WebSocket proxy', (done) => {
+    it('should receive trade messages from WebSocket proxy', done => {
       const eventSource = new EventSource('/api/websocket-proxy?symbols=AAPL');
-      
+
       eventSource.onopen = () => {
         // Simulate receiving a trade message from proxy
         mockEventSource.simulateMessage({
           type: 'trade',
           data: {
             symbol: 'AAPL',
-            price: 155.50,
+            price: 155.5,
             timestamp: 1640995200000,
             volume: 1000,
           },
         });
       };
 
-      eventSource.onmessage = (event) => {
+      eventSource.onmessage = event => {
         const data = JSON.parse(event.data);
-        
+
         expect(data.type).toBe('trade');
         expect(data.data.symbol).toBe('AAPL');
-        expect(data.data.price).toBe(155.50);
+        expect(data.data.price).toBe(155.5);
         done();
       };
     });
 
-    it('should receive connection messages from WebSocket proxy', (done) => {
+    it('should receive connection messages from WebSocket proxy', done => {
       const eventSource = new EventSource('/api/websocket-proxy?symbols=AAPL');
-      
+
       eventSource.onopen = () => {
         mockEventSource.simulateMessage({
           type: 'connected',
@@ -499,19 +516,19 @@ describe('WebSocket Service Integration', () => {
         });
       };
 
-      eventSource.onmessage = (event) => {
+      eventSource.onmessage = event => {
         const data = JSON.parse(event.data);
-        
+
         expect(data.type).toBe('connected');
         expect(data.symbols).toEqual(['AAPL']);
         done();
       };
     });
 
-    it('should handle EventSource errors', (done) => {
+    it('should handle EventSource errors', done => {
       const eventSource = new EventSource('/api/websocket-proxy?symbols=AAPL');
-      
-      eventSource.onerror = (error) => {
+
+      eventSource.onerror = error => {
         expect(error.type).toBe('error');
         done();
       };
@@ -523,11 +540,11 @@ describe('WebSocket Service Integration', () => {
 
     it('should properly close EventSource connections', () => {
       const eventSource = new EventSource('/api/websocket-proxy?symbols=AAPL');
-      
+
       expect(eventSource.readyState).toBe(EventSource.CONNECTING);
-      
+
       eventSource.close();
-      
+
       expect(eventSource.readyState).toBe(EventSource.CLOSED);
     });
   });
@@ -540,7 +557,7 @@ describe('WebSocket Service Integration', () => {
       });
 
       const isHealthy = await stockService.healthCheck();
-      
+
       expect(isHealthy).toBe(true);
       expect(mockFetch).toHaveBeenCalledWith('/api/health', {
         method: 'GET',
@@ -555,18 +572,24 @@ describe('WebSocket Service Integration', () => {
       });
 
       const isHealthy = await stockService.healthCheck();
-      
+
       expect(isHealthy).toBe(false);
-      expect(console.error).toHaveBeenCalledWith('Health check failed:', expect.any(Error));
+      expect(console.error).toHaveBeenCalledWith(
+        'Health check failed:',
+        expect.any(Error)
+      );
     });
 
     it('should handle health check network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       const isHealthy = await stockService.healthCheck();
-      
+
       expect(isHealthy).toBe(false);
-      expect(console.error).toHaveBeenCalledWith('Health check failed:', expect.any(Error));
+      expect(console.error).toHaveBeenCalledWith(
+        'Health check failed:',
+        expect.any(Error)
+      );
     });
 
     it.skip('should respect health check timeout', async () => {
@@ -576,7 +599,7 @@ describe('WebSocket Service Integration', () => {
       );
 
       const healthPromise = stockService.healthCheck();
-      
+
       // Health check should timeout and return false
       await expect(healthPromise).resolves.toBe(false);
     });
@@ -587,33 +610,37 @@ describe('WebSocket Service Integration', () => {
       const FailingWebSocket = jest.fn().mockImplementation(() => {
         throw new Error('WebSocket not supported');
       });
-      
+
       Object.assign(FailingWebSocket, {
         CONNECTING: 0,
         OPEN: 1,
         CLOSING: 2,
         CLOSED: 3,
       });
-      
+
       global.WebSocket = FailingWebSocket as any;
 
-      expect(() => new WebSocket('wss://test.com')).toThrow('WebSocket not supported');
+      expect(() => new WebSocket('wss://test.com')).toThrow(
+        'WebSocket not supported'
+      );
     });
 
     it('should handle EventSource constructor errors', () => {
       const FailingEventSource = jest.fn().mockImplementation(() => {
         throw new Error('EventSource not supported');
       });
-      
+
       Object.assign(FailingEventSource, {
         CONNECTING: 0,
         OPEN: 1,
         CLOSED: 2,
       });
-      
+
       global.EventSource = FailingEventSource as any;
 
-      expect(() => new EventSource('/test')).toThrow('EventSource not supported');
+      expect(() => new EventSource('/test')).toThrow(
+        'EventSource not supported'
+      );
     });
 
     it('should handle malformed trade messages gracefully', () => {
@@ -638,7 +665,7 @@ describe('WebSocket Service Integration', () => {
       const formats = [
         {
           type: 'trade',
-          data: [{ s: 'AAPL', p: 155.50, t: 1640995200, v: 1000 }],
+          data: [{ s: 'AAPL', p: 155.5, t: 1640995200, v: 1000 }],
         },
         {
           type: 'trade',
@@ -660,25 +687,25 @@ describe('WebSocket Service Integration', () => {
     let mockEventSource: MockEventSource;
 
     beforeEach(() => {
-      const MockedEventSource = jest.fn().mockImplementation((url) => {
+      const MockedEventSource = jest.fn().mockImplementation(url => {
         mockEventSource = new MockEventSource(url);
         return mockEventSource;
       });
-      
+
       // Assign static properties to the mock function
       Object.assign(MockedEventSource, {
         CONNECTING: MockEventSource.CONNECTING,
         OPEN: MockEventSource.OPEN,
         CLOSED: MockEventSource.CLOSED,
       });
-      
+
       global.EventSource = MockedEventSource as any;
     });
 
-    it('should handle rapid succession of trade messages', (done) => {
+    it('should handle rapid succession of trade messages', done => {
       const eventSource = new EventSource('/api/websocket-proxy?symbols=AAPL');
       const receivedMessages: any[] = [];
-      
+
       eventSource.onopen = () => {
         // Simulate rapid trade messages
         for (let i = 0; i < 100; i++) {
@@ -686,20 +713,20 @@ describe('WebSocket Service Integration', () => {
             type: 'trade',
             data: {
               symbol: 'AAPL',
-              price: 155.50 + i * 0.01,
+              price: 155.5 + i * 0.01,
               timestamp: 1640995200000 + i * 1000,
             },
           });
         }
       };
 
-      eventSource.onmessage = (event) => {
+      eventSource.onmessage = event => {
         const data = JSON.parse(event.data);
         receivedMessages.push(data);
-        
+
         if (receivedMessages.length === 100) {
           expect(receivedMessages).toHaveLength(100);
-          expect(receivedMessages[0].data.price).toBe(155.50);
+          expect(receivedMessages[0].data.price).toBe(155.5);
           expect(receivedMessages[99].data.price).toBe(156.49);
           done();
         }
@@ -707,25 +734,29 @@ describe('WebSocket Service Integration', () => {
     });
 
     it('should handle connection with many symbols', () => {
-      const symbols = Array.from({ length: 50 }, (_, i) => `STOCK${i}`).join(',');
-      const eventSource = new EventSource(`/api/websocket-proxy?symbols=${symbols}`);
-      
+      const symbols = Array.from({ length: 50 }, (_, i) => `STOCK${i}`).join(
+        ','
+      );
+      const eventSource = new EventSource(
+        `/api/websocket-proxy?symbols=${symbols}`
+      );
+
       expect(eventSource.url).toContain('symbols=STOCK0,STOCK1');
       expect(eventSource.url).toContain('STOCK49');
     });
 
     it('should handle memory cleanup on connection close', () => {
       const eventSource = new EventSource('/api/websocket-proxy?symbols=AAPL');
-      
+
       // Set up event handlers
       eventSource.onmessage = jest.fn();
       eventSource.onerror = jest.fn();
-      
+
       // Close connection
       eventSource.close();
-      
+
       expect(eventSource.readyState).toBe(EventSource.CLOSED);
-      
+
       // Verify no more events are processed
       mockEventSource.simulateMessage({ type: 'test' });
       expect(eventSource.onmessage).not.toHaveBeenCalled();
