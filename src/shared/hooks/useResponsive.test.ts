@@ -1,7 +1,7 @@
 /**
  * Unit Tests for useResponsive Hook
  * =================================
- * 
+ *
  * Tests for the responsive design custom hook
  */
 
@@ -246,7 +246,10 @@ describe('useResponsive', () => {
       expect(state.height).toBe(600);
 
       // Verify only one breakpoint is true
-      const breakpointCount = Number(state.isMobile) + Number(state.isTablet) + Number(state.isDesktop);
+      const breakpointCount =
+        Number(state.isMobile) +
+        Number(state.isTablet) +
+        Number(state.isDesktop);
       expect(breakpointCount).toBe(1);
     });
   });
@@ -321,7 +324,10 @@ describe('useResponsive', () => {
 
       renderHook(() => useResponsive());
 
-      expect(addEventListenerSpy).toHaveBeenCalledWith('resize', expect.any(Function));
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
+        'resize',
+        expect.any(Function)
+      );
 
       addEventListenerSpy.mockRestore();
     });
@@ -333,7 +339,10 @@ describe('useResponsive', () => {
 
       unmount();
 
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('resize', expect.any(Function));
+      expect(removeEventListenerSpy).toHaveBeenCalledWith(
+        'resize',
+        expect.any(Function)
+      );
 
       removeEventListenerSpy.mockRestore();
     });
@@ -343,7 +352,9 @@ describe('useResponsive', () => {
       // @ts-expect-error - Intentionally deleting global.window for testing
       delete global.window;
 
-      const addEventListenerSpy = jest.spyOn(global, 'addEventListener').mockImplementation();
+      const addEventListenerSpy = jest
+        .spyOn(global, 'addEventListener')
+        .mockImplementation();
 
       renderHook(() => useResponsive());
 
@@ -381,7 +392,7 @@ describe('useResponsive', () => {
       // Should update responsively
       expect(result.current.isDesktop).toBe(false);
       expect(result.current.isTablet).toBe(true);
-      
+
       // Verify state actually changed from initial state
       expect(result.current.isDesktop).not.toBe(initialState.isDesktop);
 
@@ -449,11 +460,11 @@ describe('useResponsive', () => {
       const { result } = renderHook(() => useResponsive());
 
       const testSizes = [
-        [320, 568],   // Mobile
-        [375, 812],   // Mobile
-        [768, 1024],  // Tablet
-        [900, 600],   // Tablet
-        [1024, 768],  // Desktop
+        [320, 568], // Mobile
+        [375, 812], // Mobile
+        [768, 1024], // Tablet
+        [900, 600], // Tablet
+        [1024, 768], // Desktop
         [1920, 1080], // Desktop
       ];
 
@@ -463,7 +474,11 @@ describe('useResponsive', () => {
         });
 
         const state = result.current;
-        const activeBreakpoints = [state.isMobile, state.isTablet, state.isDesktop].filter(Boolean);
+        const activeBreakpoints = [
+          state.isMobile,
+          state.isTablet,
+          state.isDesktop,
+        ].filter(Boolean);
         expect(activeBreakpoints).toHaveLength(1);
       });
     });

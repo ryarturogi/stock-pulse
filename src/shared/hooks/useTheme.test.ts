@@ -1,7 +1,7 @@
 /**
  * Unit Tests for useTheme Hook
  * ============================
- * 
+ *
  * Tests for the theme management custom hook
  */
 
@@ -90,7 +90,9 @@ describe('useTheme', () => {
 
       const { result } = renderHook(() => useTheme());
 
-      expect(window.matchMedia).toHaveBeenCalledWith('(prefers-color-scheme: dark)');
+      expect(window.matchMedia).toHaveBeenCalledWith(
+        '(prefers-color-scheme: dark)'
+      );
       expect(result.current.isDarkMode).toBe(true);
       expect(mockDocumentElement.classList.add).toHaveBeenCalledWith('dark');
     });
@@ -109,7 +111,10 @@ describe('useTheme', () => {
   describe('Server-Side Rendering', () => {
     it('should handle SSR when window is undefined', () => {
       // Create a new environment without window
-      const originalDescriptor = Object.getOwnPropertyDescriptor(global, 'window');
+      const originalDescriptor = Object.getOwnPropertyDescriptor(
+        global,
+        'window'
+      );
       delete (global as any).window;
 
       const { result } = renderHook(() => useTheme());
@@ -152,7 +157,10 @@ describe('useTheme', () => {
 
       expect(result.current.isDarkMode).toBe(true);
       expect(mockDocumentElement.classList.add).toHaveBeenCalledWith('dark');
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_theme', 'dark');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_theme',
+        'dark'
+      );
     });
 
     it('should toggle from dark to light', () => {
@@ -164,7 +172,10 @@ describe('useTheme', () => {
 
       expect(result.current.isDarkMode).toBe(false);
       expect(mockDocumentElement.classList.remove).toHaveBeenCalledWith('dark');
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_theme', 'light');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_theme',
+        'light'
+      );
     });
 
     it('should handle multiple toggles', () => {
@@ -202,7 +213,10 @@ describe('useTheme', () => {
 
       expect(result.current.isDarkMode).toBe(true);
       expect(mockDocumentElement.classList.add).toHaveBeenCalledWith('dark');
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_theme', 'dark');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_theme',
+        'dark'
+      );
     });
 
     it('should set dark mode to false', () => {
@@ -216,7 +230,10 @@ describe('useTheme', () => {
 
       expect(result.current.isDarkMode).toBe(false);
       expect(mockDocumentElement.classList.remove).toHaveBeenCalledWith('dark');
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_theme', 'light');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_theme',
+        'light'
+      );
     });
   });
 
@@ -270,7 +287,10 @@ describe('useTheme', () => {
         result.current.toggle();
       });
 
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_theme', 'dark');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_theme',
+        'dark'
+      );
     });
 
     it('should save light theme to localStorage', () => {
@@ -280,7 +300,10 @@ describe('useTheme', () => {
         result.current.toggle();
       });
 
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('stockpulse_theme', 'light');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'stockpulse_theme',
+        'light'
+      );
     });
 
     it('should handle localStorage errors gracefully', () => {
@@ -345,7 +368,9 @@ describe('useTheme', () => {
       const { result } = renderHook(() => useTheme());
 
       // Should fall back to system preference
-      expect(window.matchMedia).toHaveBeenCalledWith('(prefers-color-scheme: dark)');
+      expect(window.matchMedia).toHaveBeenCalledWith(
+        '(prefers-color-scheme: dark)'
+      );
       expect(result.current.isDarkMode).toBe(false);
     });
 

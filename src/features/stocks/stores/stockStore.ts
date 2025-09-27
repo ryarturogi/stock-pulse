@@ -1,7 +1,7 @@
 /**
  * Stock Tracking Store with Zustand
  * =================================
- * 
+ *
  * Centralized state management for stock tracking functionality
  * following the React Developer test requirements.
  */
@@ -16,7 +16,7 @@ import {
   FinnhubStockQuote,
   WebSocketStatus,
   RefreshInterval,
-  REFRESH_INTERVALS
+  REFRESH_INTERVALS,
 } from '@/core/types';
 import { getNotificationService } from '@/features/notifications';
 import { StockWebSocketService } from '@/features/stocks/services/stockWebSocketService';
@@ -56,7 +56,7 @@ export const useStockStore = create<StockStoreState>()(
       // Stock management actions
       addStock: (symbol: string, name: string, alertPrice: number) => {
         const state = get();
-        
+
         // Check if stock is already being watched
         if (state.watchedStocks.some(stock => stock.symbol === symbol)) {
           set({ error: `Stock ${symbol} is already being watched` });
@@ -79,20 +79,28 @@ export const useStockStore = create<StockStoreState>()(
         }));
 
         // Only reconnect WebSocket if we're currently connected and live data is enabled
-        const { webSocketStatus, webSocketConnection, isLiveDataEnabled } = get();
-        if (webSocketStatus === 'connected' && webSocketConnection && isLiveDataEnabled) {
+        const { webSocketStatus, webSocketConnection, isLiveDataEnabled } =
+          get();
+        if (
+          webSocketStatus === 'connected' &&
+          webSocketConnection &&
+          isLiveDataEnabled
+        ) {
           console.log(`📡 Reconnecting WebSocket to include ${symbol}`);
           // Immediate disconnect and reconnect with new symbol
           (webSocketConnection as EventSource).close();
-          set({ 
-            webSocketConnection: null, 
-            webSocketStatus: 'disconnected' 
+          set({
+            webSocketConnection: null,
+            webSocketStatus: 'disconnected',
           });
-          
+
           // Reconnect after a short delay to allow UI to update
           setTimeout(() => {
             const currentState = get();
-            if (currentState.watchedStocks.some(s => s.symbol === symbol) && currentState.isLiveDataEnabled) {
+            if (
+              currentState.watchedStocks.some(s => s.symbol === symbol) &&
+              currentState.isLiveDataEnabled
+            ) {
               currentState.connectWebSocket();
             }
           }, 5000); // 5 seconds - reasonable delay
@@ -102,7 +110,9 @@ export const useStockStore = create<StockStoreState>()(
 
       removeStock: (symbol: string) => {
         set(state => ({
-          watchedStocks: state.watchedStocks.filter(stock => stock.symbol !== symbol),
+          watchedStocks: state.watchedStocks.filter(
+            stock => stock.symbol !== symbol
+          ),
           error: null,
         }));
 
@@ -112,11 +122,11 @@ export const useStockStore = create<StockStoreState>()(
           console.log(`📡 Reconnecting WebSocket to remove ${symbol}`);
           // Immediate disconnect and reconnect with remaining symbols
           (webSocketConnection as EventSource).close();
-          set({ 
-            webSocketConnection: null, 
-            webSocketStatus: 'disconnected' 
+          set({
+            webSocketConnection: null,
+            webSocketStatus: 'disconnected',
           });
-          
+
           // Reconnect after a short delay if there are still stocks to watch
           const reconnectTimeout = setTimeout(() => {
             const currentState = get();
@@ -124,7 +134,7 @@ export const useStockStore = create<StockStoreState>()(
               currentState.connectWebSocket();
             }
           }, 300);
-          
+
           // Store timeout reference for cleanup
           set({ reconnectTimeout });
         }
@@ -146,7 +156,9 @@ export const useStockStore = create<StockStoreState>()(
           error: null,
         }));
 
-        console.log(`📝 Updated alert price for ${symbol}: $${newAlertPrice.toFixed(2)}`);
+        console.log(
+          `📝 Updated alert price for ${symbol}: $${newAlertPrice.toFixed(2)}`
+        );
       },
 
       // Update stock price with throttling to prevent excessive updates
@@ -163,17 +175,19 @@ export const useStockStore = create<StockStoreState>()(
 
         // Update last update time
         set(state => ({
-          lastUpdateTimes: new Map(state.lastUpdateTimes).set(symbol, now)
+          lastUpdateTimes: new Map(state.lastUpdateTimes).set(symbol, now),
         }));
 
-        console.log(`💰 Updating price for ${symbol}: $${quote.current} ${new Date().toLocaleTimeString()}`);
+        console.log(
+          `💰 Updating price for ${symbol}: $${quote.current} ${new Date().toLocaleTimeString()}`
+        );
 
         set(state => ({
           watchedStocks: state.watchedStocks.map(stock => {
             if (stock.symbol === symbol) {
               const newPriceHistory = [
                 ...(stock.priceHistory || []),
-                { time: quote.timestamp || now, price: quote.current }
+                { time: quote.timestamp || now, price: quote.current },
               ].slice(-500); // Keep last 500 data points
 
               return {
@@ -184,7 +198,8 @@ export const useStockStore = create<StockStoreState>()(
                 high: quote.high || stock.high || quote.current,
                 low: quote.low || stock.low || quote.current,
                 open: quote.open || stock.open || quote.current,
-                previousClose: quote.previousClose || stock.previousClose || quote.current,
+                previousClose:
+                  quote.previousClose || stock.previousClose || quote.current,
                 priceHistory: newPriceHistory,
                 isLoading: false,
                 lastUpdated: now,
@@ -199,42 +214,48 @@ export const useStockStore = create<StockStoreState>()(
         const updatedStock = get().watchedStocks.find(s => s.symbol === symbol);
         if (updatedStock && updatedStock.alertPrice && quote.current) {
           const isBelowAlert = quote.current < updatedStock.alertPrice;
-          
+
           // Update alert status in the stock
           set(state => ({
             watchedStocks: state.watchedStocks.map(stock => {
               if (stock.symbol === symbol) {
                 return {
                   ...stock,
-                  isAlertTriggered: isBelowAlert
+                  isAlertTriggered: isBelowAlert,
                 };
               }
               return stock;
-            })
+            }),
           }));
-          
+
           // Show notification only when price goes below the alert threshold
           if (isBelowAlert && !updatedStock.isAlertTriggered) {
-            getNotificationService().showPriceAlert(updatedStock, quote.current);
+            getNotificationService().showPriceAlert(
+              updatedStock,
+              quote.current
+            );
           }
         }
       },
-
 
       // Connect to real-time updates using dedicated WebSocket service
       connectWebSocket: async () => {
         // Initialize WebSocket service if needed
         if (!webSocketService) {
           webSocketService = new StockWebSocketService({
-            onStatusChange: (status) => set({ webSocketStatus: status }),
-            onConnectionChange: (connection) => set({ webSocketConnection: connection }),
-            onConnectingChange: (isConnecting) => set({ isConnecting }),
-            onErrorChange: (error) => set({ error }),
-            onUpdateConnectionAttempts: (attempts) => set({ connectionAttempts: attempts }),
-            onUpdateLastConnectionAttempt: (timestamp) => set({ lastConnectionAttempt: timestamp }),
+            onStatusChange: status => set({ webSocketStatus: status }),
+            onConnectionChange: connection =>
+              set({ webSocketConnection: connection }),
+            onConnectingChange: isConnecting => set({ isConnecting }),
+            onErrorChange: error => set({ error }),
+            onUpdateConnectionAttempts: attempts =>
+              set({ connectionAttempts: attempts }),
+            onUpdateLastConnectionAttempt: timestamp =>
+              set({ lastConnectionAttempt: timestamp }),
             onDisableLiveData: () => set({ isLiveDataEnabled: false }),
             onStartPeriodicRefresh: () => get().startPeriodicRefresh(),
-            onUpdateStockPrice: (symbol, quote) => get().updateStockPrice(symbol, quote),
+            onUpdateStockPrice: (symbol, quote) =>
+              get().updateStockPrice(symbol, quote),
             getWatchedStocks: () => get().watchedStocks,
             getState: () => {
               const state = get();
@@ -252,16 +273,16 @@ export const useStockStore = create<StockStoreState>()(
                 webSocketConnection: state.webSocketConnection,
                 isConnecting: state.isConnecting,
                 connectionAttempts: state.connectionAttempts,
-                watchedStocks: state.watchedStocks
+                watchedStocks: state.watchedStocks,
               };
-              
+
               // Only include lastConnectionAttempt if it has a value
               if (state.lastConnectionAttempt !== undefined) {
                 result.lastConnectionAttempt = state.lastConnectionAttempt;
               }
-              
+
               return result;
-            }
+            },
           });
         }
 
@@ -284,9 +305,9 @@ export const useStockStore = create<StockStoreState>()(
           const { webSocketConnection } = get();
           if (webSocketConnection) {
             (webSocketConnection as EventSource).close();
-            set({ 
-              webSocketConnection: null, 
-              webSocketStatus: 'disconnected' 
+            set({
+              webSocketConnection: null,
+              webSocketStatus: 'disconnected',
             });
           }
         }
@@ -304,7 +325,7 @@ export const useStockStore = create<StockStoreState>()(
           if (webSocketConnection) {
             (webSocketConnection as EventSource).close();
           }
-          
+
           // Reset all WebSocket-related state
           set({
             webSocketConnection: null,
@@ -312,9 +333,9 @@ export const useStockStore = create<StockStoreState>()(
             connectionAttempts: 0,
             isConnecting: false,
             error: null,
-            isLiveDataEnabled: true
+            isLiveDataEnabled: true,
           });
-          
+
           console.log('🔄 WebSocket state reset and live data re-enabled');
         }
       },
@@ -329,13 +350,17 @@ export const useStockStore = create<StockStoreState>()(
 
         // Only start periodic refresh if live data is enabled
         if (!state.isLiveDataEnabled) {
-          console.log(`⚠️ Periodic refresh only works when live data is enabled`);
+          console.log(
+            `⚠️ Periodic refresh only works when live data is enabled`
+          );
           return;
         }
 
         // WebSocket provides real-time data, but we still want periodic refresh for reliability
         // and to respect user's chosen refresh interval
-        console.log(`🔄 Starting periodic refresh every ${state.refreshTimeInterval} (WebSocket: ${state.webSocketStatus})`);  
+        console.log(
+          `🔄 Starting periodic refresh every ${state.refreshTimeInterval} (WebSocket: ${state.webSocketStatus})`
+        );
 
         // Clear any existing interval
         if (state.refreshInterval) {
@@ -343,43 +368,58 @@ export const useStockStore = create<StockStoreState>()(
         }
 
         // Get the current refresh interval configuration
-        const intervalConfig = REFRESH_INTERVALS.find(config => config.value === state.refreshTimeInterval);
+        const intervalConfig = REFRESH_INTERVALS.find(
+          config => config.value === state.refreshTimeInterval
+        );
         let intervalMs = intervalConfig?.milliseconds || 120000; // Default to 2 minutes to respect rate limits
-        
+
         // Enforce minimum interval based on number of watched stocks to respect API limits
         // Finnhub free tier: ~60 calls/minute, so with N stocks we need at least N seconds between calls
-        const minIntervalMs = Math.max(state.watchedStocks.length * 1000, 30000); // Minimum 30s, or 1s per stock
+        const minIntervalMs = Math.max(
+          state.watchedStocks.length * 1000,
+          30000
+        ); // Minimum 30s, or 1s per stock
         if (intervalMs < minIntervalMs) {
           intervalMs = minIntervalMs;
-          console.log(`⚠️ Increasing refresh interval to ${intervalMs/1000}s to respect API limits with ${state.watchedStocks.length} stocks`);
+          console.log(
+            `⚠️ Increasing refresh interval to ${intervalMs / 1000}s to respect API limits with ${state.watchedStocks.length} stocks`
+          );
         }
 
         // Start new interval as WebSocket fallback
-        console.log(`📊 Current refresh interval: ${state.refreshTimeInterval}`);
+        console.log(
+          `📊 Current refresh interval: ${state.refreshTimeInterval}`
+        );
         const interval = setInterval(async () => {
           const currentState = get();
-          
+
           if (currentState.watchedStocks.length > 0) {
-            console.log(`🔄 Periodic refresh executing (${currentState.refreshTimeInterval}) - WebSocket: ${currentState.webSocketStatus}`);
-            
+            console.log(
+              `🔄 Periodic refresh executing (${currentState.refreshTimeInterval}) - WebSocket: ${currentState.webSocketStatus}`
+            );
+
             // Use Promise.all for concurrent API calls
-            const refreshPromises = currentState.watchedStocks.map(async (stock) => {
-              try {
-                const response = await fetch(`/api/quote?symbol=${stock.symbol}`);
-                if (response.ok) {
-                  const data = await response.json();
-                  // Check if response has the expected structure
-                  if (data.current) {
-                    currentState.updateStockPrice(stock.symbol, data);
-                  } else if (data.data && data.data.current) {
-                    currentState.updateStockPrice(stock.symbol, data.data);
+            const refreshPromises = currentState.watchedStocks.map(
+              async stock => {
+                try {
+                  const response = await fetch(
+                    `/api/quote?symbol=${stock.symbol}`
+                  );
+                  if (response.ok) {
+                    const data = await response.json();
+                    // Check if response has the expected structure
+                    if (data.current) {
+                      currentState.updateStockPrice(stock.symbol, data);
+                    } else if (data.data && data.data.current) {
+                      currentState.updateStockPrice(stock.symbol, data.data);
+                    }
                   }
+                } catch (error) {
+                  console.warn(`Failed to refresh ${stock.symbol}:`, error);
                 }
-              } catch (error) {
-                console.warn(`Failed to refresh ${stock.symbol}:`, error);
               }
-            });
-            
+            );
+
             await Promise.all(refreshPromises);
           }
         }, intervalMs);
@@ -390,7 +430,7 @@ export const useStockStore = create<StockStoreState>()(
       // Stop periodic refresh
       stopPeriodicRefresh: () => {
         const { refreshInterval } = get();
-        
+
         if (refreshInterval) {
           clearInterval(refreshInterval);
           set({ refreshInterval: null });
@@ -399,19 +439,27 @@ export const useStockStore = create<StockStoreState>()(
 
       // Set refresh time interval
       setRefreshTimeInterval: (interval: RefreshInterval) => {
-        console.log(`🔄 Changing refresh interval from ${get().refreshTimeInterval} to ${interval}`);
+        console.log(
+          `🔄 Changing refresh interval from ${get().refreshTimeInterval} to ${interval}`
+        );
         set({ refreshTimeInterval: interval });
-        
+
         // Restart periodic refresh with new interval if live data is enabled
         const state = get();
         if (state.watchedStocks.length > 0 && state.isLiveDataEnabled) {
-          console.log(`🔄 Restarting periodic refresh with new interval: ${interval} (Live data enabled)`);
+          console.log(
+            `🔄 Restarting periodic refresh with new interval: ${interval} (Live data enabled)`
+          );
           state.stopPeriodicRefresh();
           state.startPeriodicRefresh();
         } else if (!state.isLiveDataEnabled) {
-          console.log(`⚠️ Refresh interval change ignored - live data is disabled`);
+          console.log(
+            `⚠️ Refresh interval change ignored - live data is disabled`
+          );
         } else if (state.watchedStocks.length === 0) {
-          console.log(`⚠️ Refresh interval change ignored - no stocks to watch`);
+          console.log(
+            `⚠️ Refresh interval change ignored - no stocks to watch`
+          );
         }
       },
 
@@ -419,9 +467,9 @@ export const useStockStore = create<StockStoreState>()(
       setLiveDataEnabled: (enabled: boolean) => {
         console.log(`📊 ${enabled ? 'Enabling' : 'Disabling'} live data`);
         set({ isLiveDataEnabled: enabled });
-        
+
         const state = get();
-        
+
         // Handle refresh intervals and WebSocket connections based on live data toggle
         if (enabled) {
           // Always start periodic refresh when enabling live data (regardless of WebSocket status)
@@ -447,7 +495,6 @@ export const useStockStore = create<StockStoreState>()(
           }
         }
       },
-
 
       // WebSocket status management
       setWebSocketStatus: (status: WebSocketStatus) => {
@@ -491,7 +538,7 @@ export const useStockStore = create<StockStoreState>()(
         if (state.reconnectTimeout) {
           clearTimeout(state.reconnectTimeout);
         }
-        
+
         // Disconnect WebSocket
         if (state.webSocketConnection) {
           (state.webSocketConnection as EventSource).close();
@@ -532,13 +579,16 @@ export const useStockStore = create<StockStoreState>()(
             removeItem: () => {},
           };
         }
-        
+
         // Browser environment - use localStorage
         try {
           return localStorage;
         } catch (error) {
           // Fallback to in-memory storage if localStorage is not available
-          console.warn('localStorage not available, using in-memory storage:', error);
+          console.warn(
+            'localStorage not available, using in-memory storage:',
+            error
+          );
           return {
             getItem: () => null,
             setItem: () => {},
@@ -560,11 +610,14 @@ export const useStockStore = create<StockStoreState>()(
               isLiveDataEnabled: state?.isLiveDataEnabled ?? true,
             };
           }
-          
+
           // For current version, return as-is
           return persistedState;
         } catch (error) {
-          console.warn('Failed to migrate persisted state, using defaults:', error);
+          console.warn(
+            'Failed to migrate persisted state, using defaults:',
+            error
+          );
           // Return safe defaults if migration fails
           return {
             watchedStocks: [],
@@ -573,7 +626,7 @@ export const useStockStore = create<StockStoreState>()(
           };
         }
       },
-      partialize: (state) => ({
+      partialize: state => ({
         watchedStocks: state.watchedStocks,
         refreshTimeInterval: state.refreshTimeInterval,
         isLiveDataEnabled: state.isLiveDataEnabled,
@@ -603,8 +656,10 @@ export const {
 } = useStockStore.getState();
 
 // Custom hooks for easier component usage
-export const useWatchedStocks = () => useStockStore(state => state.watchedStocks);
-export const useWebSocketStatus = () => useStockStore(state => state.webSocketStatus);
+export const useWatchedStocks = () =>
+  useStockStore(state => state.watchedStocks);
+export const useWebSocketStatus = () =>
+  useStockStore(state => state.webSocketStatus);
 export const useStockLoading = () => useStockStore(state => state.isLoading);
 export const useStockError = () => useStockStore(state => state.error);
 

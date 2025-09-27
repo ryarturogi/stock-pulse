@@ -87,11 +87,7 @@ const config = {
       },
     },
   },
-  plugins: [
-    forms,
-    typography,
-    aspectRatio,
-  ],
+  plugins: [forms, typography, aspectRatio],
 };
 
 export default config;

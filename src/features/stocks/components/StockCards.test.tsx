@@ -1,7 +1,7 @@
 /**
  * Unit Tests for StockCards Component
  * ===================================
- * 
+ *
  * Tests for the container component that displays multiple stock cards
  */
 
@@ -32,8 +32,8 @@ describe('StockCards', () => {
       symbol: 'AAPL',
       name: 'Apple Inc.',
       alertPrice: 150.0,
-      currentPrice: 155.50,
-      change: 5.50,
+      currentPrice: 155.5,
+      change: 5.5,
       percentChange: 3.67,
       high: 157.0,
       low: 153.0,
@@ -72,20 +72,30 @@ describe('StockCards', () => {
       render(<StockCards stocks={[]} onRemoveStock={mockOnRemoveStock} />);
 
       expect(screen.getByText('No stocks being watched')).toBeInTheDocument();
-      expect(screen.getByText('Add a stock from the sidebar to get started with real-time tracking')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'Add a stock from the sidebar to get started with real-time tracking'
+        )
+      ).toBeInTheDocument();
     });
 
     it('should show TrendingUp icon in empty state', () => {
       render(<StockCards stocks={[]} onRemoveStock={mockOnRemoveStock} />);
 
       // Icon should be present (from lucide-react)
-      const emptyState = screen.getByText('No stocks being watched').closest('div');
+      const emptyState = screen
+        .getByText('No stocks being watched')
+        .closest('div');
       expect(emptyState).toBeInTheDocument();
     });
 
     it('should apply custom className to empty state', () => {
       const { container } = render(
-        <StockCards stocks={[]} onRemoveStock={mockOnRemoveStock} className="custom-empty" />
+        <StockCards
+          stocks={[]}
+          onRemoveStock={mockOnRemoveStock}
+          className='custom-empty'
+        />
       );
 
       expect(container.firstChild).toHaveClass('custom-empty');
@@ -97,13 +107,22 @@ describe('StockCards', () => {
       );
 
       const emptyState = container.firstChild as HTMLElement;
-      expect(emptyState).toHaveClass('p-8', 'text-center', 'bg-white', 'rounded-lg', 'shadow-sm', 'dark:bg-gray-800');
+      expect(emptyState).toHaveClass(
+        'p-8',
+        'text-center',
+        'bg-white',
+        'rounded-lg',
+        'shadow-sm',
+        'dark:bg-gray-800'
+      );
     });
   });
 
   describe('Stock Cards Grid', () => {
     it('should render all provided stocks', () => {
-      render(<StockCards stocks={mockStocks} onRemoveStock={mockOnRemoveStock} />);
+      render(
+        <StockCards stocks={mockStocks} onRemoveStock={mockOnRemoveStock} />
+      );
 
       expect(screen.getByTestId('stock-card-AAPL')).toBeInTheDocument();
       expect(screen.getByTestId('stock-card-GOOGL')).toBeInTheDocument();
@@ -117,19 +136,31 @@ describe('StockCards', () => {
       );
 
       const grid = container.firstChild as HTMLElement;
-      expect(grid).toHaveClass('grid', 'grid-cols-1', 'gap-6', 'md:grid-cols-2', 'xl:grid-cols-4');
+      expect(grid).toHaveClass(
+        'grid',
+        'grid-cols-1',
+        'gap-6',
+        'md:grid-cols-2',
+        'xl:grid-cols-4'
+      );
     });
 
     it('should apply custom className to grid', () => {
       const { container } = render(
-        <StockCards stocks={mockStocks} onRemoveStock={mockOnRemoveStock} className="custom-grid" />
+        <StockCards
+          stocks={mockStocks}
+          onRemoveStock={mockOnRemoveStock}
+          className='custom-grid'
+        />
       );
 
       expect(container.firstChild).toHaveClass('custom-grid');
     });
 
     it('should pass correct props to StockCard components', () => {
-      render(<StockCards stocks={mockStocks} onRemoveStock={mockOnRemoveStock} />);
+      render(
+        <StockCards stocks={mockStocks} onRemoveStock={mockOnRemoveStock} />
+      );
 
       // Check that StockCard receives the stock data
       expect(screen.getByText('$155.5')).toBeInTheDocument(); // AAPL price
@@ -137,7 +168,9 @@ describe('StockCards', () => {
     });
 
     it('should pass onRemove callback to StockCard components', () => {
-      render(<StockCards stocks={mockStocks} onRemoveStock={mockOnRemoveStock} />);
+      render(
+        <StockCards stocks={mockStocks} onRemoveStock={mockOnRemoveStock} />
+      );
 
       expect(screen.getByText('Remove AAPL')).toBeInTheDocument();
       expect(screen.getByText('Remove GOOGL')).toBeInTheDocument();
@@ -147,7 +180,9 @@ describe('StockCards', () => {
   describe('Component Interactions', () => {
     it('should handle stock removal', async () => {
       const user = userEvent.setup();
-      render(<StockCards stocks={mockStocks} onRemoveStock={mockOnRemoveStock} />);
+      render(
+        <StockCards stocks={mockStocks} onRemoveStock={mockOnRemoveStock} />
+      );
 
       const removeButton = screen.getByText('Remove AAPL');
       await user.click(removeButton);
@@ -157,7 +192,9 @@ describe('StockCards', () => {
 
     it('should handle removal of different stocks', async () => {
       const user = userEvent.setup();
-      render(<StockCards stocks={mockStocks} onRemoveStock={mockOnRemoveStock} />);
+      render(
+        <StockCards stocks={mockStocks} onRemoveStock={mockOnRemoveStock} />
+      );
 
       const removeAaplButton = screen.getByText('Remove AAPL');
       const removeGooglButton = screen.getByText('Remove GOOGL');
@@ -179,7 +216,12 @@ describe('StockCards', () => {
         lastUpdated: Date.now() + index * 1000,
       }));
 
-      render(<StockCards stocks={stocksWithTimestamps} onRemoveStock={mockOnRemoveStock} />);
+      render(
+        <StockCards
+          stocks={stocksWithTimestamps}
+          onRemoveStock={mockOnRemoveStock}
+        />
+      );
 
       // Keys should include both id and lastUpdated
       expect(screen.getByTestId('stock-card-AAPL')).toBeInTheDocument();
@@ -192,7 +234,12 @@ describe('StockCards', () => {
         return stockWithoutTimestamp;
       });
 
-      render(<StockCards stocks={stocksWithoutTimestamps} onRemoveStock={mockOnRemoveStock} />);
+      render(
+        <StockCards
+          stocks={stocksWithoutTimestamps}
+          onRemoveStock={mockOnRemoveStock}
+        />
+      );
 
       // Should still render without errors
       expect(screen.getByTestId('stock-card-AAPL')).toBeInTheDocument();
@@ -212,7 +259,12 @@ describe('StockCards', () => {
     });
 
     it('should handle single stock', () => {
-      render(<StockCards stocks={[mockStocks[0]]} onRemoveStock={mockOnRemoveStock} />);
+      render(
+        <StockCards
+          stocks={[mockStocks[0]]}
+          onRemoveStock={mockOnRemoveStock}
+        />
+      );
 
       expect(screen.getByTestId('stock-card-AAPL')).toBeInTheDocument();
       expect(screen.queryByTestId('stock-card-GOOGL')).not.toBeInTheDocument();
@@ -226,7 +278,9 @@ describe('StockCards', () => {
         name: `Stock ${i} Inc.`,
       }));
 
-      render(<StockCards stocks={manyStocks} onRemoveStock={mockOnRemoveStock} />);
+      render(
+        <StockCards stocks={manyStocks} onRemoveStock={mockOnRemoveStock} />
+      );
 
       // Should render all stocks
       manyStocks.forEach((_, i) => {
@@ -262,7 +316,9 @@ describe('StockCards', () => {
       render(<StockCards stocks={[]} onRemoveStock={mockOnRemoveStock} />);
 
       const heading = screen.getByText('No stocks being watched');
-      const description = screen.getByText('Add a stock from the sidebar to get started with real-time tracking');
+      const description = screen.getByText(
+        'Add a stock from the sidebar to get started with real-time tracking'
+      );
 
       expect(heading).toHaveClass('dark:text-white');
       expect(description).toHaveClass('dark:text-gray-300');
@@ -280,7 +336,9 @@ describe('StockCards', () => {
     it('should provide descriptive text for empty state', () => {
       render(<StockCards stocks={[]} onRemoveStock={mockOnRemoveStock} />);
 
-      expect(screen.getByText(/Add a stock from the sidebar/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Add a stock from the sidebar/)
+      ).toBeInTheDocument();
     });
   });
 
@@ -297,7 +355,9 @@ describe('StockCards', () => {
         lastUpdated: Date.now(),
       }));
 
-      rerender(<StockCards stocks={updatedStocks} onRemoveStock={mockOnRemoveStock} />);
+      rerender(
+        <StockCards stocks={updatedStocks} onRemoveStock={mockOnRemoveStock} />
+      );
 
       // Should still render all stocks
       expect(screen.getByTestId('stock-card-AAPL')).toBeInTheDocument();

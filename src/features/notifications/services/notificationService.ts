@@ -1,16 +1,16 @@
 /**
  * Notification Service for Price Alerts
  * =====================================
- * 
+ *
  * Enhanced notification service for managing push notifications
  * and price alerts following the React Developer test requirements.
  */
 
-import { 
+import {
   type PriceAlertNotification,
   type WatchedStock,
   type NotificationPermissionType,
-  isWatchedStock
+  isWatchedStock,
 } from '@/core/types';
 import { useNotificationStore } from '../stores/notificationStore';
 
@@ -55,20 +55,21 @@ export class NotificationService {
     }
 
     try {
-      const permission = await Notification.requestPermission() as NotificationPermissionType;
+      const permission =
+        (await Notification.requestPermission()) as NotificationPermissionType;
       console.log('Notification permission:', permission);
-      
+
       // Update the store with the new permission
       const store = useNotificationStore.getState();
       store.setPermission(permission);
-      
+
       if (permission === 'granted') {
         await this.registerServiceWorker();
         store.setEnabled(true);
       } else if (permission === 'denied') {
         store.setEnabled(false);
       }
-      
+
       return permission;
     } catch (error) {
       console.error('Failed to request notification permission:', error);
@@ -86,29 +87,35 @@ export class NotificationService {
     try {
       // Check if service worker is available (might be disabled in development)
       if (!('serviceWorker' in navigator)) {
-        console.log('Service worker not supported, using fallback notifications');
+        console.log(
+          'Service worker not supported, using fallback notifications'
+        );
         return;
       }
 
       // Service worker registration now works in both development and production
 
-      this.serviceWorkerRegistration = await navigator.serviceWorker.register('/sw-custom.js');
+      this.serviceWorkerRegistration =
+        await navigator.serviceWorker.register('/sw-custom.js');
       console.log('Service worker registered for notifications');
-      
+
       // Wait for service worker to become active
       if (this.serviceWorkerRegistration.installing) {
         console.log('Service worker installing...');
       }
-      
+
       if (this.serviceWorkerRegistration.waiting) {
         console.log('Service worker waiting...');
       }
-      
+
       if (this.serviceWorkerRegistration.active) {
         console.log('Service worker active and ready');
       }
     } catch (error) {
-      console.error('Failed to register service worker (falling back to regular notifications):', error);
+      console.error(
+        'Failed to register service worker (falling back to regular notifications):',
+        error
+      );
       this.serviceWorkerRegistration = null;
     }
   }
@@ -127,7 +134,7 @@ export class NotificationService {
     }
 
     // Wait for service worker to activate
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const checkActive = () => {
         if (this.serviceWorkerRegistration?.active) {
           resolve(true);
@@ -135,7 +142,7 @@ export class NotificationService {
           setTimeout(checkActive, 100);
         }
       };
-      
+
       // Start checking with a timeout
       setTimeout(() => resolve(false), 5000); // 5 second timeout
       checkActive();
@@ -147,7 +154,9 @@ export class NotificationService {
    */
   public isEnabled(): boolean {
     const store = useNotificationStore.getState();
-    return this.isSupported && store.permission === 'granted' && store.isEnabled;
+    return (
+      this.isSupported && store.permission === 'granted' && store.isEnabled
+    );
   }
 
   /**
@@ -189,7 +198,7 @@ export class NotificationService {
     this.showNotification(notification).catch(error => {
       console.error('Failed to show price alert notification:', error);
     });
-    
+
     // Add notification to store history
     const store = useNotificationStore.getState();
     store.addNotification({
@@ -198,14 +207,16 @@ export class NotificationService {
       message: notification.body,
       actionUrl: `/stock/${stock.symbol}`,
     });
-    
+
     this.alertHistory.set(stock.symbol, now);
   }
 
   /**
    * Show generic notification
    */
-  public async showNotification(notification: PriceAlertNotification): Promise<void> {
+  public async showNotification(
+    notification: PriceAlertNotification
+  ): Promise<void> {
     if (!this.isEnabled()) {
       return;
     }
@@ -217,21 +228,30 @@ export class NotificationService {
       if (this.serviceWorkerRegistration) {
         try {
           const isReady = await this.waitForServiceWorker();
-          
+
           if (isReady && this.serviceWorkerRegistration.active) {
-            await this.serviceWorkerRegistration.showNotification(notification.title, {
-              body: notification.body,
-              icon: notification.icon || '/icons/icon-192x192.svg',
-              badge: notification.badge || '/icons/icon-72x72.svg',
-              data: notification.data,
-              tag: `price-alert-${notification.data.symbol}`, // Prevent duplicate notifications
-              requireInteraction: true, // Keep notification visible until user interacts
-            });
+            await this.serviceWorkerRegistration.showNotification(
+              notification.title,
+              {
+                body: notification.body,
+                icon: notification.icon || '/icons/icon-192x192.svg',
+                badge: notification.badge || '/icons/icon-72x72.svg',
+                data: notification.data,
+                tag: `price-alert-${notification.data.symbol}`, // Prevent duplicate notifications
+                requireInteraction: true, // Keep notification visible until user interacts
+              }
+            );
             notificationShown = true;
-            console.log('Service worker notification shown for', notification.data.symbol);
+            console.log(
+              'Service worker notification shown for',
+              notification.data.symbol
+            );
           }
         } catch (swError) {
-          console.warn('Service worker notification failed, falling back to regular notification:', swError);
+          console.warn(
+            'Service worker notification failed, falling back to regular notification:',
+            swError
+          );
         }
       }
 
@@ -269,14 +289,16 @@ export class NotificationService {
 
     const notification: PriceAlertNotification = {
       title: 'Stock Tracker',
-      body: isConnected ? 'Real-time connection restored' : 'Connection lost - using cached data',
+      body: isConnected
+        ? 'Real-time connection restored'
+        : 'Connection lost - using cached data',
       icon: '/icons/icon-192x192.svg',
-        data: {
-          symbol: 'CONNECTION',
-          currentPrice: 0,
-          alertPrice: 0,
-          type: 'above',
-        },
+      data: {
+        symbol: 'CONNECTION',
+        currentPrice: 0,
+        alertPrice: 0,
+        type: 'above',
+      },
     };
 
     this.showNotification(notification);
@@ -294,12 +316,12 @@ export class NotificationService {
       title: 'Stock Tracker Error',
       body: message,
       icon: '/icons/icon-192x192.svg',
-        data: {
-          symbol: 'ERROR',
-          currentPrice: 0,
-          alertPrice: 0,
-          type: 'above',
-        },
+      data: {
+        symbol: 'ERROR',
+        currentPrice: 0,
+        alertPrice: 0,
+        type: 'above',
+      },
     };
 
     this.showNotification(notification);
@@ -317,12 +339,12 @@ export class NotificationService {
       title: 'Stock Tracker',
       body: message,
       icon: '/icons/icon-192x192.svg',
-        data: {
-          symbol: 'SUCCESS',
-          currentPrice: 0,
-          alertPrice: 0,
-          type: 'above',
-        },
+      data: {
+        symbol: 'SUCCESS',
+        currentPrice: 0,
+        alertPrice: 0,
+        type: 'above',
+      },
     };
 
     this.showNotification(notification);
@@ -371,15 +393,20 @@ export class NotificationService {
     }
 
     // Handle notification clicks
-    navigator.serviceWorker.addEventListener('message', (event) => {
+    navigator.serviceWorker.addEventListener('message', event => {
       if (event.data.type === 'NOTIFICATION_CLICK') {
         const { action, data } = event.data;
-        
+
         switch (action) {
           case 'view':
             // Focus the app and navigate to the stock
             window.focus();
-            if (data.symbol && data.symbol !== 'CONNECTION' && data.symbol !== 'ERROR' && data.symbol !== 'SUCCESS') {
+            if (
+              data.symbol &&
+              data.symbol !== 'CONNECTION' &&
+              data.symbol !== 'ERROR' &&
+              data.symbol !== 'SUCCESS'
+            ) {
               // Could navigate to specific stock view
               console.log('Navigate to stock:', data.symbol);
             }

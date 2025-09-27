@@ -1,10 +1,12 @@
 # StockPulse Architecture Guide
 
-This document outlines the architectural decisions, patterns, and structure of the StockPulse application.
+This document outlines the architectural decisions, patterns, and structure of the StockPulse
+application.
 
 ## 🏗️ Overall Architecture
 
-StockPulse follows a modern, enterprise-grade architecture built on Next.js 15 + React 19 with the following principles:
+StockPulse follows a modern, enterprise-grade architecture built on Next.js 15 + React 19 with the
+following principles:
 
 - **Next.js 15 App Router** - Latest framework with React Compiler optimizations
 - **Enterprise TypeScript** - Comprehensive utility types for consistency and safety
@@ -23,7 +25,7 @@ stock-pulse/
 │   │   ├── health/              # Health monitoring endpoint
 │   │   └── cron/                # Vercel cron jobs
 │   ├── layout.tsx               # Root layout with React 19
-│   ├── page.tsx                 # Home page component  
+│   ├── page.tsx                 # Home page component
 │   ├── loading.tsx              # Global loading states
 │   ├── error.tsx                # Global error boundaries
 │   └── globals.css              # Global Tailwind styles
@@ -148,7 +150,7 @@ export interface StockCardProps {
 
 /**
  * Displays stock information in a card format
- * 
+ *
  * @param props - The component props
  * @returns JSX element
  */
@@ -157,7 +159,7 @@ export const StockCard: React.FC<StockCardProps> = ({
   price,
   change,
   changePercent,
-  onClick
+  onClick,
 }) => {
   // Component implementation
 };
@@ -338,7 +340,7 @@ const logger = {
   error: (message: string, error?: Error) => {
     console.error(`[ERROR] ${message}`, error);
     // Send to monitoring service
-  }
+  },
 };
 ```
 
@@ -393,4 +395,5 @@ const features: FeatureFlags = {
 - Progressive enhancement approach
 - Clear deprecation notices
 
-This architecture provides a solid foundation for a scalable, maintainable, and high-performance stock tracking application while remaining flexible for future enhancements.
+This architecture provides a solid foundation for a scalable, maintainable, and high-performance
+stock tracking application while remaining flexible for future enhancements.

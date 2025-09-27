@@ -1,7 +1,7 @@
 /**
  * Unit Tests for ErrorBoundary Component
  * ======================================
- * 
+ *
  * Tests for error handling and fallback UI
  */
 
@@ -52,7 +52,9 @@ describe('ErrorBoundary', () => {
       );
 
       expect(screen.getByText('No error')).toBeInTheDocument();
-      expect(screen.queryByText('Something went wrong')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Something went wrong')
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -65,7 +67,11 @@ describe('ErrorBoundary', () => {
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-      expect(screen.getByText('We encountered an unexpected error. Please refresh the page to continue.')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'We encountered an unexpected error. Please refresh the page to continue.'
+        )
+      ).toBeInTheDocument();
       expect(screen.queryByText('No error')).not.toBeInTheDocument();
     });
 
@@ -124,7 +130,9 @@ describe('ErrorBoundary', () => {
       );
 
       expect(screen.getByText('Custom error message')).toBeInTheDocument();
-      expect(screen.queryByText('Something went wrong')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Something went wrong')
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -152,7 +160,7 @@ describe('ErrorBoundary', () => {
     it('should call window.location.reload when refresh button is clicked', async () => {
       const user = userEvent.setup();
       const mockReload = jest.fn();
-      
+
       // Mock window.location.reload
       Object.defineProperty(window, 'location', {
         value: { reload: mockReload },
@@ -216,7 +224,9 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      expect(screen.getByText('Error Details (Development)')).toBeInTheDocument();
+      expect(
+        screen.getByText('Error Details (Development)')
+      ).toBeInTheDocument();
     });
 
     it('should not show error details in production', () => {
@@ -231,7 +241,9 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      expect(screen.queryByText('Error Details (Development)')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Error Details (Development)')
+      ).not.toBeInTheDocument();
     });
 
     it('should show error stack trace in development', () => {
@@ -258,7 +270,12 @@ describe('ErrorBoundary', () => {
       );
 
       const errorContainer = container.firstChild as HTMLElement;
-      expect(errorContainer).toHaveClass('min-h-screen', 'flex', 'items-center', 'justify-center');
+      expect(errorContainer).toHaveClass(
+        'min-h-screen',
+        'flex',
+        'items-center',
+        'justify-center'
+      );
     });
 
     it('should be responsive', () => {
@@ -292,7 +309,9 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      const refreshButton = screen.getByRole('button', { name: 'Refresh Page' });
+      const refreshButton = screen.getByRole('button', {
+        name: 'Refresh Page',
+      });
       const tryAgainButton = screen.getByRole('button', { name: 'Try Again' });
 
       expect(refreshButton).toBeInTheDocument();

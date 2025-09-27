@@ -1,7 +1,7 @@
 /**
  * Unit Tests for useSidebar Hook
  * ==============================
- * 
+ *
  * Tests for the sidebar state management custom hook
  */
 
@@ -434,7 +434,9 @@ describe('useSidebar', () => {
 
     it('should work with component unmount and remount scenarios', () => {
       // First render
-      const { result: result1, unmount: unmount1 } = renderHook(() => useSidebar(true));
+      const { result: result1, unmount: unmount1 } = renderHook(() =>
+        useSidebar(true)
+      );
 
       expect(result1.current.isOpen).toBe(true);
 
@@ -449,7 +451,7 @@ describe('useSidebar', () => {
 
       // Create a new instance (simulating component remount)
       const { result: result2 } = renderHook(() => useSidebar(true));
-      
+
       // Should start fresh with initial state
       expect(result2.current.isOpen).toBe(true);
     });

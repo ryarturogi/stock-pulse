@@ -1,6 +1,7 @@
 # StockPulse Deployment Guide
 
-This guide covers deploying StockPulse to various hosting platforms with proper environment variable management.
+This guide covers deploying StockPulse to various hosting platforms with proper environment variable
+management.
 
 ## 🌍 Environment Overview
 
@@ -8,7 +9,7 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
 
 ```
 ├── .env.example          # ✅ Template with example values (COMMIT)
-├── .env.production       # ✅ Production template (COMMIT)  
+├── .env.production       # ✅ Production template (COMMIT)
 ├── .env.staging          # ✅ Staging template (COMMIT)
 ├── .env                  # ❌ Local development secrets (DO NOT COMMIT)
 ├── .env.production.local # ❌ Actual production secrets (DO NOT COMMIT)
@@ -18,11 +19,13 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
 ### Environment Variable Types
 
 #### 🌐 **Public Variables** (`NEXT_PUBLIC_*`)
+
 - Exposed to browser bundle
 - Safe for client-side usage
 - Examples: feature flags, app metadata, analytics IDs
 
 #### 🔒 **Private Variables** (no prefix)
+
 - Server-side only
 - Never exposed to browser
 - Examples: API keys, database URLs, secrets
@@ -32,15 +35,17 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
 ### Vercel Deployment
 
 1. **Install Vercel CLI**
+
    ```bash
    npm install -g vercel
    ```
 
 2. **Deploy with Environment Variables**
+
    ```bash
    # Production deployment
    vercel --prod
-   
+
    # Set environment variables
    vercel env add FINNHUB_API_KEY production
    vercel env add JWT_SECRET production
@@ -54,12 +59,13 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
 ### Netlify Deployment
 
 1. **Build Settings**
+
    ```toml
    # netlify.toml
    [build]
      command = "pnpm run build"
      publish = ".next"
-   
+
    [build.environment]
      NODE_VERSION = "20"
      PNPM_VERSION = "8"
@@ -73,6 +79,7 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
 ### Railway Deployment
 
 1. **Railway CLI Setup**
+
    ```bash
    npm install -g @railway/cli
    railway login
@@ -89,10 +96,11 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
 ### AWS (Lambda/Serverless)
 
 1. **Serverless Framework Configuration**
+
    ```yaml
    # serverless.yml
    service: stockpulse
-   
+
    provider:
      name: aws
      runtime: nodejs20.x
@@ -110,16 +118,17 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
 ### Docker Deployment
 
 1. **Dockerfile Configuration**
+
    ```dockerfile
    FROM node:20-alpine
-   
+
    WORKDIR /app
    COPY package*.json ./
    RUN npm ci --only=production
-   
+
    COPY . .
    RUN npm run build
-   
+
    EXPOSE 3000
    CMD ["npm", "start"]
    ```
@@ -132,7 +141,7 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
      stockpulse:
        build: .
        ports:
-         - "3000:3000"
+         - '3000:3000'
        environment:
          - NODE_ENV=production
        env_file:
@@ -144,22 +153,24 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
 ### Secret Management
 
 1. **Never Commit Secrets**
+
    ```bash
    # ❌ WRONG - commits secrets to git
    git add .env
-   
+
    # ✅ CORRECT - only commit templates
    git add .env.example .env.production .env.staging
    ```
 
 2. **Use Platform Secret Managers**
+
    ```bash
    # Vercel
    vercel env add SECRET_NAME production
-   
+
    # Railway
    railway variables set SECRET_NAME=value
-   
+
    # AWS Systems Manager
    aws ssm put-parameter --name "/stockpulse/prod/SECRET_NAME" --value "secret_value" --type "SecureString"
    ```
@@ -168,7 +179,7 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
    ```bash
    # Different secrets per environment
    development: jwt_secret_dev_123
-   staging:     jwt_secret_staging_456  
+   staging:     jwt_secret_staging_456
    production:  jwt_secret_prod_789
    ```
 
@@ -180,6 +191,7 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
    - Test after rotation
 
 2. **Rate Limiting**
+
    ```typescript
    // Rate limit API calls to prevent abuse
    const rateLimiter = new RateLimiter({
@@ -196,6 +208,7 @@ This guide covers deploying StockPulse to various hosting platforms with proper 
 ## 📊 Environment Configuration
 
 ### Development (.env)
+
 ```bash
 # Copy template and add your development keys
 cp .env.example .env
@@ -203,6 +216,7 @@ cp .env.example .env
 ```
 
 ### Staging (.env.staging.local)
+
 ```bash
 # Copy staging template and add real staging keys
 cp .env.staging .env.staging.local
@@ -210,6 +224,7 @@ cp .env.staging .env.staging.local
 ```
 
 ### Production (.env.production.local)
+
 ```bash
 # Copy production template and add real production keys
 cp .env.production .env.production.local
@@ -221,6 +236,7 @@ cp .env.production .env.production.local
 ### API Key Compromise
 
 1. **Immediate Actions**
+
    ```bash
    # 1. Revoke compromised key immediately
    # 2. Generate new key
@@ -271,6 +287,7 @@ cp .env.production .env.production.local
 ### Monitoring Setup
 
 1. **Error Tracking**
+
    ```typescript
    // Sentry configuration
    Sentry.init({
@@ -280,6 +297,7 @@ cp .env.production .env.production.local
    ```
 
 2. **Performance Monitoring**
+
    ```typescript
    // New Relic or DataDog setup
    const performanceMonitoring = {
@@ -307,30 +325,31 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Run tests
         run: pnpm run test
-        
+
       - name: Build application
         run: pnpm run build
         env:
           NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
-          
+
       - name: Deploy to production
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel --prod --token $VERCEL_TOKEN
 ```
 
-This comprehensive deployment guide ensures secure, scalable deployment across multiple platforms while maintaining proper secret management.
+This comprehensive deployment guide ensures secure, scalable deployment across multiple platforms
+while maintaining proper secret management.

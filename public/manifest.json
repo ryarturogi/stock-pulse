@@ -101,9 +101,7 @@
     "requireInteraction": true,
     "silent": false
   },
-  "permissions": [
-    "notifications"
-  ],
+  "permissions": ["notifications"],
   "protocol_handlers": [
     {
       "protocol": "web+stockpulse",
