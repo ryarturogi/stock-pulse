@@ -1,7 +1,7 @@
 /**
  * Integration Tests for Stock Store WebSocket Functionality
  * ========================================================
- * 
+ *
  * Tests for WebSocket connection management in the Zustand store
  */
 
@@ -92,12 +92,12 @@ describe('Stock Store WebSocket Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    
+
     // Reset store
     useStockStore.getState().reset();
-    
+
     // Setup mock EventSource
-    const mockEventSourceConstructor = jest.fn().mockImplementation((url) => {
+    const mockEventSourceConstructor = jest.fn().mockImplementation(url => {
       mockEventSource = new MockEventSource(url);
       return mockEventSource;
     }) as any;
@@ -107,7 +107,9 @@ describe('Stock Store WebSocket Integration', () => {
     global.EventSource = mockEventSourceConstructor;
 
     // Setup default stock service mocks
-    mockStockService.fetchStockQuote.mockResolvedValue(createMockQuote('AAPL', 150.00));
+    mockStockService.fetchStockQuote.mockResolvedValue(
+      createMockQuote('AAPL', 150.0)
+    );
   });
 
   afterEach(() => {
@@ -120,7 +122,7 @@ describe('Stock Store WebSocket Integration', () => {
   describe('WebSocket Connection Management', () => {
     it('should not connect WebSocket when live data is disabled', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       // Add a stock but keep live data disabled
       act(() => {
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -132,12 +134,14 @@ describe('Stock Store WebSocket Integration', () => {
       });
 
       expect(global.EventSource).not.toHaveBeenCalled();
-      expect(console.log).toHaveBeenCalledWith('⚠️ Live data is disabled, skipping WebSocket connection');
+      expect(console.log).toHaveBeenCalledWith(
+        '⚠️ Live data is disabled, skipping WebSocket connection'
+      );
     });
 
     it('should not connect WebSocket when no stocks are watched', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.connectWebSocket();
@@ -149,21 +153,23 @@ describe('Stock Store WebSocket Integration', () => {
 
     it('should create WebSocket connection when conditions are met', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
         result.current.connectWebSocket();
       });
 
-      expect(global.EventSource).toHaveBeenCalledWith('/api/websocket-proxy?symbols=AAPL');
+      expect(global.EventSource).toHaveBeenCalledWith(
+        '/api/websocket-proxy?symbols=AAPL'
+      );
       expect(result.current.webSocketStatus).toBe('connecting');
       expect(result.current.isConnecting).toBe(true);
     });
 
     it('should connect to multiple stocks', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -172,12 +178,14 @@ describe('Stock Store WebSocket Integration', () => {
         result.current.connectWebSocket();
       });
 
-      expect(global.EventSource).toHaveBeenCalledWith('/api/websocket-proxy?symbols=AAPL,GOOGL,MSFT');
+      expect(global.EventSource).toHaveBeenCalledWith(
+        '/api/websocket-proxy?symbols=AAPL,GOOGL,MSFT'
+      );
     });
 
     it('should not create duplicate connections', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -190,12 +198,14 @@ describe('Stock Store WebSocket Integration', () => {
       });
 
       expect(global.EventSource).toHaveBeenCalledTimes(1);
-      expect(console.log).toHaveBeenCalledWith('✅ WebSocket already connected');
+      expect(console.log).toHaveBeenCalledWith(
+        '✅ WebSocket already connected'
+      );
     });
 
     it('should close existing connection before creating new one', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -219,7 +229,7 @@ describe('Stock Store WebSocket Integration', () => {
   describe('WebSocket Connection Events', () => {
     it('should handle successful connection', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -238,14 +248,16 @@ describe('Stock Store WebSocket Integration', () => {
         expect(result.current.connectionAttempts).toBe(0);
       });
 
-      expect(console.log).toHaveBeenCalledWith('✅ Connected to secure WebSocket proxy');
+      expect(console.log).toHaveBeenCalledWith(
+        '✅ Connected to secure WebSocket proxy'
+      );
     });
 
     it('should handle connection timeout', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       // Mock EventSource that never connects
-      const mockEventSourceConstructor = jest.fn().mockImplementation((url) => {
+      const mockEventSourceConstructor = jest.fn().mockImplementation(url => {
         mockEventSource = new MockEventSource(url);
         mockEventSource.readyState = MockEventSource.CONNECTING; // Stay connecting
         return mockEventSource;
@@ -269,17 +281,21 @@ describe('Stock Store WebSocket Integration', () => {
       await waitFor(() => {
         expect(result.current.webSocketStatus).toBe('error');
         expect(result.current.isConnecting).toBe(false);
-        expect(result.current.error).toBe('Connection timeout - using API fallback');
+        expect(result.current.error).toBe(
+          'Connection timeout - using API fallback'
+        );
       });
 
-      expect(console.log).toHaveBeenCalledWith('⏰ WebSocket proxy connection timeout, switching to API mode...');
+      expect(console.log).toHaveBeenCalledWith(
+        '⏰ WebSocket proxy connection timeout, switching to API mode...'
+      );
     });
 
     it('should start periodic refresh on connection timeout', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       // Mock EventSource that never connects
-      const mockEventSourceConstructor = jest.fn().mockImplementation((url) => {
+      const mockEventSourceConstructor = jest.fn().mockImplementation(url => {
         mockEventSource = new MockEventSource(url);
         mockEventSource.readyState = MockEventSource.CONNECTING;
         return mockEventSource;
@@ -289,7 +305,10 @@ describe('Stock Store WebSocket Integration', () => {
       mockEventSourceConstructor.CLOSED = 2;
       global.EventSource = mockEventSourceConstructor;
 
-      const startPeriodicRefreshSpy = jest.spyOn(result.current, 'startPeriodicRefresh');
+      const startPeriodicRefreshSpy = jest.spyOn(
+        result.current,
+        'startPeriodicRefresh'
+      );
 
       act(() => {
         result.current.setLiveDataEnabled(true);
@@ -311,7 +330,7 @@ describe('Stock Store WebSocket Integration', () => {
   describe('WebSocket Message Handling', () => {
     beforeEach(async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -337,7 +356,7 @@ describe('Stock Store WebSocket Integration', () => {
           type: 'trade',
           data: {
             symbol: 'AAPL',
-            price: 155.50,
+            price: 155.5,
             timestamp: Date.now(),
             volume: 1000,
           },
@@ -345,11 +364,15 @@ describe('Stock Store WebSocket Integration', () => {
       });
 
       await waitFor(() => {
-        const stock = result.current.watchedStocks.find(s => s.symbol === 'AAPL');
-        expect(stock?.currentPrice).toBe(155.50);
+        const stock = result.current.watchedStocks.find(
+          s => s.symbol === 'AAPL'
+        );
+        expect(stock?.currentPrice).toBe(155.5);
       });
 
-      expect(console.log).toHaveBeenCalledWith('💰 Real-time trade update: AAPL = $155.5');
+      expect(console.log).toHaveBeenCalledWith(
+        '💰 Real-time trade update: AAPL = $155.5'
+      );
     });
 
     it('should calculate price changes from previous data', async () => {
@@ -357,7 +380,7 @@ describe('Stock Store WebSocket Integration', () => {
 
       // Set initial price
       act(() => {
-        result.current.updateStockPrice('AAPL', createMockQuote('AAPL', 150.00));
+        result.current.updateStockPrice('AAPL', createMockQuote('AAPL', 150.0));
       });
 
       // Simulate trade message with new price
@@ -366,16 +389,18 @@ describe('Stock Store WebSocket Integration', () => {
           type: 'trade',
           data: {
             symbol: 'AAPL',
-            price: 155.50,
+            price: 155.5,
             timestamp: Date.now(),
           },
         });
       });
 
       await waitFor(() => {
-        const stock = result.current.watchedStocks.find(s => s.symbol === 'AAPL');
-        expect(stock?.currentPrice).toBe(155.50);
-        expect(stock?.change).toBeCloseTo(5.50, 2);
+        const stock = result.current.watchedStocks.find(
+          s => s.symbol === 'AAPL'
+        );
+        expect(stock?.currentPrice).toBe(155.5);
+        expect(stock?.change).toBeCloseTo(5.5, 2);
         expect(stock?.percentChange).toBeCloseTo(3.67, 2);
       });
     });
@@ -386,9 +411,9 @@ describe('Stock Store WebSocket Integration', () => {
       // Set initial stock with existing high/low
       act(() => {
         result.current.updateStockPrice('AAPL', {
-          ...createMockQuote('AAPL', 150.00),
-          high: 152.00,
-          low: 148.00,
+          ...createMockQuote('AAPL', 150.0),
+          high: 152.0,
+          low: 148.0,
         });
       });
 
@@ -398,16 +423,18 @@ describe('Stock Store WebSocket Integration', () => {
           type: 'trade',
           data: {
             symbol: 'AAPL',
-            price: 156.00,
+            price: 156.0,
             timestamp: Date.now(),
           },
         });
       });
 
       await waitFor(() => {
-        const stock = result.current.watchedStocks.find(s => s.symbol === 'AAPL');
-        expect(stock?.high).toBe(156.00);
-        expect(stock?.low).toBe(148.00);
+        const stock = result.current.watchedStocks.find(
+          s => s.symbol === 'AAPL'
+        );
+        expect(stock?.high).toBe(156.0);
+        expect(stock?.low).toBe(148.0);
       });
 
       // Simulate trade with new low
@@ -416,16 +443,18 @@ describe('Stock Store WebSocket Integration', () => {
           type: 'trade',
           data: {
             symbol: 'AAPL',
-            price: 145.00,
+            price: 145.0,
             timestamp: Date.now(),
           },
         });
       });
 
       await waitFor(() => {
-        const stock = result.current.watchedStocks.find(s => s.symbol === 'AAPL');
-        expect(stock?.high).toBe(156.00);
-        expect(stock?.low).toBe(145.00);
+        const stock = result.current.watchedStocks.find(
+          s => s.symbol === 'AAPL'
+        );
+        expect(stock?.high).toBe(156.0);
+        expect(stock?.low).toBe(145.0);
       });
     });
 
@@ -440,7 +469,7 @@ describe('Stock Store WebSocket Integration', () => {
           type: 'trade',
           data: {
             symbol: 'GOOGL',
-            price: 2800.00,
+            price: 2800.0,
             timestamp: Date.now(),
           },
         });
@@ -448,7 +477,9 @@ describe('Stock Store WebSocket Integration', () => {
 
       // Should not create new stock or update existing
       expect(result.current.watchedStocks.length).toBe(initialStocksCount);
-      expect(result.current.watchedStocks.find(s => s.symbol === 'GOOGL')).toBeUndefined();
+      expect(
+        result.current.watchedStocks.find(s => s.symbol === 'GOOGL')
+      ).toBeUndefined();
     });
 
     it('should handle connected messages', async () => {
@@ -462,7 +493,10 @@ describe('Stock Store WebSocket Integration', () => {
         });
       });
 
-      expect(console.log).toHaveBeenCalledWith('✅ WebSocket proxy connected:', 'Secure WebSocket proxy connected');
+      expect(console.log).toHaveBeenCalledWith(
+        '✅ WebSocket proxy connected:',
+        'Secure WebSocket proxy connected'
+      );
     });
 
     it('should handle error messages', async () => {
@@ -481,7 +515,10 @@ describe('Stock Store WebSocket Integration', () => {
         expect(result.current.error).toBe('Connection failed');
       });
 
-      expect(console.warn).toHaveBeenCalledWith('⚠️ WebSocket proxy message:', 'Connection failed');
+      expect(console.warn).toHaveBeenCalledWith(
+        '⚠️ WebSocket proxy message:',
+        'Connection failed'
+      );
     });
 
     it('should handle malformed JSON messages', async () => {
@@ -494,14 +531,17 @@ describe('Stock Store WebSocket Integration', () => {
         }
       });
 
-      expect(console.error).toHaveBeenCalledWith('Failed to parse WebSocket proxy message:', expect.any(Error));
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to parse WebSocket proxy message:',
+        expect.any(Error)
+      );
     });
   });
 
   describe('WebSocket Error Handling and Reconnection', () => {
     it('should handle connection errors gracefully', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -518,12 +558,14 @@ describe('Stock Store WebSocket Integration', () => {
         expect(result.current.isConnecting).toBe(false);
       });
 
-      expect(console.warn).toHaveBeenCalledWith('⚠️ WebSocket proxy connection issue (likely rate limited or cooldown active)');
+      expect(console.warn).toHaveBeenCalledWith(
+        '⚠️ WebSocket proxy connection issue (likely rate limited or cooldown active)'
+      );
     });
 
     it('should attempt reconnection with exponential backoff', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -540,7 +582,10 @@ describe('Stock Store WebSocket Integration', () => {
         mockEventSource.simulateError();
       });
 
-      const connectWebSocketSpy = jest.spyOn(result.current, 'connectWebSocket');
+      const connectWebSocketSpy = jest.spyOn(
+        result.current,
+        'connectWebSocket'
+      );
 
       // Fast-forward to trigger reconnection
       act(() => {
@@ -553,13 +598,15 @@ describe('Stock Store WebSocket Integration', () => {
       });
 
       expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining('🔄 Attempting to reconnect WebSocket proxy... (attempt 1')
+        expect.stringContaining(
+          '🔄 Attempting to reconnect WebSocket proxy... (attempt 1'
+        )
       );
     });
 
     it('should increase backoff delay on subsequent reconnection attempts', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -582,8 +629,11 @@ describe('Stock Store WebSocket Integration', () => {
 
     it('should start periodic refresh as fallback on connection error', async () => {
       const { result } = renderHook(() => useStockStore());
-      
-      const startPeriodicRefreshSpy = jest.spyOn(result.current, 'startPeriodicRefresh');
+
+      const startPeriodicRefreshSpy = jest.spyOn(
+        result.current,
+        'startPeriodicRefresh'
+      );
 
       act(() => {
         result.current.setLiveDataEnabled(true);
@@ -603,7 +653,7 @@ describe('Stock Store WebSocket Integration', () => {
 
     it('should not reconnect when no stocks are watched', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -620,7 +670,10 @@ describe('Stock Store WebSocket Integration', () => {
         mockEventSource.simulateError();
       });
 
-      const connectWebSocketSpy = jest.spyOn(result.current, 'connectWebSocket');
+      const connectWebSocketSpy = jest.spyOn(
+        result.current,
+        'connectWebSocket'
+      );
 
       // Fast-forward past reconnection delay
       act(() => {
@@ -632,7 +685,7 @@ describe('Stock Store WebSocket Integration', () => {
 
     it('should not reconnect when already connected', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -649,7 +702,10 @@ describe('Stock Store WebSocket Integration', () => {
         result.current.connectionAttempts = 1;
       });
 
-      const connectWebSocketSpy = jest.spyOn(result.current, 'connectWebSocket');
+      const connectWebSocketSpy = jest.spyOn(
+        result.current,
+        'connectWebSocket'
+      );
 
       // Fast-forward past reconnection delay
       act(() => {
@@ -663,7 +719,7 @@ describe('Stock Store WebSocket Integration', () => {
   describe('WebSocket Disconnection', () => {
     it('should disconnect WebSocket properly', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -684,25 +740,29 @@ describe('Stock Store WebSocket Integration', () => {
       expect(closeSpy).toHaveBeenCalled();
       expect(result.current.webSocketConnection).toBeNull();
       expect(result.current.webSocketStatus).toBe('disconnected');
-      expect(console.log).toHaveBeenCalledWith('❌ WebSocket proxy disconnected');
+      expect(console.log).toHaveBeenCalledWith(
+        '❌ WebSocket proxy disconnected'
+      );
     });
 
     it('should handle disconnection when no connection exists', () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.disconnectWebSocket();
       });
 
       expect(result.current.webSocketConnection).toBeNull();
-      expect(console.log).toHaveBeenCalledWith('❌ WebSocket proxy disconnected');
+      expect(console.log).toHaveBeenCalledWith(
+        '❌ WebSocket proxy disconnected'
+      );
     });
   });
 
   describe('Integration with Periodic Refresh', () => {
     it('should stop periodic refresh when WebSocket connects', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       // Start with periodic refresh
       act(() => {
         result.current.setLiveDataEnabled(true);
@@ -710,7 +770,10 @@ describe('Stock Store WebSocket Integration', () => {
         result.current.startPeriodicRefresh();
       });
 
-      const stopPeriodicRefreshSpy = jest.spyOn(result.current, 'stopPeriodicRefresh');
+      const stopPeriodicRefreshSpy = jest.spyOn(
+        result.current,
+        'stopPeriodicRefresh'
+      );
 
       // Connect WebSocket
       act(() => {
@@ -726,12 +789,14 @@ describe('Stock Store WebSocket Integration', () => {
         expect(stopPeriodicRefreshSpy).toHaveBeenCalled();
       });
 
-      expect(console.log).toHaveBeenCalledWith('🔌 WebSocket connected, stopping periodic refresh - switching to real-time data');
+      expect(console.log).toHaveBeenCalledWith(
+        '🔌 WebSocket connected, stopping periodic refresh - switching to real-time data'
+      );
     });
 
     it('should not start periodic refresh when WebSocket is connected', () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -748,7 +813,9 @@ describe('Stock Store WebSocket Integration', () => {
         result.current.startPeriodicRefresh();
       });
 
-      expect(console.log).toHaveBeenCalledWith('🔌 WebSocket is connected, skipping periodic refresh - using real-time data');
+      expect(console.log).toHaveBeenCalledWith(
+        '🔌 WebSocket is connected, skipping periodic refresh - using real-time data'
+      );
     });
   });
 
@@ -758,7 +825,7 @@ describe('Stock Store WebSocket Integration', () => {
       delete (global as any).window;
 
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);
@@ -775,7 +842,7 @@ describe('Stock Store WebSocket Integration', () => {
   describe('Edge Cases and Error Recovery', () => {
     it('should handle EventSource creation errors', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       // Mock EventSource constructor to throw
       const mockEventSourceConstructor = jest.fn().mockImplementation(() => {
         throw new Error('EventSource creation failed');
@@ -796,12 +863,15 @@ describe('Stock Store WebSocket Integration', () => {
         expect(result.current.error).toBe('EventSource creation failed');
       });
 
-      expect(console.error).toHaveBeenCalledWith('Failed to create WebSocket proxy connection:', expect.any(Error));
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to create WebSocket proxy connection:',
+        expect.any(Error)
+      );
     });
 
     it('should reset connection attempts on successful connection', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       // Set some connection attempts
       act(() => {
         result.current.setLiveDataEnabled(true);
@@ -822,7 +892,7 @@ describe('Stock Store WebSocket Integration', () => {
 
     it('should handle rapid connection/disconnection cycles', async () => {
       const { result } = renderHook(() => useStockStore());
-      
+
       act(() => {
         result.current.setLiveDataEnabled(true);
         result.current.addStock('AAPL', 'Apple Inc.', 150.0);

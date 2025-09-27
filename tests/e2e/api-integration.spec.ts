@@ -1,7 +1,7 @@
 /**
  * E2E Tests for API Integration
  * =============================
- * 
+ *
  * Tests for API endpoints and external service integration
  */
 
@@ -23,9 +23,9 @@ test.describe('API Integration Tests', () => {
   test.describe('Stock Quote API', () => {
     test('should fetch stock quote successfully', async () => {
       const response = await apiContext.get('/api/quote?symbol=AAPL');
-      
+
       expect(response.status()).toBe(200);
-      
+
       const data = await response.json();
       expect(data).toHaveProperty('success', true);
       expect(data).toHaveProperty('data');
@@ -42,9 +42,9 @@ test.describe('API Integration Tests', () => {
 
     test('should handle invalid stock symbols', async () => {
       const response = await apiContext.get('/api/quote?symbol=INVALID_SYMBOL');
-      
+
       expect(response.status()).toBe(400);
-      
+
       const data = await response.json();
       expect(data).toHaveProperty('code', 'INVALID_SYMBOL');
       expect(data).toHaveProperty('message');
@@ -53,9 +53,9 @@ test.describe('API Integration Tests', () => {
 
     test('should require symbol parameter', async () => {
       const response = await apiContext.get('/api/quote');
-      
+
       expect(response.status()).toBe(400);
-      
+
       const data = await response.json();
       expect(data).toHaveProperty('code', 'MISSING_SYMBOL');
       expect(data).toHaveProperty('message');
@@ -66,15 +66,15 @@ test.describe('API Integration Tests', () => {
       const promises = Array.from({ length: 10 }, () =>
         apiContext.get('/api/quote?symbol=AAPL')
       );
-      
+
       const responses = await Promise.all(promises);
-      
+
       // Most should succeed, some might be rate limited
       const successResponses = responses.filter(r => r.status() === 200);
       const rateLimitedResponses = responses.filter(r => r.status() === 429);
-      
+
       expect(successResponses.length).toBeGreaterThan(0);
-      
+
       // If rate limited, should have proper headers
       if (rateLimitedResponses.length > 0) {
         const rateLimitedResponse = rateLimitedResponses[0];
@@ -85,13 +85,13 @@ test.describe('API Integration Tests', () => {
 
     test('should return consistent data format', async () => {
       const symbols = ['AAPL', 'GOOGL', 'MSFT'];
-      
+
       for (const symbol of symbols) {
         const response = await apiContext.get(`/api/quote?symbol=${symbol}`);
-        
+
         if (response.status() === 200) {
           const data = await response.json();
-          
+
           // Verify consistent structure
           expect(data.data.symbol).toBe(symbol);
           expect(typeof data.data.current).toBe('number');
@@ -106,9 +106,9 @@ test.describe('API Integration Tests', () => {
   test.describe('Health Check API', () => {
     test('should return healthy status', async () => {
       const response = await apiContext.get('/api/health');
-      
+
       expect(response.status()).toBe(200);
-      
+
       const data = await response.json();
       expect(data).toHaveProperty('status', 'healthy');
       expect(data).toHaveProperty('timestamp');
@@ -120,11 +120,11 @@ test.describe('API Integration Tests', () => {
     test('should include system metrics', async () => {
       const response = await apiContext.get('/api/health');
       const data = await response.json();
-      
+
       expect(data.memory).toHaveProperty('used');
       expect(data.memory).toHaveProperty('total');
       expect(data.memory).toHaveProperty('percentage');
-      
+
       expect(typeof data.uptime).toBe('number');
       expect(data.uptime).toBeGreaterThan(0);
     });
@@ -132,10 +132,10 @@ test.describe('API Integration Tests', () => {
     test('should check external API connectivity', async () => {
       const response = await apiContext.get('/api/health');
       const data = await response.json();
-      
+
       expect(data).toHaveProperty('externalApis');
       expect(data.externalApis).toHaveProperty('finnhub');
-      
+
       // Should be either 'connected' or 'error' with details
       const finnhubStatus = data.externalApis.finnhub;
       expect(['connected', 'error']).toContain(finnhubStatus.status);
@@ -144,8 +144,10 @@ test.describe('API Integration Tests', () => {
 
   test.describe('WebSocket Proxy API', () => {
     test('should establish WebSocket proxy connection', async () => {
-      const response = await apiContext.get('/api/websocket-proxy?symbols=AAPL');
-      
+      const response = await apiContext.get(
+        '/api/websocket-proxy?symbols=AAPL'
+      );
+
       expect(response.status()).toBe(200);
       expect(response.headers()['content-type']).toBe('text/event-stream');
       expect(response.headers()['cache-control']).toBe('no-cache');
@@ -154,29 +156,35 @@ test.describe('API Integration Tests', () => {
 
     test('should require symbols parameter', async () => {
       const response = await apiContext.get('/api/websocket-proxy');
-      
+
       expect(response.status()).toBe(400);
-      
+
       const text = await response.text();
       expect(text).toContain('Symbols parameter required');
     });
 
     test('should handle multiple symbols', async () => {
-      const response = await apiContext.get('/api/websocket-proxy?symbols=AAPL,GOOGL,MSFT');
-      
+      const response = await apiContext.get(
+        '/api/websocket-proxy?symbols=AAPL,GOOGL,MSFT'
+      );
+
       expect(response.status()).toBe(200);
       expect(response.headers()['content-type']).toBe('text/event-stream');
     });
 
     test('should prevent duplicate connections', async () => {
       // Start first connection
-      const response1 = await apiContext.get('/api/websocket-proxy?symbols=AAPL');
+      const response1 = await apiContext.get(
+        '/api/websocket-proxy?symbols=AAPL'
+      );
       expect(response1.status()).toBe(200);
-      
+
       // Attempt second connection with same symbols
-      const response2 = await apiContext.get('/api/websocket-proxy?symbols=AAPL');
+      const response2 = await apiContext.get(
+        '/api/websocket-proxy?symbols=AAPL'
+      );
       expect(response2.status()).toBe(409);
-      
+
       const text = await response2.text();
       expect(text).toContain('Connection already exists');
     });
@@ -184,8 +192,10 @@ test.describe('API Integration Tests', () => {
     test('should handle connection cooldowns', async () => {
       // This test would need to trigger a cooldown scenario
       // which might happen after rate limiting or connection failures
-      const response = await apiContext.get('/api/websocket-proxy?symbols=RATE_LIMITED_SYMBOL');
-      
+      const response = await apiContext.get(
+        '/api/websocket-proxy?symbols=RATE_LIMITED_SYMBOL'
+      );
+
       if (response.status() === 429) {
         const text = await response.text();
         expect(text).toContain('cooldown');
@@ -210,12 +220,15 @@ test.describe('API Integration Tests', () => {
       const response = await apiContext.post('/api/push/subscribe', {
         data: subscriptionData,
       });
-      
+
       expect(response.status()).toBe(200);
-      
+
       const data = await response.json();
       expect(data).toHaveProperty('success', true);
-      expect(data).toHaveProperty('message', 'Subscription stored successfully');
+      expect(data).toHaveProperty(
+        'message',
+        'Subscription stored successfully'
+      );
     });
 
     test('should validate push subscription data', async () => {
@@ -231,18 +244,18 @@ test.describe('API Integration Tests', () => {
       const response = await apiContext.post('/api/push/subscribe', {
         data: invalidData,
       });
-      
+
       expect(response.status()).toBe(400);
-      
+
       const data = await response.json();
       expect(data).toHaveProperty('code', 'INVALID_SUBSCRIPTION');
     });
 
     test('should get subscription statistics', async () => {
       const response = await apiContext.get('/api/push/subscribe');
-      
+
       expect(response.status()).toBe(200);
-      
+
       const data = await response.json();
       expect(data).toHaveProperty('success', true);
       expect(data).toHaveProperty('subscriptions');
@@ -275,21 +288,24 @@ test.describe('API Integration Tests', () => {
       const response = await apiContext.post('/api/push/unsubscribe', {
         data: unsubscribeData,
       });
-      
+
       expect(response.status()).toBe(200);
-      
+
       const data = await response.json();
       expect(data).toHaveProperty('success', true);
-      expect(data).toHaveProperty('message', 'Subscription removed successfully');
+      expect(data).toHaveProperty(
+        'message',
+        'Subscription removed successfully'
+      );
     });
 
     test('should handle bulk unsubscription', async () => {
       const response = await apiContext.post('/api/push/unsubscribe', {
         data: { timestamp: Date.now() },
       });
-      
+
       expect(response.status()).toBe(200);
-      
+
       const data = await response.json();
       expect(data).toHaveProperty('success', true);
       expect(data.message).toContain('subscriptions removed successfully');
@@ -304,9 +320,9 @@ test.describe('API Integration Tests', () => {
           'content-type': 'application/json',
         },
       });
-      
+
       expect(response.status()).toBe(500);
-      
+
       const data = await response.json();
       expect(data).toHaveProperty('code');
       expect(data).toHaveProperty('message');
@@ -316,8 +332,10 @@ test.describe('API Integration Tests', () => {
     test('should handle missing environment variables', async () => {
       // This would test behavior when FINNHUB_API_KEY is not set
       // In real testing, you might temporarily unset env vars
-      const response = await apiContext.get('/api/websocket-proxy?symbols=AAPL');
-      
+      const response = await apiContext.get(
+        '/api/websocket-proxy?symbols=AAPL'
+      );
+
       // If API key is missing, should return 500
       if (response.status() === 500) {
         const text = await response.text();
@@ -327,7 +345,7 @@ test.describe('API Integration Tests', () => {
 
     test('should return proper CORS headers', async () => {
       const response = await apiContext.get('/api/health');
-      
+
       const headers = response.headers();
       expect(headers['access-control-allow-origin']).toBeTruthy();
     });
@@ -348,7 +366,7 @@ test.describe('API Integration Tests', () => {
       const response = await apiContext.post('/api/push/subscribe', {
         data: largeData,
       });
-      
+
       // Should either succeed or fail gracefully
       expect([200, 400, 413]).toContain(response.status());
     });
@@ -364,18 +382,18 @@ test.describe('API Integration Tests', () => {
 
       for (const endpoint of endpoints) {
         const startTime = Date.now();
-        
+
         if (endpoint.includes('subscribe')) {
           await apiContext.get(endpoint);
         } else {
           await apiContext.get(endpoint);
         }
-        
+
         const responseTime = Date.now() - startTime;
-        
+
         // API should respond within 5 seconds
         expect(responseTime).toBeLessThan(5000);
-        
+
         // Health check should be particularly fast
         if (endpoint.includes('health')) {
           expect(responseTime).toBeLessThan(1000);
@@ -387,13 +405,13 @@ test.describe('API Integration Tests', () => {
       const promises = Array.from({ length: 20 }, (_, i) =>
         apiContext.get(`/api/quote?symbol=STOCK${i}`)
       );
-      
+
       const responses = await Promise.all(promises);
-      
+
       // Should handle all requests without server errors
       const serverErrors = responses.filter(r => r.status() >= 500);
       expect(serverErrors.length).toBe(0);
-      
+
       // Most should succeed (some might be rate limited)
       const successResponses = responses.filter(r => r.status() === 200);
       expect(successResponses.length).toBeGreaterThan(0);
@@ -418,7 +436,7 @@ test.describe('API Integration Tests', () => {
       // Check subscription exists
       const statsResponse = await apiContext.get('/api/push/subscribe');
       const stats = await statsResponse.json();
-      
+
       const hasSubscription = stats.details.some(
         (sub: any) => sub.endpoint === subscriptionData.subscription.endpoint
       );
@@ -435,7 +453,7 @@ test.describe('API Integration Tests', () => {
       // Verify subscription is removed
       const finalStatsResponse = await apiContext.get('/api/push/subscribe');
       const finalStats = await finalStatsResponse.json();
-      
+
       const stillHasSubscription = finalStats.details.some(
         (sub: any) => sub.endpoint === subscriptionData.subscription.endpoint
       );
@@ -446,11 +464,13 @@ test.describe('API Integration Tests', () => {
   test.describe('Security', () => {
     test('should sanitize input parameters', async () => {
       const maliciousSymbol = '<script>alert("xss")</script>';
-      const response = await apiContext.get(`/api/quote?symbol=${encodeURIComponent(maliciousSymbol)}`);
-      
+      const response = await apiContext.get(
+        `/api/quote?symbol=${encodeURIComponent(maliciousSymbol)}`
+      );
+
       // Should not execute script, should return safe error
       expect(response.status()).toBe(400);
-      
+
       const data = await response.json();
       expect(data.message).not.toContain('<script>');
     });
@@ -462,7 +482,7 @@ test.describe('API Integration Tests', () => {
           'content-type': 'text/plain', // Wrong content type
         },
       });
-      
+
       // Should handle gracefully
       expect([400, 415, 500]).toContain(response.status());
     });
@@ -481,7 +501,7 @@ test.describe('API Integration Tests', () => {
       const response = await apiContext.post('/api/push/subscribe', {
         data: oversizedData,
       });
-      
+
       // Should reject oversized requests
       expect([400, 413]).toContain(response.status());
     });

@@ -1,7 +1,7 @@
 /**
  * Error Boundary Wrapper for Next.js
  * ==================================
- * 
+ *
  * Client-side wrapper to use ErrorBoundary in Next.js layouts.
  */
 
@@ -23,7 +23,7 @@ export function ErrorBoundaryWrapper({ children }: ErrorBoundaryWrapperProps) {
         if (process.env.NODE_ENV === 'development') {
           console.error('App Error Boundary:', error, errorInfo);
         }
-        
+
         // In production, you might want to send to an error reporting service
         // Example: Sentry.captureException(error, { contexts: { react: errorInfo } });
       }}

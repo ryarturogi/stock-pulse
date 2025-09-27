@@ -34,7 +34,8 @@ export const StockForm: React.FC<StockFormProps> = ({
   isLoading = false,
   className = '',
 }) => {
-  const [allAvailableStocks, setAllAvailableStocks] = React.useState<StockOption[]>(availableStocks);
+  const [allAvailableStocks, setAllAvailableStocks] =
+    React.useState<StockOption[]>(availableStocks);
   const [isLoadingStocks, setIsLoadingStocks] = React.useState(false);
 
   const {
@@ -83,7 +84,6 @@ export const StockForm: React.FC<StockFormProps> = ({
     }
   }, [selectedStock, fetchCurrentPrice, setAlertPrice]);
 
-
   /**
    * Handle form submission
    */
@@ -100,7 +100,7 @@ export const StockForm: React.FC<StockFormProps> = ({
     );
 
     const price = parseFloat(alertPrice);
-    
+
     // Pass stock name if found, otherwise let handleAddStock figure it out
     const stockName = selectedStockData?.name;
     onAddStock(selectedStock, price, stockName);
@@ -112,7 +112,11 @@ export const StockForm: React.FC<StockFormProps> = ({
   /**
    * Handle stock selection from search
    */
-  const handleSearchStockSelect = async (symbol: string, alertPrice: number, stockName?: string) => {
+  const handleSearchStockSelect = async (
+    symbol: string,
+    alertPrice: number,
+    stockName?: string
+  ) => {
     // Call the parent's onAddStock function
     onAddStock(symbol, alertPrice, stockName);
   };
@@ -128,7 +132,6 @@ export const StockForm: React.FC<StockFormProps> = ({
     }
   };
 
-
   return (
     <div
       className={`w-full h-full bg-white shadow-sm dark:bg-gray-800 ${className}`}
@@ -139,46 +142,42 @@ export const StockForm: React.FC<StockFormProps> = ({
           <div className='flex justify-center items-center w-8 h-8 bg-blue-600 rounded-lg'>
             <TrendingUp className='w-4 h-4 text-white' />
           </div>
-          <span
-            className="text-lg font-semibold text-gray-900 dark:text-white"
-          >
+          <span className='text-lg font-semibold text-gray-900 dark:text-white'>
             StockPulse
           </span>
         </div>
 
         {/* Form */}
         <div className='space-y-4 lg:space-y-6'>
-          <h2
-            className="text-base lg:text-lg font-semibold text-gray-900 dark:text-white"
-          >
+          <h2 className='text-base lg:text-lg font-semibold text-gray-900 dark:text-white'>
             Add Stock to Watch
           </h2>
 
           {/* Stock Search */}
           <div>
-            <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className='block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'>
               Search & Add Stock
             </label>
             <StockSearch
               onSelectStock={handleSearchStockSelect}
               watchedStocks={watchedStocks}
-              className="mb-4"
+              className='mb-4'
               data-intro="Use the Stock Search to find any stock by symbol or company name. This gives you access to thousands of stocks beyond the popular ones. Try searching for 'AAPL', 'Tesla', or 'Microsoft' to see it in action."
-              data-title="🔍 Search for Stocks"
-              data-desktop-step="2"
-              data-mobile-step="2"
+              data-title='🔍 Search for Stocks'
+              data-desktop-step='2'
+              data-mobile-step='2'
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
               Search for any stock symbol or company name
             </p>
           </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+          <div className='relative'>
+            <div className='absolute inset-0 flex items-center'>
+              <div className='w-full border-t border-gray-300 dark:border-gray-600' />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+            <div className='relative flex justify-center text-sm'>
+              <span className='px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400'>
                 or select from popular stocks
               </span>
             </div>
@@ -189,25 +188,26 @@ export const StockForm: React.FC<StockFormProps> = ({
             <div>
               <label
                 htmlFor='stock-selector'
-                className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                className='block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'
               >
                 Select Stock
               </label>
               <InfiniteStockSelector
                 value={selectedStock}
                 onChange={setSelectedStock}
-                placeholder="Choose a stock..."
+                placeholder='Choose a stock...'
                 disabled={isLoading}
                 error={errors.stock || ''}
-                data-desktop-step="3"
-                data-mobile-step="3"
-                data-intro="Select a stock from the dropdown to add it to your watchlist. You can search for any stock by symbol or company name."
-                data-title="📋 Select Stock"
+                data-desktop-step='3'
+                data-mobile-step='3'
+                data-intro='Select a stock from the dropdown to add it to your watchlist. You can search for any stock by symbol or company name.'
+                data-title='📋 Select Stock'
                 watchedStocks={watchedStocks}
               />
               {availableStocksToShow.length === 0 && !isLoadingStocks && (
                 <div className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-                  All default stocks are being watched. Use the search above to find more stocks.
+                  All default stocks are being watched. Use the search above to
+                  find more stocks.
                 </div>
               )}
             </div>
@@ -216,28 +216,32 @@ export const StockForm: React.FC<StockFormProps> = ({
             <div>
               <label
                 htmlFor='price-alert'
-                className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                className='block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'
               >
                 Price Alert ($)
               </label>
-              <div className="relative">
+              <div className='relative'>
                 <input
                   id='price-alert'
                   type='text'
-                  placeholder={currentPrice ? `Current: $${currentPrice.toFixed(2)}` : 'Enter alert price'}
+                  placeholder={
+                    currentPrice
+                      ? `Current: $${currentPrice.toFixed(2)}`
+                      : 'Enter alert price'
+                  }
                   value={alertPrice}
                   onChange={handlePriceChange}
                   className={`w-full px-3 py-2 pr-20 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 bg-white dark:text-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 ${errors.price ? 'border-red-300' : ''}`}
                   disabled={isLoading}
                   data-intro="Set a price alert to get notified when a stock reaches your target price. The current price is automatically fetched to help you decide. You'll receive browser notifications when your alerts trigger (make sure to enable them!)."
-                  data-title="💰 Set Price Alerts"
-                  data-desktop-step="4"
+                  data-title='💰 Set Price Alerts'
+                  data-desktop-step='4'
                 />
                 {currentPrice && !alertPrice && (
                   <button
-                    type="button"
+                    type='button'
                     onClick={() => setAlertPrice(currentPrice.toFixed(2))}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+                    className='absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors'
                     disabled={isLoading}
                   >
                     Use Current

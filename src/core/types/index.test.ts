@@ -1,7 +1,7 @@
 /**
  * Unit Tests for Types Index
  * ==========================
- * 
+ *
  * Tests for type exports and interface validation
  */
 
@@ -248,11 +248,22 @@ describe('Types Index', () => {
 
     describe('TimeRange', () => {
       it('should validate TimeRange union type', () => {
-        const ranges: TimeRange[] = ['1D', '5D', '1M', '3M', '6M', '1Y', '5Y', 'MAX'];
-        
+        const ranges: TimeRange[] = [
+          '1D',
+          '5D',
+          '1M',
+          '3M',
+          '6M',
+          '1Y',
+          '5Y',
+          'MAX',
+        ];
+
         ranges.forEach(range => {
           expect(typeof range).toBe('string');
-          expect(['1D', '5D', '1M', '3M', '6M', '1Y', '5Y', 'MAX']).toContain(range);
+          expect(['1D', '5D', '1M', '3M', '6M', '1Y', '5Y', 'MAX']).toContain(
+            range
+          );
         });
       });
     });
@@ -299,8 +310,13 @@ describe('Types Index', () => {
       });
 
       it('should validate notification types', () => {
-        const types: Notification['type'][] = ['info', 'success', 'warning', 'error'];
-        
+        const types: Notification['type'][] = [
+          'info',
+          'success',
+          'warning',
+          'error',
+        ];
+
         types.forEach(type => {
           expect(['info', 'success', 'warning', 'error']).toContain(type);
         });
@@ -359,7 +375,7 @@ describe('Types Index', () => {
             changePercent: 1.67,
             volume: 1000000,
             timestamp: '2023-12-01T10:00:00Z',
-          }
+          },
         ],
       };
 

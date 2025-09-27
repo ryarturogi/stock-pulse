@@ -93,7 +93,7 @@ export const useStockForm = (): StockFormState => {
     });
 
     const newErrors: typeof errors = {};
-    
+
     if (!validation.isValid) {
       if (validation.errors.symbol) {
         newErrors.stock = validation.errors.symbol;
@@ -130,4 +130,3 @@ export const useStockForm = (): StockFormState => {
 };
 
 export default useStockForm;
-

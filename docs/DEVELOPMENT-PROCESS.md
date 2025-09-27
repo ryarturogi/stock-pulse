@@ -2,7 +2,10 @@
 
 **Complete Development Journey: From Concept to Production**
 
-This comprehensive guide documents the complete development process of StockPulse, an enterprise-grade Next.js 15 + React 19 stock tracking application. This documentation is designed for developers who want to understand the full development lifecycle, architectural decisions, and best practices used to build this production-ready application.
+This comprehensive guide documents the complete development process of StockPulse, an
+enterprise-grade Next.js 15 + React 19 stock tracking application. This documentation is designed
+for developers who want to understand the full development lifecycle, architectural decisions, and
+best practices used to build this production-ready application.
 
 ## 📋 Table of Contents
 
@@ -23,9 +26,12 @@ This comprehensive guide documents the complete development process of StockPuls
 ## 🎯 Project Overview
 
 ### Vision
-Create an enterprise-grade stock tracking application that demonstrates modern web development best practices while providing real-time market data, price alerts, and a seamless PWA experience.
+
+Create an enterprise-grade stock tracking application that demonstrates modern web development best
+practices while providing real-time market data, price alerts, and a seamless PWA experience.
 
 ### Key Requirements
+
 - **Real-time Data**: Live stock quotes with WebSocket fallback to API polling
 - **Progressive Web App**: Offline functionality and native app-like experience
 - **Enterprise Architecture**: Scalable, maintainable code structure
@@ -34,6 +40,7 @@ Create an enterprise-grade stock tracking application that demonstrates modern w
 - **Modern Framework**: Next.js 15 with React 19 and React Compiler
 
 ### Success Metrics
+
 - Performance: Lighthouse score 90+ for all metrics
 - Type Safety: 100% TypeScript coverage with strict mode
 - Testing: 80%+ code coverage across unit and integration tests
@@ -60,6 +67,7 @@ Docker (optional)    # For containerized development
 ### Initial Project Setup
 
 #### 1. Project Initialization
+
 ```bash
 # Create Next.js 15 project with TypeScript
 npx create-next-app@latest stock-pulse --typescript --tailwind --eslint --app
@@ -71,6 +79,7 @@ pnpm install
 ```
 
 #### 2. Package Manager Configuration
+
 ```json
 // package.json - Package manager enforcement
 {
@@ -83,6 +92,7 @@ pnpm install
 ```
 
 #### 3. TypeScript Configuration
+
 ```json
 // tsconfig.json - Strict TypeScript setup
 {
@@ -100,6 +110,7 @@ pnpm install
 ### Development Tools Configuration
 
 #### 1. ESLint & Prettier Setup
+
 ```bash
 # Install development dependencies
 pnpm add -D @typescript-eslint/eslint-plugin @typescript-eslint/parser
@@ -109,6 +120,7 @@ pnpm add -D prettier eslint-config-prettier eslint-plugin-prettier
 ```
 
 #### 2. IDE Configuration
+
 ```json
 // .vscode/settings.json
 {
@@ -119,6 +131,7 @@ pnpm add -D prettier eslint-config-prettier eslint-plugin-prettier
 ```
 
 #### 3. Path Aliases Setup
+
 ```json
 // tsconfig.json - Import path configuration
 {
@@ -141,23 +154,27 @@ pnpm add -D prettier eslint-config-prettier eslint-plugin-prettier
 ### Core Technology Decisions
 
 #### Frontend Framework
+
 - **Next.js 15**: Latest features including App Router and React Compiler
 - **React 19**: Concurrent features and improved performance
 - **TypeScript 5.6**: Strict mode with comprehensive utility types
 - **Tailwind CSS 3.4**: Utility-first styling with PostCSS
 
 #### State Management
+
 - **Zustand 5.0**: Lightweight state management with persistence
 - **React Query Alternative**: Server state managed through custom hooks
 - **localStorage**: Client-side persistence for user preferences
 
 #### Real-time Data
+
 - **Finnhub API**: Professional-grade stock market data
 - **WebSocket**: Real-time price updates via secure proxy
 - **Server-Sent Events**: Fallback for real-time updates
 - **API Polling**: Final fallback with intelligent rate limiting
 
 #### Progressive Web App
+
 - **next-pwa**: Service worker integration
 - **Web Notifications API**: Price alerts and push notifications
 - **Push Notifications**: Simplified push notification implementation (no VAPID required)
@@ -166,6 +183,7 @@ pnpm add -D prettier eslint-config-prettier eslint-plugin-prettier
 ### Architecture Patterns
 
 #### 1. Feature-Based Module Organization
+
 ```
 src/
 ├── core/                    # Core application modules
@@ -183,6 +201,7 @@ src/
 ```
 
 #### 2. TypeScript-First Development
+
 ```typescript
 // Comprehensive utility types for consistency
 export type ApiResponse<T = unknown> = {
@@ -206,18 +225,19 @@ export type AsyncState<T = unknown, E = Error> = {
 ```
 
 #### 3. Service Layer Pattern
+
 ```typescript
 // Singleton service pattern for external APIs
 export class StockService {
   private static instance: StockService;
-  
+
   static getInstance(): StockService {
     if (!StockService.instance) {
       StockService.instance = new StockService();
     }
     return StockService.instance;
   }
-  
+
   async getQuote(symbol: string): Promise<StockQuote> {
     // Implementation with error handling and retries
   }
@@ -231,12 +251,14 @@ export class StockService {
 ### Agile Approach
 
 #### 1. Sprint Planning
+
 - **Sprint Duration**: 2-week sprints
 - **Planning Sessions**: Define user stories and acceptance criteria
 - **Story Estimation**: T-shirt sizing (XS, S, M, L, XL)
 - **Definition of Done**: Tests written, documentation updated, deployed
 
 #### 2. User Story Format
+
 ```
 As a [stock trader]
 I want to [receive price alerts]
@@ -250,6 +272,7 @@ Acceptance Criteria:
 ```
 
 #### 3. Development Workflow
+
 1. **Feature Branch**: Create branch from main
 2. **TDD Approach**: Write tests before implementation
 3. **Implementation**: Build feature with type safety
@@ -261,6 +284,7 @@ Acceptance Criteria:
 ### Code Quality Standards
 
 #### 1. Commit Convention
+
 ```bash
 # Conventional commits for automated changelog
 feat: add real-time stock price alerts
@@ -271,6 +295,7 @@ refactor: optimize price update throttling
 ```
 
 #### 2. Branch Strategy
+
 ```bash
 main                 # Production-ready code
 ├── develop         # Integration branch
@@ -280,6 +305,7 @@ main                 # Production-ready code
 ```
 
 #### 3. Code Review Checklist
+
 - [ ] TypeScript strict mode compliance
 - [ ] Test coverage for new functionality
 - [ ] Performance implications reviewed
@@ -294,6 +320,7 @@ main                 # Production-ready code
 ### Phase 1: Foundation Setup (Week 1-2)
 
 #### 1. Project Structure Creation
+
 ```bash
 # Create enterprise-grade directory structure
 mkdir -p src/{core,features,shared}/{types,components,hooks,services,stores,utils}
@@ -302,6 +329,7 @@ mkdir -p tests/{unit,integration,e2e}
 ```
 
 #### 2. Core Type System Development
+
 ```typescript
 // src/core/types/utils.ts - Comprehensive utility types
 export type DeepPartial<T> = {
@@ -322,6 +350,7 @@ export const isDefined = <T>(value: T | null | undefined): value is T => {
 ```
 
 #### 3. Development Environment Configuration
+
 ```typescript
 // next.config.js - Production-optimized configuration
 const nextConfig = {
@@ -332,14 +361,16 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   async headers() {
-    return [{
-      source: '/(.*)',
-      headers: [
-        { key: 'X-Frame-Options', value: 'DENY' },
-        { key: 'X-Content-Type-Options', value: 'nosniff' },
-        // Additional security headers...
-      ],
-    }];
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          // Additional security headers...
+        ],
+      },
+    ];
   },
 };
 ```
@@ -347,6 +378,7 @@ const nextConfig = {
 ### Phase 2: Core Architecture Implementation (Week 3-4)
 
 #### 1. State Management Setup
+
 ```typescript
 // Zustand store with persistence and type safety
 export const useStockStore = create<StockStoreState>()(
@@ -354,11 +386,11 @@ export const useStockStore = create<StockStoreState>()(
     (set, get) => ({
       watchedStocks: [],
       webSocketStatus: 'disconnected',
-      
+
       addStock: (symbol: string, name: string, alertPrice: number) => {
         // Implementation with validation and error handling
       },
-      
+
       updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => {
         // Throttled updates with notification triggers
       },
@@ -375,25 +407,23 @@ export const useStockStore = create<StockStoreState>()(
 ```
 
 #### 2. API Integration Layer
+
 ```typescript
 // Secure API route with rate limiting
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get('symbol');
-    
+
     const apiKey = process.env.FINNHUB_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: 'API key not configured' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
     }
-    
+
     const response = await fetch(
       `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`
     );
-    
+
     return NextResponse.json({
       symbol,
       current: data.c,
@@ -401,15 +431,13 @@ export async function GET(request: NextRequest) {
       // Normalized response format
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch stock quote' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch stock quote' }, { status: 500 });
   }
 }
 ```
 
 #### 3. Component Architecture
+
 ```typescript
 // Type-safe component with utility types
 interface StockCardProps extends ComponentProps {
@@ -442,48 +470,50 @@ export const StockCard: React.FC<StockCardProps> = ({
 ### Phase 3: Real-time Data Implementation (Week 5-6)
 
 #### 1. WebSocket Proxy Development
+
 ```typescript
 // Server-side WebSocket proxy for secure real-time data
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const symbols = searchParams.get('symbols')?.split(',') || [];
-  
+
   // Create Server-Sent Events stream
   const stream = new ReadableStream({
     start(controller) {
       // Establish WebSocket connection to Finnhub
       const ws = new WebSocket(`wss://ws.finnhub.io?token=${apiKey}`);
-      
+
       ws.onopen = () => {
         symbols.forEach(symbol => {
           ws.send(JSON.stringify({ type: 'subscribe', symbol }));
         });
       };
-      
-      ws.onmessage = (event) => {
+
+      ws.onmessage = event => {
         const data = JSON.parse(event.data);
         controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
       };
     },
   });
-  
+
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }
 ```
 
 #### 2. Client-side WebSocket Management
+
 ```typescript
 // Robust WebSocket connection with fallback strategies
 connectWebSocket: async () => {
   const symbols = state.watchedStocks.map(stock => stock.symbol).join(',');
   const eventSource = new EventSource(`/api/websocket-proxy?symbols=${symbols}`);
-  
+
   // Connection timeout handling
   const connectionTimeout = setTimeout(() => {
     if (get().webSocketStatus === 'connecting') {
@@ -492,7 +522,7 @@ connectWebSocket: async () => {
       state.startPeriodicRefresh();
     }
   }, 15000);
-  
+
   eventSource.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.type === 'trade' && data.data) {
@@ -502,7 +532,7 @@ connectWebSocket: async () => {
       });
     }
   };
-  
+
   eventSource.onerror = () => {
     // Graceful degradation to API polling
     state.startPeriodicRefresh();
@@ -511,6 +541,7 @@ connectWebSocket: async () => {
 ```
 
 #### 3. Intelligent Rate Limiting
+
 ```typescript
 // API fallback with respect for rate limits
 startPeriodicRefresh: () => {
@@ -518,13 +549,13 @@ startPeriodicRefresh: () => {
     config => config.value === state.refreshTimeInterval
   );
   let intervalMs = intervalConfig?.milliseconds || 120000; // 2 minutes default
-  
+
   // Enforce minimum interval based on number of stocks
   const minIntervalMs = Math.max(state.watchedStocks.length * 1000, 30000);
   if (intervalMs < minIntervalMs) {
     intervalMs = minIntervalMs;
   }
-  
+
   const interval = setInterval(async () => {
     // Concurrent API calls with Promise.all
     const refreshPromises = state.watchedStocks.map(async (stock) => {
@@ -538,7 +569,7 @@ startPeriodicRefresh: () => {
         console.warn(`Failed to refresh ${stock.symbol}:`, error);
       }
     });
-    
+
     await Promise.all(refreshPromises);
   }, intervalMs);
 },
@@ -547,6 +578,7 @@ startPeriodicRefresh: () => {
 ### Phase 4: PWA & Notifications (Week 7-8)
 
 #### 1. Service Worker Configuration
+
 ```javascript
 // next-pwa configuration for offline functionality
 const withPWA = withPWAInit({
@@ -558,6 +590,7 @@ const withPWA = withPWAInit({
 ```
 
 #### 2. Web Push Notifications
+
 ```typescript
 // Simplified notification service (no VAPID required)
 export class NotificationService {
@@ -575,7 +608,7 @@ export class NotificationService {
       }
     }
   }
-  
+
   async requestPermission(): Promise<NotificationPermission> {
     if ('Notification' in window) {
       return await Notification.requestPermission();
@@ -586,11 +619,12 @@ export class NotificationService {
 ```
 
 #### 3. Price Alert System
+
 ```typescript
 // Intelligent alert triggering
 updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => {
   // ... price update logic
-  
+
   // Check for price alerts
   const stock = get().watchedStocks.find(s => s.symbol === symbol);
   if (stock && stock.alertPrice && quote.current >= stock.alertPrice && !stock.isAlertTriggered) {
@@ -604,7 +638,7 @@ updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => {
         alertPrice: stock.alertPrice,
       }
     });
-    
+
     // Mark alert as triggered to prevent spam
     state.updateAlertStatus(symbol, true);
   }
@@ -618,6 +652,7 @@ updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => {
 ### Testing Pyramid Implementation
 
 #### 1. Unit Tests (70% coverage target)
+
 ```typescript
 // Jest + React Testing Library
 describe('StockCard Component', () => {
@@ -630,21 +665,21 @@ describe('StockCard Component', () => {
         percentChange={1.69}
       />
     );
-    
+
     expect(screen.getByText('AAPL')).toBeInTheDocument();
     expect(screen.getByText('$150.25')).toBeInTheDocument();
     expect(screen.getByText('+2.50 (+1.69%)')).toBeInTheDocument();
   });
-  
+
   it('handles price alert notifications', async () => {
     const mockNotification = jest.fn();
     jest.spyOn(notificationService, 'showNotification').mockImplementation(mockNotification);
-    
+
     // Trigger price alert
     await act(async () => {
       updateStockPrice('AAPL', { current: 155.00, alertPrice: 150.00 });
     });
-    
+
     expect(mockNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Price Alert: AAPL',
@@ -655,13 +690,14 @@ describe('StockCard Component', () => {
 ```
 
 #### 2. Integration Tests (20% coverage target)
+
 ```typescript
 // API route testing
 describe('/api/quote endpoint', () => {
   it('returns stock quote data', async () => {
     const response = await fetch('/api/quote?symbol=AAPL');
     const data = await response.json();
-    
+
     expect(response.status).toBe(200);
     expect(data).toEqual(
       expect.objectContaining({
@@ -672,7 +708,7 @@ describe('/api/quote endpoint', () => {
       })
     );
   });
-  
+
   it('handles invalid symbols gracefully', async () => {
     const response = await fetch('/api/quote?symbol=INVALID');
     expect(response.status).toBe(400);
@@ -681,22 +717,23 @@ describe('/api/quote endpoint', () => {
 ```
 
 #### 3. End-to-End Tests (10% coverage target)
+
 ```typescript
 // Playwright E2E tests
 test('complete stock tracking workflow', async ({ page }) => {
   await page.goto('/');
-  
+
   // Add a stock to watchlist
   await page.fill('[data-testid="symbol-input"]', 'AAPL');
   await page.fill('[data-testid="alert-price-input"]', '150');
   await page.click('[data-testid="add-stock-button"]');
-  
+
   // Verify stock appears in watchlist
   await expect(page.locator('[data-testid="stock-card-AAPL"]')).toBeVisible();
-  
+
   // Test price alert functionality
   await expect(page.locator('[data-testid="alert-price"]')).toContainText('$150.00');
-  
+
   // Test responsive design
   await page.setViewportSize({ width: 375, height: 667 });
   await expect(page.locator('[data-testid="mobile-menu"]')).toBeVisible();
@@ -706,6 +743,7 @@ test('complete stock tracking workflow', async ({ page }) => {
 ### Test Automation Pipeline
 
 #### 1. Pre-commit Testing
+
 ```json
 // package.json - Testing scripts
 {
@@ -720,6 +758,7 @@ test('complete stock tracking workflow', async ({ page }) => {
 ```
 
 #### 2. GitHub Actions CI/CD
+
 ```yaml
 # .github/workflows/test.yml
 name: Test Suite
@@ -733,16 +772,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Run unit tests
         run: pnpm run test:ci
-      
+
       - name: Run E2E tests
         run: pnpm run test:e2e
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
 ```
@@ -754,17 +793,19 @@ jobs:
 ### Environment Strategy
 
 #### 1. Environment Hierarchy
+
 ```bash
 # Environment progression
 Development → Staging → Production
 
 # Branch mapping
 feature/* → Development
-develop → Staging  
+develop → Staging
 main → Production
 ```
 
 #### 2. Environment Configuration
+
 ```bash
 # .env.example - Template for all environments
 NEXT_PUBLIC_APP_NAME=StockPulse
@@ -776,6 +817,7 @@ JWT_SECRET=your_jwt_secret_32chars_minimum
 ```
 
 #### 3. Secret Management
+
 ```bash
 # Vercel deployment with secure environment variables
 vercel env add FINNHUB_API_KEY production
@@ -790,6 +832,7 @@ vercel env add CRON_SECRET production
 ### Automated Deployment Process
 
 #### 1. Build Validation
+
 ```bash
 # Pre-deployment checks in deploy script
 echo "🔧 Running linter..."
@@ -806,6 +849,7 @@ pnpm run build || exit 1
 ```
 
 #### 2. Deployment Process
+
 ```bash
 # Preview deployment
 vercel
@@ -815,6 +859,7 @@ vercel --prod
 ```
 
 #### 3. Health Monitoring
+
 ```typescript
 // app/api/health/route.ts - Health check endpoint
 export async function GET() {
@@ -822,7 +867,7 @@ export async function GET() {
     // Check database connectivity
     // Check external API availability
     // Check critical services
-    
+
     return NextResponse.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -833,10 +878,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    return NextResponse.json(
-      { status: 'unhealthy', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ status: 'unhealthy', error: error.message }, { status: 500 });
   }
 }
 ```
@@ -848,6 +890,7 @@ export async function GET() {
 ### Frontend Performance
 
 #### 1. React Compiler Optimization
+
 ```typescript
 // next.config.js - React Compiler configuration
 const nextConfig = {
@@ -860,18 +903,19 @@ const nextConfig = {
 ```
 
 #### 2. Component Optimization
+
 ```typescript
 // Memoization strategies
 const StockCard = memo(({ symbol, currentPrice, change }: StockCardProps) => {
-  const formattedPrice = useMemo(() => 
+  const formattedPrice = useMemo(() =>
     currentPrice ? `$${currentPrice.toFixed(2)}` : 'Loading...',
     [currentPrice]
   );
-  
+
   const handleClick = useCallback(() => {
     onClick?.(symbol);
   }, [symbol, onClick]);
-  
+
   return (
     <Card onClick={handleClick}>
       <div>{symbol}</div>
@@ -882,6 +926,7 @@ const StockCard = memo(({ symbol, currentPrice, change }: StockCardProps) => {
 ```
 
 #### 3. Bundle Optimization
+
 ```typescript
 // Dynamic imports for code splitting
 const ChartComponent = dynamic(() => import('./StockChart'), {
@@ -904,45 +949,47 @@ import Image from 'next/image';
 ### Backend Performance
 
 #### 1. API Response Optimization
+
 ```typescript
 // Efficient data fetching with caching
 export async function GET(request: NextRequest) {
   const symbol = searchParams.get('symbol');
-  
+
   // Check cache first
   const cached = await redis.get(`quote:${symbol}`);
   if (cached) {
     return NextResponse.json(JSON.parse(cached));
   }
-  
+
   // Fetch from external API
   const response = await fetch(finnhubUrl, {
     headers: { 'X-Finnhub-Token': apiKey },
   });
-  
+
   const data = await response.json();
-  
+
   // Cache for 30 seconds
   await redis.setex(`quote:${symbol}`, 30, JSON.stringify(data));
-  
+
   return NextResponse.json(data);
 }
 ```
 
 #### 2. Database Query Optimization
+
 ```typescript
 // Efficient state updates with batching
 updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => {
   const now = Date.now();
   const lastUpdate = state.lastUpdateTimes.get(symbol) || 0;
-  
+
   // Throttle updates to prevent excessive re-renders
   if (now - lastUpdate < 2000) return;
-  
+
   // Batch state updates
   set(state => ({
-    watchedStocks: state.watchedStocks.map(stock => 
-      stock.symbol === symbol 
+    watchedStocks: state.watchedStocks.map(stock =>
+      stock.symbol === symbol
         ? { ...stock, currentPrice: quote.current, lastUpdated: now }
         : stock
     ),
@@ -954,12 +1001,13 @@ updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => {
 ### Performance Monitoring
 
 #### 1. Core Web Vitals Tracking
+
 ```typescript
 // Performance measurement
 export function reportWebVitals(metric: NextWebVitalsMetric) {
   if (metric.label === 'web-vital') {
     console.log(`${metric.name}: ${metric.value}`);
-    
+
     // Send to analytics
     gtag('event', metric.name, {
       value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
@@ -971,6 +1019,7 @@ export function reportWebVitals(metric: NextWebVitalsMetric) {
 ```
 
 #### 2. Bundle Analysis
+
 ```bash
 # Analyze bundle size
 ANALYZE=true pnpm run build
@@ -986,6 +1035,7 @@ lighthouse --chrome-flags="--headless" --output=json https://your-app.vercel.app
 ### API Security
 
 #### 1. Environment Variable Protection
+
 ```typescript
 // Secure environment variable handling
 const config = {
@@ -1002,6 +1052,7 @@ Object.entries(config).forEach(([key, value]) => {
 ```
 
 #### 2. API Route Security
+
 ```typescript
 // Secure API implementation with rate limiting
 import rateLimit from 'express-rate-limit';
@@ -1015,16 +1066,13 @@ const limiter = rateLimit({
 export async function GET(request: NextRequest) {
   // Apply rate limiting
   await limiter(request);
-  
+
   // Validate request parameters
   const symbol = searchParams.get('symbol');
   if (!symbol || !/^[A-Z]{1,5}$/.test(symbol)) {
-    return NextResponse.json(
-      { error: 'Invalid symbol format' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Invalid symbol format' }, { status: 400 });
   }
-  
+
   // Secure API call
   const response = await fetch(apiUrl, {
     headers: {
@@ -1032,12 +1080,13 @@ export async function GET(request: NextRequest) {
       'User-Agent': 'StockPulse/1.0',
     },
   });
-  
+
   return NextResponse.json(data);
 }
 ```
 
 #### 3. Content Security Policy
+
 ```typescript
 // next.config.js - Security headers
 async headers() {
@@ -1064,6 +1113,7 @@ async headers() {
 ### Client-side Security
 
 #### 1. Input Validation
+
 ```typescript
 // Zod schema validation
 import { z } from 'zod';
@@ -1083,6 +1133,7 @@ const validateStockForm = (data: unknown) => {
 ```
 
 #### 2. XSS Prevention
+
 ```typescript
 // Safe HTML rendering
 import DOMPurify from 'dompurify';
@@ -1098,6 +1149,7 @@ const sanitizeHTML = (html: string) => {
 ### Secret Management Audit
 
 #### 1. Environment Variable Audit
+
 ```bash
 # Script to check for exposed secrets
 #!/bin/bash
@@ -1113,6 +1165,7 @@ echo "✅ Security audit complete"
 ```
 
 #### 2. Dependency Security
+
 ```bash
 # Regular security audits
 pnpm audit
@@ -1129,9 +1182,10 @@ npx npm-check-updates -u
 ### Technical Insights
 
 #### 1. Real-time Data Challenges
-**Challenge**: Managing WebSocket connections and fallback strategies
-**Solution**: Implemented layered approach with EventSource → API polling fallback
-**Lesson**: Always plan for graceful degradation in real-time applications
+
+**Challenge**: Managing WebSocket connections and fallback strategies **Solution**: Implemented
+layered approach with EventSource → API polling fallback **Lesson**: Always plan for graceful
+degradation in real-time applications
 
 ```typescript
 // Robust connection management
@@ -1146,89 +1200,102 @@ const connectWithFallback = async () => {
 ```
 
 #### 2. State Management Complexity
-**Challenge**: Managing complex state with real-time updates
-**Solution**: Zustand with careful state normalization and memoization
-**Lesson**: Keep state flat and use selectors to prevent unnecessary re-renders
+
+**Challenge**: Managing complex state with real-time updates **Solution**: Zustand with careful
+state normalization and memoization **Lesson**: Keep state flat and use selectors to prevent
+unnecessary re-renders
 
 ```typescript
 // Optimized state selection
-const useStockPrice = (symbol: string) => 
-  useStockStore(state => 
-    state.watchedStocks.find(stock => stock.symbol === symbol)?.currentPrice
-  );
+const useStockPrice = (symbol: string) =>
+  useStockStore(state => state.watchedStocks.find(stock => stock.symbol === symbol)?.currentPrice);
 ```
 
 #### 3. TypeScript Utility Types
-**Challenge**: Maintaining type safety across complex component hierarchies
-**Solution**: Comprehensive utility type system for consistency
-**Lesson**: Invest early in utility types for long-term maintainability
+
+**Challenge**: Maintaining type safety across complex component hierarchies **Solution**:
+Comprehensive utility type system for consistency **Lesson**: Invest early in utility types for
+long-term maintainability
 
 ### Performance Insights
 
 #### 1. React Compiler Benefits
-**Observation**: 15-20% performance improvement with React Compiler
-**Implementation**: Automatic memoization reduced manual optimization needs
-**Recommendation**: Enable React Compiler for new projects
+
+**Observation**: 15-20% performance improvement with React Compiler **Implementation**: Automatic
+memoization reduced manual optimization needs **Recommendation**: Enable React Compiler for new
+projects
 
 #### 2. Bundle Size Optimization
-**Challenge**: Chart libraries significantly increased bundle size
-**Solution**: Dynamic imports and code splitting
-**Result**: 40% reduction in initial bundle size
+
+**Challenge**: Chart libraries significantly increased bundle size **Solution**: Dynamic imports and
+code splitting **Result**: 40% reduction in initial bundle size
 
 #### 3. API Rate Limiting
-**Challenge**: Free tier API limits required careful optimization
-**Solution**: Intelligent throttling and WebSocket prioritization
-**Learning**: Always design for API constraints from the beginning
+
+**Challenge**: Free tier API limits required careful optimization **Solution**: Intelligent
+throttling and WebSocket prioritization **Learning**: Always design for API constraints from the
+beginning
 
 ### Development Process Insights
 
 #### 1. Feature-based Architecture
-**Benefits**: 
+
+**Benefits**:
+
 - Easy to locate related code
 - Team members could work independently
 - Clear module boundaries
 
 **Challenges**:
+
 - Initial setup complexity
 - Import path management
 - Cross-feature dependencies
 
 #### 2. TypeScript-First Development
+
 **Benefits**:
+
 - Caught errors at compile time
 - Excellent IDE support
 - Self-documenting code
 
 **Challenges**:
+
 - Initial learning curve
 - Complex type definitions
 - Generic type debugging
 
 #### 3. Testing Strategy
-**Success**: TDD approach caught integration issues early
-**Challenge**: E2E test maintenance overhead
-**Balance**: 70/20/10 split (unit/integration/e2e) worked well
+
+**Success**: TDD approach caught integration issues early **Challenge**: E2E test maintenance
+overhead **Balance**: 70/20/10 split (unit/integration/e2e) worked well
 
 ### Deployment and Operations
 
 #### 1. Vercel Platform Benefits
+
 **Advantages**:
+
 - Zero-config deployments
 - Excellent Next.js integration
 - Built-in monitoring
 
 **Considerations**:
+
 - Vendor lock-in concerns
 - Cost scaling with usage
 - Limited backend customization
 
 #### 2. Environment Management
-**Success**: Template-based environment files
-**Challenge**: Secret rotation across environments
+
+**Success**: Template-based environment files **Challenge**: Secret rotation across environments
 **Solution**: Automated scripts for environment setup
 
 #### 3. Monitoring and Debugging
+
 **Essential Tools**:
+
 - Health check endpoints
 - Structured logging
 - Error boundary implementation
@@ -1237,6 +1304,7 @@ const useStockPrice = (symbol: string) =>
 ### Recommendations for Future Projects
 
 #### 1. Architecture Decisions
+
 ```typescript
 // Start with these patterns
 - Feature-based module organization
@@ -1247,6 +1315,7 @@ const useStockPrice = (symbol: string) =>
 ```
 
 #### 2. Technology Stack
+
 ```bash
 # Recommended starting stack
 Next.js 15+         # Latest framework features
@@ -1259,6 +1328,7 @@ Vercel             # Deployment platform
 ```
 
 #### 3. Development Workflow
+
 ```bash
 # Essential tooling
 ESLint + Prettier  # Code quality
@@ -1277,7 +1347,9 @@ Dependabot        # Automated updates
 5. **Documentation**: Comprehensive documentation enabled team collaboration
 6. **Monitoring**: Health checks and error tracking enabled proactive issue resolution
 
-This development process guide represents a complete journey from project conception to production deployment, providing a blueprint for building modern, enterprise-grade web applications with Next.js and React.
+This development process guide represents a complete journey from project conception to production
+deployment, providing a blueprint for building modern, enterprise-grade web applications with
+Next.js and React.
 
 ---
 
@@ -1296,4 +1368,5 @@ For questions about this development process or to contribute improvements:
 - **Discussions**: [GitHub Discussions](https://github.com/your-username/stock-pulse/discussions)
 - **Contributing**: See [CONTRIBUTING.md](../CONTRIBUTING.md)
 
-This guide serves as both documentation and a blueprint for future projects, capturing the complete development journey and lessons learned in building a production-ready application.
+This guide serves as both documentation and a blueprint for future projects, capturing the complete
+development journey and lessons learned in building a production-ready application.

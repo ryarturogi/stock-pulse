@@ -1,7 +1,7 @@
 /**
  * Subscription Storage Service
  * ===========================
- * 
+ *
  * Handles persistent storage of push notification subscriptions.
  * Uses file-based storage that can be easily upgraded to database storage.
  */
@@ -57,11 +57,13 @@ export class SubscriptionStorageService {
       try {
         const data = await fs.readFile(this.storagePath, 'utf-8');
         const storageData: SubscriptionStorageData = JSON.parse(data);
-        
+
         // Convert back to Map
         this.subscriptions = new Map(Object.entries(storageData.subscriptions));
-        
-        console.log(`📦 Loaded ${this.subscriptions.size} subscriptions from storage`);
+
+        console.log(
+          `📦 Loaded ${this.subscriptions.size} subscriptions from storage`
+        );
       } catch {
         // File doesn't exist or is corrupted, start with empty storage
         console.log('📦 Starting with empty subscription storage');
@@ -91,8 +93,14 @@ export class SubscriptionStorageService {
         lastUpdated: Date.now(),
       };
 
-      await fs.writeFile(this.storagePath, JSON.stringify(storageData, null, 2), 'utf-8');
-      console.log(`💾 Saved ${this.subscriptions.size} subscriptions to storage`);
+      await fs.writeFile(
+        this.storagePath,
+        JSON.stringify(storageData, null, 2),
+        'utf-8'
+      );
+      console.log(
+        `💾 Saved ${this.subscriptions.size} subscriptions to storage`
+      );
     } catch (error) {
       console.error('Failed to save subscriptions to storage:', error);
       // Continue with in-memory storage
@@ -102,7 +110,10 @@ export class SubscriptionStorageService {
   /**
    * Store a subscription
    */
-  public async storeSubscription(subscriptionId: string, data: PushSubscriptionData): Promise<void> {
+  public async storeSubscription(
+    subscriptionId: string,
+    data: PushSubscriptionData
+  ): Promise<void> {
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -114,7 +125,9 @@ export class SubscriptionStorageService {
   /**
    * Get a subscription by ID
    */
-  public async getSubscription(subscriptionId: string): Promise<PushSubscriptionData | undefined> {
+  public async getSubscription(
+    subscriptionId: string
+  ): Promise<PushSubscriptionData | undefined> {
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -125,7 +138,9 @@ export class SubscriptionStorageService {
   /**
    * Get all subscriptions
    */
-  public async getAllSubscriptions(): Promise<Map<string, PushSubscriptionData>> {
+  public async getAllSubscriptions(): Promise<
+    Map<string, PushSubscriptionData>
+  > {
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -202,11 +217,13 @@ export class SubscriptionStorageService {
     for (const [, data] of this.subscriptions) {
       // Count by device type
       const deviceType = data.deviceType || 'unknown';
-      stats.byDeviceType[deviceType] = (stats.byDeviceType[deviceType] || 0) + 1;
+      stats.byDeviceType[deviceType] =
+        (stats.byDeviceType[deviceType] || 0) + 1;
 
       // Count by browser type
       const browserType = data.browserType || 'unknown';
-      stats.byBrowserType[browserType] = (stats.byBrowserType[browserType] || 0) + 1;
+      stats.byBrowserType[browserType] =
+        (stats.byBrowserType[browserType] || 0) + 1;
 
       // Track oldest and newest
       const createdAt = data.createdAt;
@@ -229,7 +246,7 @@ export class SubscriptionStorageService {
       await this.initialize();
     }
 
-    const cutoffTime = Date.now() - (daysOld * 24 * 60 * 60 * 1000);
+    const cutoffTime = Date.now() - daysOld * 24 * 60 * 60 * 1000;
     let removedCount = 0;
 
     for (const [id, data] of this.subscriptions) {
@@ -251,4 +268,5 @@ export class SubscriptionStorageService {
 /**
  * Export singleton instance
  */
-export const getSubscriptionStorage = () => SubscriptionStorageService.getInstance();
+export const getSubscriptionStorage = () =>
+  SubscriptionStorageService.getInstance();

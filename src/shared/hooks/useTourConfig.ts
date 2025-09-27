@@ -117,7 +117,7 @@ export const getDesktopTourSteps = (): TourStep[] => [
   },
   {
     element: '[data-desktop-step="11"]',
-    title: '🎉 You\'re All Set!',
+    title: "🎉 You're All Set!",
     intro: `
       <div class="space-y-3">
         <p><strong>Congratulations!</strong> You now know how to use StockPulse effectively.</p>
@@ -239,23 +239,27 @@ export const getTourSteps = (isMobile: boolean): TourStep[] => {
 // Check if tour should be shown (only show once per device type)
 export const shouldShowTour = (isMobileOrTablet: boolean): boolean => {
   if (typeof window === 'undefined') return false;
-  
-  const tourKey = isMobileOrTablet ? 'stockpulse-tour-mobile-completed' : 'stockpulse-tour-desktop-completed';
+
+  const tourKey = isMobileOrTablet
+    ? 'stockpulse-tour-mobile-completed'
+    : 'stockpulse-tour-desktop-completed';
   return !localStorage.getItem(tourKey);
 };
 
 // Mark tour as completed
 export const markTourAsCompleted = (isMobileOrTablet: boolean): void => {
   if (typeof window === 'undefined') return;
-  
-  const tourKey = isMobileOrTablet ? 'stockpulse-tour-mobile-completed' : 'stockpulse-tour-desktop-completed';
+
+  const tourKey = isMobileOrTablet
+    ? 'stockpulse-tour-mobile-completed'
+    : 'stockpulse-tour-desktop-completed';
   localStorage.setItem(tourKey, 'true');
 };
 
 // Reset tour completion status (for debugging)
 export const resetTour = (): void => {
   if (typeof window === 'undefined') return;
-  
+
   // Clear both mobile and desktop tour completion flags
   localStorage.removeItem('stockpulse-tour-mobile-completed');
   localStorage.removeItem('stockpulse-tour-desktop-completed');

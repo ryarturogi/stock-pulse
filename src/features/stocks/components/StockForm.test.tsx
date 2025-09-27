@@ -1,7 +1,7 @@
 /**
  * Unit Tests for StockForm Component
  * ==================================
- * 
+ *
  * Tests for the stock selection and alert form component
  */
 
@@ -21,7 +21,7 @@ jest.mock('@/features/stocks/hooks', () => ({
   useStockForm: () => ({
     selectedStock: 'AAPL',
     alertPrice: '150.00',
-    currentPrice: 155.50,
+    currentPrice: 155.5,
     isLoadingPrice: false,
     errors: {},
     setSelectedStock: mockSetSelectedStock,
@@ -34,13 +34,21 @@ jest.mock('@/features/stocks/hooks', () => ({
 
 // Mock the Button component
 jest.mock('@/shared/components/ui/Button', () => ({
-  Button: ({ children, disabled, loading, onClick, type, leftIcon, className }: any) => (
+  Button: ({
+    children,
+    disabled,
+    loading,
+    onClick,
+    type,
+    leftIcon,
+    className,
+  }: any) => (
     <button
       type={type}
       disabled={disabled || loading}
       onClick={onClick}
       className={className}
-      data-testid="submit-button"
+      data-testid='submit-button'
       data-loading={loading}
     >
       {leftIcon}
@@ -59,22 +67,23 @@ jest.mock('./InfiniteStockSelector', () => ({
       { symbol: 'MSFT', name: 'Microsoft Corp.', exchange: 'NASDAQ' },
       { symbol: 'TSLA', name: 'Tesla Inc.', exchange: 'NASDAQ' },
     ];
-    
+
     // Filter out watched stocks
     const filteredStocks = mockStocks.filter(
-      stock => !watchedStocks?.some((watched: any) => watched.symbol === stock.symbol)
+      stock =>
+        !watchedStocks?.some((watched: any) => watched.symbol === stock.symbol)
     );
-    
+
     return (
-      <div data-testid="infinite-stock-selector">
-        <label htmlFor="stock-select">Select Stock</label>
-        <select 
-          id="stock-select" 
+      <div data-testid='infinite-stock-selector'>
+        <label htmlFor='stock-select'>Select Stock</label>
+        <select
+          id='stock-select'
           value={value || ''}
-          onChange={(e) => onChange && onChange(e.target.value)}
+          onChange={e => onChange && onChange(e.target.value)}
         >
-          <option value="">Select a stock...</option>
-          {filteredStocks.map((stock) => (
+          <option value=''>Select a stock...</option>
+          {filteredStocks.map(stock => (
             <option key={stock.symbol} value={stock.symbol}>
               {stock.symbol} - {stock.name}
             </option>
@@ -88,13 +97,14 @@ jest.mock('./InfiniteStockSelector', () => ({
 // Mock StockSearch component
 jest.mock('./StockSearch', () => ({
   StockSearch: ({ onStockSelect }: any) => (
-    <div data-testid="stock-search">
-      <input 
-        type="text" 
-        placeholder="Search stocks..."
-        onChange={(e) => {
+    <div data-testid='stock-search'>
+      <input
+        type='text'
+        placeholder='Search stocks...'
+        onChange={e => {
           if (e.target.value === 'AAPL') {
-            onStockSelect && onStockSelect({ symbol: 'AAPL', name: 'Apple Inc.' });
+            onStockSelect &&
+              onStockSelect({ symbol: 'AAPL', name: 'Apple Inc.' });
           }
         }}
       />
@@ -111,7 +121,8 @@ jest.mock('@/features/stocks/services', () => ({
 
 // Get mock reference after mocking
 const { stockService } = require('@/features/stocks/services');
-const mockGetAvailableStocksLegacy = stockService.getAvailableStocksLegacy as jest.Mock;
+const mockGetAvailableStocksLegacy =
+  stockService.getAvailableStocksLegacy as jest.Mock;
 
 // Mock fetch for API calls
 global.fetch = jest.fn();
@@ -142,10 +153,10 @@ describe('StockForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockValidateForm.mockReturnValue(true);
-    
+
     // Setup default mock for stock service
     mockGetAvailableStocksLegacy.mockResolvedValue(mockAvailableStocks);
-    
+
     // Mock successful API responses for all possible endpoints
     (global.fetch as jest.Mock).mockImplementation((url: string) => {
       // Handle stock symbols API requests
@@ -168,7 +179,7 @@ describe('StockForm', () => {
           }),
         });
       }
-      
+
       // Default mock response for any other requests
       return Promise.resolve({
         ok: true,
@@ -227,7 +238,9 @@ describe('StockForm', () => {
       );
 
       expect(screen.getByText('How it works:')).toBeInTheDocument();
-      expect(screen.getByText(/Select a stock from the dropdown/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Select a stock from the dropdown/)
+      ).toBeInTheDocument();
     });
 
     it('should apply custom className', () => {
@@ -235,7 +248,7 @@ describe('StockForm', () => {
         <StockForm
           availableStocks={mockAvailableStocks}
           onAddStock={mockOnAddStock}
-          className="custom-form"
+          className='custom-form'
         />
       );
 
@@ -257,7 +270,9 @@ describe('StockForm', () => {
 
       // Wait for async stock loading to complete
       await waitFor(() => {
-        expect(screen.getByTestId('infinite-stock-selector')).toBeInTheDocument();
+        expect(
+          screen.getByTestId('infinite-stock-selector')
+        ).toBeInTheDocument();
       });
 
       // TSLA should be filtered out since it's already watched
@@ -284,8 +299,12 @@ describe('StockForm', () => {
         />
       );
 
-      expect(screen.getByText('All stocks are already being watched')).toBeInTheDocument();
-      expect(screen.getByText('All available stocks are already being watched')).toBeInTheDocument();
+      expect(
+        screen.getByText('All stocks are already being watched')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('All available stocks are already being watched')
+      ).toBeInTheDocument();
     });
 
     it('should call setSelectedStock when stock is selected', async () => {
@@ -322,7 +341,7 @@ describe('StockForm', () => {
         useStockForm: () => ({
           selectedStock: 'AAPL',
           alertPrice: '',
-          currentPrice: 155.50,
+          currentPrice: 155.5,
           isLoadingPrice: false,
           errors: {},
           setSelectedStock: mockSetSelectedStock,
@@ -345,13 +364,13 @@ describe('StockForm', () => {
 
     it('should call setAlertPrice when Use Current button is clicked', async () => {
       const user = userEvent.setup();
-      
+
       // Mock hook to return empty alert price
       jest.doMock('@/features/stocks/hooks', () => ({
         useStockForm: () => ({
           selectedStock: 'AAPL',
           alertPrice: '',
-          currentPrice: 155.50,
+          currentPrice: 155.5,
           isLoadingPrice: false,
           errors: {},
           setSelectedStock: mockSetSelectedStock,
@@ -400,7 +419,7 @@ describe('StockForm', () => {
       );
 
       const priceInput = screen.getByLabelText('Price Alert ($)');
-      
+
       // Valid inputs should call setAlertPrice
       await user.type(priceInput, '123.45');
       expect(mockSetAlertPrice).toHaveBeenCalledWith('123.45');
@@ -416,7 +435,7 @@ describe('StockForm', () => {
         useStockForm: () => ({
           selectedStock: 'AAPL',
           alertPrice: '150.00',
-          currentPrice: 155.50,
+          currentPrice: 155.5,
           isLoadingPrice: true,
           errors: {},
           setSelectedStock: mockSetSelectedStock,
@@ -472,7 +491,7 @@ describe('StockForm', () => {
         useStockForm: () => ({
           selectedStock: 'AAPL',
           alertPrice: '',
-          currentPrice: 155.50,
+          currentPrice: 155.5,
           isLoadingPrice: false,
           errors: { price: 'Price must be greater than 0' },
           setSelectedStock: mockSetSelectedStock,
@@ -490,7 +509,9 @@ describe('StockForm', () => {
         />
       );
 
-      expect(screen.getByText('Price must be greater than 0')).toBeInTheDocument();
+      expect(
+        screen.getByText('Price must be greater than 0')
+      ).toBeInTheDocument();
     });
 
     it('should apply error styles to inputs', () => {
@@ -539,7 +560,7 @@ describe('StockForm', () => {
       await user.click(submitButton);
 
       expect(mockValidateForm).toHaveBeenCalled();
-      expect(mockOnAddStock).toHaveBeenCalledWith('AAPL', 150.00);
+      expect(mockOnAddStock).toHaveBeenCalledWith('AAPL', 150.0);
       expect(mockResetForm).toHaveBeenCalled();
     });
 
@@ -691,7 +712,9 @@ describe('StockForm', () => {
         />
       );
 
-      const errorIcon = screen.getByText('Please select a stock').previousElementSibling;
+      const errorIcon = screen.getByText(
+        'Please select a stock'
+      ).previousElementSibling;
       expect(errorIcon).toBeInTheDocument();
     });
   });

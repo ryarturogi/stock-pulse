@@ -1,7 +1,7 @@
 /**
  * Unit Tests for RefreshIntervalSelector Component
  * ================================================
- * 
+ *
  * Tests for the refresh interval selection component
  */
 
@@ -31,7 +31,7 @@ describe('RefreshIntervalSelector', () => {
     it('should render with correct elements', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -44,7 +44,7 @@ describe('RefreshIntervalSelector', () => {
     it('should show clock icon', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -57,18 +57,18 @@ describe('RefreshIntervalSelector', () => {
     it('should show responsive labels', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
 
       const label = screen.getByLabelText(/Refresh/);
       expect(label).toBeInTheDocument();
-      
+
       // Check for responsive text classes
       const refreshText = screen.getByText('Refresh:');
       const shortText = screen.getByText('R:');
-      
+
       expect(refreshText).toHaveClass('hidden', 'sm:inline');
       expect(shortText).toHaveClass('sm:hidden');
     });
@@ -76,9 +76,9 @@ describe('RefreshIntervalSelector', () => {
     it('should apply custom className', () => {
       const { container } = render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
-          className="custom-selector"
+          className='custom-selector'
         />
       );
 
@@ -90,7 +90,7 @@ describe('RefreshIntervalSelector', () => {
     it('should display all available interval options', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -106,7 +106,7 @@ describe('RefreshIntervalSelector', () => {
     it('should show current interval as selected', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="5m"
+          currentInterval='5m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -118,7 +118,7 @@ describe('RefreshIntervalSelector', () => {
 
     it('should handle different current intervals', () => {
       const intervals: RefreshInterval[] = ['30s', '1m', '2m', '5m', '10m'];
-      
+
       intervals.forEach(interval => {
         const { unmount } = render(
           <RefreshIntervalSelector
@@ -140,7 +140,7 @@ describe('RefreshIntervalSelector', () => {
       const user = userEvent.setup();
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -155,7 +155,7 @@ describe('RefreshIntervalSelector', () => {
       const user = userEvent.setup();
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -175,7 +175,7 @@ describe('RefreshIntervalSelector', () => {
       const user = userEvent.setup();
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -193,19 +193,24 @@ describe('RefreshIntervalSelector', () => {
     it('should have proper responsive classes', () => {
       const { container } = render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
 
       const wrapper = container.firstChild as HTMLElement;
-      expect(wrapper).toHaveClass('flex', 'items-center', 'space-x-1', 'lg:space-x-2');
+      expect(wrapper).toHaveClass(
+        'flex',
+        'items-center',
+        'space-x-1',
+        'lg:space-x-2'
+      );
     });
 
     it('should have responsive clock icon sizing', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -217,24 +222,28 @@ describe('RefreshIntervalSelector', () => {
     it('should have responsive select styling', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
 
       const select = screen.getByRole('combobox');
       expect(select).toHaveClass(
-        'min-w-28', 'lg:min-w-32',
-        'pl-1', 'lg:pl-2',
-        'pr-6', 'lg:pr-8',
-        'text-xs', 'lg:text-sm'
+        'min-w-28',
+        'lg:min-w-32',
+        'pl-1',
+        'lg:pl-2',
+        'pr-6',
+        'lg:pr-8',
+        'text-xs',
+        'lg:text-sm'
       );
     });
 
     it('should have dark mode support', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -245,7 +254,11 @@ describe('RefreshIntervalSelector', () => {
 
       expect(clockIcon).toHaveClass('dark:text-gray-400');
       expect(label).toHaveClass('dark:text-gray-300');
-      expect(select).toHaveClass('dark:bg-gray-700', 'dark:border-gray-600', 'dark:text-white');
+      expect(select).toHaveClass(
+        'dark:bg-gray-700',
+        'dark:border-gray-600',
+        'dark:text-white'
+      );
     });
   });
 
@@ -253,7 +266,7 @@ describe('RefreshIntervalSelector', () => {
     it('should have proper label association', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -268,7 +281,7 @@ describe('RefreshIntervalSelector', () => {
     it('should be keyboard navigable', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -280,13 +293,17 @@ describe('RefreshIntervalSelector', () => {
     it('should have focus styles', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
 
       const select = screen.getByRole('combobox');
-      expect(select).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
+      expect(select).toHaveClass(
+        'focus:outline-none',
+        'focus:ring-2',
+        'focus:ring-blue-500'
+      );
     });
   });
 
@@ -294,9 +311,9 @@ describe('RefreshIntervalSelector', () => {
     it('should handle empty className gracefully', () => {
       const { container } = render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
-          className=""
+          className=''
         />
       );
 
@@ -307,7 +324,7 @@ describe('RefreshIntervalSelector', () => {
       const user = userEvent.setup();
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -327,7 +344,13 @@ describe('RefreshIntervalSelector', () => {
 
   describe('Props Validation', () => {
     it('should work with all valid interval values', () => {
-      const validIntervals: RefreshInterval[] = ['30s', '1m', '2m', '5m', '10m'];
+      const validIntervals: RefreshInterval[] = [
+        '30s',
+        '1m',
+        '2m',
+        '5m',
+        '10m',
+      ];
 
       validIntervals.forEach(interval => {
         const { unmount } = render(
@@ -349,7 +372,7 @@ describe('RefreshIntervalSelector', () => {
     it('should not call onIntervalChange on initial render', () => {
       render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -360,7 +383,7 @@ describe('RefreshIntervalSelector', () => {
     it('should update when currentInterval prop changes', () => {
       const { rerender } = render(
         <RefreshIntervalSelector
-          currentInterval="2m"
+          currentInterval='2m'
           onIntervalChange={mockOnIntervalChange}
         />
       );
@@ -369,7 +392,7 @@ describe('RefreshIntervalSelector', () => {
 
       rerender(
         <RefreshIntervalSelector
-          currentInterval="5m"
+          currentInterval='5m'
           onIntervalChange={mockOnIntervalChange}
         />
       );

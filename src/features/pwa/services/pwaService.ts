@@ -1,7 +1,7 @@
 /**
  * PWA Service for Background Management and Local Storage
  * ======================================================
- * 
+ *
  * Enhanced PWA service for managing background WebSocket connections,
  * local storage, and offline functionality following the React Developer test requirements.
  */
@@ -12,7 +12,7 @@ import {
   type BackgroundSyncData,
   type WatchedStock,
   isWatchedStock,
-  PWA_CONFIG
+  PWA_CONFIG,
 } from '@/core/types';
 
 /**
@@ -20,7 +20,8 @@ import {
  */
 export class PWAService {
   private static instance: PWAService;
-  private isOnline: boolean = typeof window !== 'undefined' ? navigator.onLine : true;
+  private isOnline: boolean =
+    typeof window !== 'undefined' ? navigator.onLine : true;
   private backgroundSyncInterval: NodeJS.Timeout | null = null;
   private storageListeners: Map<string, (data: unknown) => void> = new Map();
 
@@ -56,7 +57,10 @@ export class PWAService {
     window.addEventListener('offline', this.handleOffline.bind(this));
 
     // Visibility change (background/foreground)
-    document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+    document.addEventListener(
+      'visibilitychange',
+      this.handleVisibilityChange.bind(this)
+    );
 
     // Before unload (save data)
     window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this));
@@ -105,10 +109,10 @@ export class PWAService {
       };
 
       localStorage.setItem(STORAGE_KEYS.WATCHED_STOCKS, JSON.stringify(data));
-      
+
       // Notify listeners
       this.notifyStorageListeners('watchedStocks', data);
-      
+
       console.log('Saved watched stocks to local storage');
     } catch (error) {
       console.error('Failed to save watched stocks:', error);
@@ -124,18 +128,21 @@ export class PWAService {
       if (!data) return [];
 
       const parsed: LocalStorageData = JSON.parse(data);
-      
+
       // Ensure watchedStocks exists and is an array
       if (!parsed.watchedStocks || !Array.isArray(parsed.watchedStocks)) {
         return [];
       }
-      
+
       // Validate and filter valid stocks
-      const validStocks = parsed.watchedStocks.filter(stock => 
+      const validStocks = parsed.watchedStocks.filter(stock =>
         isWatchedStock(stock)
       );
 
-      console.log('Loaded watched stocks from local storage:', validStocks.length);
+      console.log(
+        'Loaded watched stocks from local storage:',
+        validStocks.length
+      );
       return validStocks;
     } catch (error) {
       console.error('Failed to load watched stocks:', error);
@@ -153,7 +160,10 @@ export class PWAService {
         timestamp: Date.now(),
       };
 
-      localStorage.setItem('stockpulse_background_sync', JSON.stringify(syncData));
+      localStorage.setItem(
+        'stockpulse_background_sync',
+        JSON.stringify(syncData)
+      );
       console.log('Saved background sync data');
     } catch (error) {
       console.error('Failed to save background sync data:', error);
@@ -183,7 +193,7 @@ export class PWAService {
       localStorage.removeItem(STORAGE_KEYS.WATCHED_STOCKS);
       localStorage.removeItem('stockpulse_background_sync');
       localStorage.removeItem(STORAGE_KEYS.LAST_SYNC);
-      
+
       console.log('Cleared all local storage data');
     } catch (error) {
       console.error('Failed to clear storage:', error);
@@ -221,8 +231,10 @@ export class PWAService {
    * Check if PWA is installed
    */
   public isPWAInstalled(): boolean {
-    return window.matchMedia('(display-mode: standalone)').matches ||
-           (window.navigator as { standalone?: boolean }).standalone === true;
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as { standalone?: boolean }).standalone === true
+    );
   }
 
   /**
@@ -248,7 +260,11 @@ export class PWAService {
    * Check if push notifications are supported
    */
   public isPushNotificationSupported(): boolean {
-    return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+    return (
+      'Notification' in window &&
+      'serviceWorker' in navigator &&
+      'PushManager' in window
+    );
   }
 
   /**
@@ -298,16 +314,18 @@ export class PWAService {
       };
 
       this.saveBackgroundSyncData(syncData);
-      
+
       // If online, try to fetch fresh data
       if (this.isOnline) {
         try {
           // Attempt to fetch fresh data for stocks
-          const { StockService } = await import('@/features/stocks/services/stockService');
+          const { StockService } = await import(
+            '@/features/stocks/services/stockService'
+          );
           const service = StockService.getInstance();
-          
+
           // Fetch data for each stock with error handling
-          const updatePromises = stocks.map(async (stock) => {
+          const updatePromises = stocks.map(async stock => {
             try {
               const quoteData = await service.fetchStockQuote(stock.symbol);
               if (quoteData && quoteData.current) {
@@ -315,31 +333,43 @@ export class PWAService {
                 const updatedStock = {
                   ...stock,
                   currentPrice: quoteData.current,
-                  priceHistory: [...(stock.priceHistory || []), {
-                    price: quoteData.current,
-                    timestamp: Date.now()
-                  }].slice(-50) // Keep last 50 price points
+                  priceHistory: [
+                    ...(stock.priceHistory || []),
+                    {
+                      price: quoteData.current,
+                      timestamp: Date.now(),
+                    },
+                  ].slice(-50), // Keep last 50 price points
                 };
                 return updatedStock;
               }
             } catch (error) {
-              console.warn(`Failed to update ${stock.symbol} in background:`, error);
+              console.warn(
+                `Failed to update ${stock.symbol} in background:`,
+                error
+              );
             }
             return stock; // Return original stock if update failed
           });
-          
+
           const updatedStocks = await Promise.allSettled(updatePromises);
           const validStocks = updatedStocks
-            .filter((result): result is PromiseFulfilledResult<WatchedStock> => result.status === 'fulfilled')
+            .filter(
+              (result): result is PromiseFulfilledResult<WatchedStock> =>
+                result.status === 'fulfilled'
+            )
             .map(result => result.value);
-          
+
           if (validStocks.length > 0) {
             // Save updated stocks
             this.saveWatchedStocks(validStocks);
             console.log(`Background sync updated ${validStocks.length} stocks`);
           }
         } catch (error) {
-          console.warn('Background data fetch failed, using cached data:', error);
+          console.warn(
+            'Background data fetch failed, using cached data:',
+            error
+          );
         }
       } else {
         console.log('Background sync completed (offline mode)');
@@ -355,12 +385,12 @@ export class PWAService {
   private handleOnline(): void {
     console.log('App is online');
     this.isOnline = true;
-    
+
     // Trigger sync when coming back online
     this.performBackgroundSync();
-    
+
     // Notify storage listeners about online status
-    this.storageListeners.forEach((listener) => {
+    this.storageListeners.forEach(listener => {
       try {
         listener({ type: 'online', timestamp: Date.now() });
       } catch (error) {
@@ -375,12 +405,12 @@ export class PWAService {
   private handleOffline(): void {
     console.log('App is offline');
     this.isOnline = false;
-    
+
     // Save current state for offline access
     this.performBackgroundSync();
-    
+
     // Notify storage listeners about offline status
-    this.storageListeners.forEach((listener) => {
+    this.storageListeners.forEach(listener => {
       try {
         listener({ type: 'offline', timestamp: Date.now() });
       } catch (error) {
@@ -429,7 +459,10 @@ export class PWAService {
   /**
    * Add storage listener
    */
-  public addStorageListener(key: string, listener: (_data: unknown) => void): void {
+  public addStorageListener(
+    key: string,
+    listener: (_data: unknown) => void
+  ): void {
     this.storageListeners.set(key, listener);
   }
 
@@ -468,11 +501,14 @@ export class PWAService {
   public destroy(): void {
     this.stopBackgroundSync();
     this.storageListeners.clear();
-    
+
     // Remove event listeners
     window.removeEventListener('online', this.handleOnline);
     window.removeEventListener('offline', this.handleOffline);
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    document.removeEventListener(
+      'visibilitychange',
+      this.handleVisibilityChange
+    );
     window.removeEventListener('beforeunload', this.handleBeforeUnload);
     window.removeEventListener('storage', this.handleStorageEvent);
   }
@@ -483,4 +519,3 @@ export class PWAService {
  */
 // Lazy-loaded service to prevent SSR issues
 export const getPWAService = () => PWAService.getInstance();
-

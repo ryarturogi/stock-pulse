@@ -1,7 +1,7 @@
 /**
  * Unit Tests for Shared Components Index
  * ======================================
- * 
+ *
  * Tests for shared components export file
  */
 
@@ -47,9 +47,13 @@ describe('Shared Components Index', () => {
 
   describe('Direct Component Exports', () => {
     it('should maintain reference equality for direct exports', async () => {
-      const { ErrorBoundary: directErrorBoundary } = await import('./ErrorBoundary');
-      const { ErrorBoundaryWrapper: directWrapper } = await import('./ErrorBoundaryWrapper');
-      
+      const { ErrorBoundary: directErrorBoundary } = await import(
+        './ErrorBoundary'
+      );
+      const { ErrorBoundaryWrapper: directWrapper } = await import(
+        './ErrorBoundaryWrapper'
+      );
+
       expect(ComponentsIndex.ErrorBoundary).toBe(directErrorBoundary);
       expect(ComponentsIndex.ErrorBoundaryWrapper).toBe(directWrapper);
     });
@@ -57,8 +61,12 @@ describe('Shared Components Index', () => {
 
   describe('Export Structure', () => {
     it('should have expected component exports', () => {
-      const expectedComponents = ['ErrorBoundary', 'ErrorBoundaryWrapper', 'Button'];
-      
+      const expectedComponents = [
+        'ErrorBoundary',
+        'ErrorBoundaryWrapper',
+        'Button',
+      ];
+
       expectedComponents.forEach(componentName => {
         expect(ComponentsIndex).toHaveProperty(componentName);
         expect(typeof (ComponentsIndex as any)[componentName]).toBe('function');
@@ -89,7 +97,7 @@ describe('Shared Components Index', () => {
   describe('Component Types', () => {
     it('should export React components', () => {
       const components = [ErrorBoundary, ErrorBoundaryWrapper, Button];
-      
+
       components.forEach(Component => {
         expect(typeof Component).toBe('function');
         // React components should be callable functions

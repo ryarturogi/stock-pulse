@@ -1,7 +1,7 @@
 /**
  * StockPulse Application - Main Export
  * ====================================
- * 
+ *
  * Enterprise-level stock tracking application with real-time data,
  * notifications, and PWA capabilities.
  */

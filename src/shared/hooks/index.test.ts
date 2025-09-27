@@ -1,7 +1,7 @@
 /**
  * Unit Tests for Shared Hooks Index
  * =================================
- * 
+ *
  * Tests for hooks export file
  */
 
@@ -45,10 +45,10 @@ describe('Shared Hooks Index', () => {
     it('should have exactly the expected number of hook exports', () => {
       const hookExports = [
         'useResponsive',
-        'useSidebar', 
+        'useSidebar',
         'useTheme',
         'useSearch',
-        'useTour'
+        'useTour',
       ];
 
       hookExports.forEach(hookName => {
@@ -66,15 +66,15 @@ describe('Shared Hooks Index', () => {
       const expectedHooks = [
         'useResponsive',
         'useSidebar',
-        'useTheme', 
+        'useTheme',
         'useSearch',
         'useTour',
         'getDesktopTourSteps',
-        'getMobileTourSteps', 
+        'getMobileTourSteps',
         'getTourSteps',
         'shouldShowTour',
         'markTourAsCompleted',
-        'resetTour'
+        'resetTour',
       ];
 
       expect(functionKeys.sort()).toEqual(expectedHooks.sort());
@@ -93,7 +93,7 @@ describe('Shared Hooks Index', () => {
     it('should export functions that are callable', () => {
       // Hook functions should be callable functions
       const hooks = [useResponsive, useSidebar, useTheme, useSearch, useTour];
-      
+
       hooks.forEach(hook => {
         expect(typeof hook).toBe('function');
         expect(hook.length).toBeGreaterThanOrEqual(0); // Function arity (parameter count)
@@ -106,7 +106,7 @@ describe('Shared Hooks Index', () => {
       // Import from the actual source files
       const { useSearch: directUseSearch } = await import('./useSearch');
       const { useSidebar: directUseSidebar } = await import('./useSidebar');
-      
+
       // These should be functionally equivalent
       expect(typeof HooksIndex.useSearch).toBe('function');
       expect(typeof directUseSearch).toBe('function');

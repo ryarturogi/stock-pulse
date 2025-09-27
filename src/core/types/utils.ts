@@ -1,7 +1,7 @@
 /**
  * Comprehensive TypeScript Utility Types for StockPulse
  * =======================================================
- * 
+ *
  * This file contains reusable utility types that should be used throughout
  * the application to ensure type safety and consistency.
  */
@@ -32,7 +32,8 @@ export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 /**
  * Makes specified keys K in T required
  */
-export type RequiredBy<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
+export type RequiredBy<T, K extends keyof T> = Omit<T, K> &
+  Required<Pick<T, K>>;
 
 /**
  * Creates a type with all properties of T except those in K, made optional
@@ -77,11 +78,9 @@ export type ExactlyOne<T> = {
 /**
  * Extracts return type from async function
  */
-export type AsyncReturnType<T extends (..._args: unknown[]) => Promise<unknown>> = T extends (
-  ..._args: unknown[]
-) => Promise<infer R>
-  ? R
-  : never;
+export type AsyncReturnType<
+  T extends (..._args: unknown[]) => Promise<unknown>,
+> = T extends (..._args: unknown[]) => Promise<infer R> ? R : never;
 
 /**
  * Creates a type-safe event handler
@@ -105,7 +104,9 @@ export type Parameters<T extends (..._args: unknown[]) => unknown> = T extends (
 /**
  * Creates a function type with specific parameters and return type
  */
-export type Fn<P extends readonly unknown[] = [], R = void> = (..._args: P) => R;
+export type Fn<P extends readonly unknown[] = [], R = void> = (
+  ..._args: P
+) => R;
 
 /**
  * Creates an async function type with specific parameters and return type
@@ -232,7 +233,9 @@ export type WithRef<T = Record<string, never>, R = HTMLElement> = T & {
 /**
  * Component props with all common properties
  */
-export type ComponentProps<T = Record<string, never>> = WithChildren<WithClassName<T>>;
+export type ComponentProps<T = Record<string, never>> = WithChildren<
+  WithClassName<T>
+>;
 
 /**
  * Props for components that can be disabled
@@ -387,16 +390,17 @@ export type IsAny<T> = 0 extends 1 & T ? true : false;
 /**
  * Check if T is unknown
  */
-export type IsUnknown<T> = IsAny<T> extends true
-  ? false
-  : unknown extends T
-  ? true
-  : false;
+export type IsUnknown<T> =
+  IsAny<T> extends true ? false : unknown extends T ? true : false;
 
 /**
  * Check if T equals U
  */
-export type Equals<T, U> = [T] extends [U] ? ([U] extends [T] ? true : false) : false;
+export type Equals<T, U> = [T] extends [U]
+  ? [U] extends [T]
+    ? true
+    : false
+  : false;
 
 // ============================================================================
 // UTILITY FUNCTIONS FOR TYPE CHECKING
@@ -447,7 +451,9 @@ export const isArray = <T>(value: unknown): value is T[] => {
 /**
  * Type guard for checking if value is a function
  */
-export const isFunction = (value: unknown): value is (...args: unknown[]) => unknown => {
+export const isFunction = (
+  value: unknown
+): value is (...args: unknown[]) => unknown => {
   return typeof value === 'function';
 };
 
@@ -468,7 +474,10 @@ export const isPromise = <T>(value: unknown): value is Promise<T> => {
 /**
  * Type assertion helper
  */
-export const assertIs = <T>(value: unknown, guard: (value: unknown) => value is T): T => {
+export const assertIs = <T>(
+  value: unknown,
+  guard: (value: unknown) => value is T
+): T => {
   if (!guard(value)) {
     throw new Error('Type assertion failed');
   }

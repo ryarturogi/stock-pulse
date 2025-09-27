@@ -1,0 +1,40 @@
+{
+  // Cursor-specific terminal settings
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.shell.osx": "/bin/zsh",
+  "terminal.integrated.profiles.osx": {
+    "zsh": {
+      "path": "/bin/zsh",
+      "args": ["-l", "-i"]
+    },
+    "bash": {
+      "path": "/bin/bash",
+      "args": ["-l"]
+    }
+  },
+  "terminal.integrated.env.osx": {
+    "PATH": "/Users/ricardoguillen/.local/bin:/Users/ricardoguillen/.pyenv/shims:/Users/ricardoguillen/.bun/bin:/Users/ricardoguillen/Library/pnpm:/Users/ricardoguillen/.docker/bin:/Users/ricardoguillen/.volta/bin:/opt/homebrew/opt/php@8.0/sbin:/opt/homebrew/opt/php@8.0/bin:/Users/ricardoguillen/.yarn/bin:/Users/ricardoguillen/.config/yarn/global/node_modules/.bin:/opt/homebrew/opt/php@7.4/sbin:/opt/homebrew/opt/php@7.4/bin:/Users/ricardoguillen/bin:/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/Users/ricardoguillen/.cargo/bin:/Users/ricardoguillen/.orbstack/bin:/opt/homebrew/opt/fzf/bin"
+  },
+  "terminal.integrated.inheritEnv": true,
+  "terminal.integrated.allowChords": false,
+  "terminal.integrated.enableMultiLinePasteWarning": false,
+  "terminal.integrated.showExitAlert": false,
+
+  // Node.js and package manager
+  "nodejs.packageManager": "pnpm",
+
+  // Security and permissions
+  "security.workspace.trust.untrustedFiles": "open",
+  "security.workspace.trust.enabled": false,
+
+  // File watching
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/.next/**": true,
+    "**/.obsidian/**": true,
+    "**/dist/**": true,
+    "**/build/**": true
+  }
+}

@@ -1,7 +1,7 @@
 /**
  * Notification Store with Zustand
  * ==============================
- * 
+ *
  * Centralized state management for notification functionality
  * with persistence following the React Developer test requirements.
  */
@@ -62,7 +62,8 @@ export const useNotificationStore = create<NotificationStoreState>()(
           } else {
             // Enable notifications (request permission if needed)
             if (state.permission !== 'granted') {
-              const newPermission = await notificationService.requestPermission();
+              const newPermission =
+                await notificationService.requestPermission();
               set({ permission: newPermission });
 
               if (newPermission === 'granted') {
@@ -82,7 +83,7 @@ export const useNotificationStore = create<NotificationStoreState>()(
         try {
           const notificationService = getNotificationService();
           const newPermission = await notificationService.requestPermission();
-          
+
           set({ permission: newPermission });
 
           if (newPermission === 'granted') {
@@ -108,7 +109,9 @@ export const useNotificationStore = create<NotificationStoreState>()(
       },
 
       // Notification history management
-      addNotification: (notificationData: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+      addNotification: (
+        notificationData: Omit<Notification, 'id' | 'timestamp' | 'read'>
+      ) => {
         const state = get();
         const newNotification: Notification = {
           ...notificationData,
@@ -128,8 +131,10 @@ export const useNotificationStore = create<NotificationStoreState>()(
 
       markAsRead: (notificationId: string) => {
         const state = get();
-        const notification = state.notifications.find(n => n.id === notificationId);
-        
+        const notification = state.notifications.find(
+          n => n.id === notificationId
+        );
+
         if (notification && !notification.read) {
           const updatedNotifications = state.notifications.map(n =>
             n.id === notificationId ? { ...n, read: true } : n
@@ -145,7 +150,10 @@ export const useNotificationStore = create<NotificationStoreState>()(
 
       markAllAsRead: () => {
         const state = get();
-        const updatedNotifications = state.notifications.map(n => ({ ...n, read: true }));
+        const updatedNotifications = state.notifications.map(n => ({
+          ...n,
+          read: true,
+        }));
 
         set({
           notifications: updatedNotifications,
@@ -155,11 +163,17 @@ export const useNotificationStore = create<NotificationStoreState>()(
 
       removeNotification: (notificationId: string) => {
         const state = get();
-        const notification = state.notifications.find(n => n.id === notificationId);
-        
+        const notification = state.notifications.find(
+          n => n.id === notificationId
+        );
+
         if (notification) {
-          const updatedNotifications = state.notifications.filter(n => n.id !== notificationId);
-          const updatedUnreadCount = notification.read ? state.unreadCount : Math.max(0, state.unreadCount - 1);
+          const updatedNotifications = state.notifications.filter(
+            n => n.id !== notificationId
+          );
+          const updatedUnreadCount = notification.read
+            ? state.unreadCount
+            : Math.max(0, state.unreadCount - 1);
 
           set({
             notifications: updatedNotifications,
@@ -206,13 +220,16 @@ export const useNotificationStore = create<NotificationStoreState>()(
             removeItem: () => {},
           };
         }
-        
+
         // Browser environment - use localStorage
         try {
           return localStorage;
         } catch (error) {
           // Fallback to in-memory storage if localStorage is not available
-          console.warn('localStorage not available, using in-memory storage:', error);
+          console.warn(
+            'localStorage not available, using in-memory storage:',
+            error
+          );
           return {
             getItem: () => null,
             setItem: () => {},
@@ -227,11 +244,13 @@ export const useNotificationStore = create<NotificationStoreState>()(
           if (version === 0) {
             // If no version exists, this is a fresh install or old format
             // Try to migrate from old localStorage format
-            
+
             // Check for old notification preference
             let isEnabled = true;
             if (typeof window !== 'undefined') {
-              const oldNotificationPref = localStorage.getItem('stockpulse_notifications_enabled');
+              const oldNotificationPref = localStorage.getItem(
+                'stockpulse_notifications_enabled'
+              );
               if (oldNotificationPref !== null) {
                 isEnabled = JSON.parse(oldNotificationPref);
                 // Clean up old storage key
@@ -250,11 +269,14 @@ export const useNotificationStore = create<NotificationStoreState>()(
               soundEnabled: true,
             };
           }
-          
+
           // For current version, return as-is
           return persistedState;
         } catch (error) {
-          console.warn('Failed to migrate persisted state, using defaults:', error);
+          console.warn(
+            'Failed to migrate persisted state, using defaults:',
+            error
+          );
           // Return safe defaults if migration fails
           return {
             permission: 'default',
@@ -268,7 +290,7 @@ export const useNotificationStore = create<NotificationStoreState>()(
           };
         }
       },
-      partialize: (state) => ({
+      partialize: state => ({
         permission: state.permission,
         isEnabled: state.isEnabled,
         pushSubscription: state.pushSubscription,
@@ -281,7 +303,10 @@ export const useNotificationStore = create<NotificationStoreState>()(
       onRehydrateStorage: () => {
         return (_state, error) => {
           if (error) {
-            console.warn('Failed to rehydrate notification store state:', error);
+            console.warn(
+              'Failed to rehydrate notification store state:',
+              error
+            );
           } else {
             console.log('Notification store state rehydrated successfully');
           }
@@ -312,12 +337,16 @@ export const {
 
 // Export convenience hooks for specific state slices
 export const useNotificationPermission = () => {
-  const permission = useNotificationStore((state) => state.permission);
-  const isEnabled = useNotificationStore((state) => state.isEnabled);
-  const setPermission = useNotificationStore((state) => state.setPermission);
-  const setEnabled = useNotificationStore((state) => state.setEnabled);
-  const toggleNotifications = useNotificationStore((state) => state.toggleNotifications);
-  const requestPermission = useNotificationStore((state) => state.requestPermission);
+  const permission = useNotificationStore(state => state.permission);
+  const isEnabled = useNotificationStore(state => state.isEnabled);
+  const setPermission = useNotificationStore(state => state.setPermission);
+  const setEnabled = useNotificationStore(state => state.setEnabled);
+  const toggleNotifications = useNotificationStore(
+    state => state.toggleNotifications
+  );
+  const requestPermission = useNotificationStore(
+    state => state.requestPermission
+  );
 
   return {
     permission,
@@ -330,13 +359,17 @@ export const useNotificationPermission = () => {
 };
 
 export const useNotificationHistory = () => {
-  const notifications = useNotificationStore((state) => state.notifications);
-  const unreadCount = useNotificationStore((state) => state.unreadCount);
-  const addNotification = useNotificationStore((state) => state.addNotification);
-  const markAsRead = useNotificationStore((state) => state.markAsRead);
-  const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
-  const removeNotification = useNotificationStore((state) => state.removeNotification);
-  const clearNotifications = useNotificationStore((state) => state.clearNotifications);
+  const notifications = useNotificationStore(state => state.notifications);
+  const unreadCount = useNotificationStore(state => state.unreadCount);
+  const addNotification = useNotificationStore(state => state.addNotification);
+  const markAsRead = useNotificationStore(state => state.markAsRead);
+  const markAllAsRead = useNotificationStore(state => state.markAllAsRead);
+  const removeNotification = useNotificationStore(
+    state => state.removeNotification
+  );
+  const clearNotifications = useNotificationStore(
+    state => state.clearNotifications
+  );
 
   return {
     notifications,
@@ -350,12 +383,20 @@ export const useNotificationHistory = () => {
 };
 
 export const useNotificationSettings = () => {
-  const showDesktopNotifications = useNotificationStore((state) => state.showDesktopNotifications);
-  const showPushNotifications = useNotificationStore((state) => state.showPushNotifications);
-  const soundEnabled = useNotificationStore((state) => state.soundEnabled);
-  const setShowDesktopNotifications = useNotificationStore((state) => state.setShowDesktopNotifications);
-  const setShowPushNotifications = useNotificationStore((state) => state.setShowPushNotifications);
-  const setSoundEnabled = useNotificationStore((state) => state.setSoundEnabled);
+  const showDesktopNotifications = useNotificationStore(
+    state => state.showDesktopNotifications
+  );
+  const showPushNotifications = useNotificationStore(
+    state => state.showPushNotifications
+  );
+  const soundEnabled = useNotificationStore(state => state.soundEnabled);
+  const setShowDesktopNotifications = useNotificationStore(
+    state => state.setShowDesktopNotifications
+  );
+  const setShowPushNotifications = useNotificationStore(
+    state => state.setShowPushNotifications
+  );
+  const setSoundEnabled = useNotificationStore(state => state.setSoundEnabled);
 
   return {
     showDesktopNotifications,
@@ -368,9 +409,15 @@ export const useNotificationSettings = () => {
 };
 
 export const usePushSubscription = () => {
-  const pushSubscription = useNotificationStore((state) => state.pushSubscription);
-  const setPushSubscription = useNotificationStore((state) => state.setPushSubscription);
-  const clearPushSubscription = useNotificationStore((state) => state.clearPushSubscription);
+  const pushSubscription = useNotificationStore(
+    state => state.pushSubscription
+  );
+  const setPushSubscription = useNotificationStore(
+    state => state.setPushSubscription
+  );
+  const clearPushSubscription = useNotificationStore(
+    state => state.clearPushSubscription
+  );
 
   return {
     pushSubscription,

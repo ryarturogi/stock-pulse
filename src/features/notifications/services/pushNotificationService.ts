@@ -1,7 +1,7 @@
 /**
  * Push Notification Service - Mobile Optimized (No VAPID)
  * ======================================================
- * 
+ *
  * Handles web push notifications without VAPID keys for simplified
  * server-to-client communication with mobile-specific optimizations.
  */
@@ -12,7 +12,12 @@
  * Device type detection for mobile-specific handling
  */
 type DeviceType = 'mobile' | 'desktop' | 'unknown';
-type BrowserType = 'ios-safari' | 'android-chrome' | 'desktop-chrome' | 'desktop-firefox' | 'unknown';
+type BrowserType =
+  | 'ios-safari'
+  | 'android-chrome'
+  | 'desktop-chrome'
+  | 'desktop-firefox'
+  | 'unknown';
 
 /**
  * Push notification service for notifications with mobile support (no VAPID)
@@ -48,9 +53,11 @@ export class PushNotificationService {
     if (typeof window === 'undefined') return;
 
     const userAgent = navigator.userAgent.toLowerCase();
-    
+
     // Detect device type
-    if (/android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
+    if (
+      /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent)
+    ) {
       this.deviceType = 'mobile';
     } else if (/windows|macintosh|linux/i.test(userAgent)) {
       this.deviceType = 'desktop';
@@ -59,7 +66,11 @@ export class PushNotificationService {
     }
 
     // Detect browser type
-    if (/iphone|ipad|ipod/i.test(userAgent) && /safari/i.test(userAgent) && !/chrome/i.test(userAgent)) {
+    if (
+      /iphone|ipad|ipod/i.test(userAgent) &&
+      /safari/i.test(userAgent) &&
+      !/chrome/i.test(userAgent)
+    ) {
       this.browserType = 'ios-safari';
     } else if (/android/i.test(userAgent) && /chrome/i.test(userAgent)) {
       this.browserType = 'android-chrome';
@@ -71,7 +82,10 @@ export class PushNotificationService {
       this.browserType = 'unknown';
     }
 
-    console.log('Device detection:', { deviceType: this.deviceType, browserType: this.browserType });
+    console.log('Device detection:', {
+      deviceType: this.deviceType,
+      browserType: this.browserType,
+    });
   }
 
   /**
@@ -81,9 +95,10 @@ export class PushNotificationService {
     if (typeof window === 'undefined') return false;
 
     // Basic support check
-    const basicSupport = 'serviceWorker' in navigator && 
-                        'PushManager' in window &&
-                        'Notification' in window;
+    const basicSupport =
+      'serviceWorker' in navigator &&
+      'PushManager' in window &&
+      'Notification' in window;
 
     if (!basicSupport) return false;
 
@@ -112,7 +127,6 @@ export class PushNotificationService {
     return basicSupport;
   }
 
-
   /**
    * Check if push notifications are ready (no VAPID required)
    */
@@ -135,20 +149,23 @@ export class PushNotificationService {
     try {
       this.registration = await navigator.serviceWorker.register(swPath, {
         scope: '/',
-        updateViaCache: 'none' // Always check for updates
+        updateViaCache: 'none', // Always check for updates
       });
-      
-      console.log(`Service worker registered for ${this.deviceType}/${this.browserType}:`, this.registration);
-      
+
+      console.log(
+        `Service worker registered for ${this.deviceType}/${this.browserType}:`,
+        this.registration
+      );
+
       // Enhanced service worker lifecycle management
       await this.waitForServiceWorkerReady();
-      
+
       return this.registration;
     } catch (error) {
       console.error('Failed to register service worker:', error);
-      
+
       // No fallback needed since we're using a single service worker file
-      
+
       return null;
     }
   }
@@ -179,7 +196,7 @@ export class PushNotificationService {
           });
         });
       }
-      
+
       // Ensure service worker is active
       if (this.registration.waiting) {
         this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -217,9 +234,10 @@ export class PushNotificationService {
     try {
       // For iOS Safari, ensure we're in PWA mode
       if (this.browserType === 'ios-safari') {
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                            (window.navigator as { standalone?: boolean }).standalone === true;
-        
+        const isStandalone =
+          window.matchMedia('(display-mode: standalone)').matches ||
+          (window.navigator as { standalone?: boolean }).standalone === true;
+
         if (!isStandalone) {
           console.warn('iOS Safari requires PWA mode for push notifications');
           return 'denied';
@@ -228,12 +246,14 @@ export class PushNotificationService {
 
       const permission = await Notification.requestPermission();
       console.log(`Notification permission (${this.browserType}):`, permission);
-      
+
       // For mobile devices, provide additional guidance
       if (this.deviceType === 'mobile' && permission === 'denied') {
-        console.warn('Push notifications denied on mobile device. User may need to enable in browser settings.');
+        console.warn(
+          'Push notifications denied on mobile device. User may need to enable in browser settings.'
+        );
       }
-      
+
       return permission;
     } catch (error) {
       console.error('Failed to request notification permission:', error);
@@ -268,12 +288,16 @@ export class PushNotificationService {
 
       // Create new subscription without VAPID (simplified)
       const subscriptionOptions: PushSubscriptionOptionsInit = {
-        userVisibleOnly: true
+        userVisibleOnly: true,
       };
 
-      this.subscription = await this.registration.pushManager.subscribe(subscriptionOptions);
+      this.subscription =
+        await this.registration.pushManager.subscribe(subscriptionOptions);
 
-      console.log(`Subscribed to push notifications (${this.deviceType}):`, this.subscription);
+      console.log(
+        `Subscribed to push notifications (${this.deviceType}):`,
+        this.subscription
+      );
 
       // Send subscription to server with device info
       await this.sendSubscriptionToServer(this.subscription);
@@ -281,14 +305,16 @@ export class PushNotificationService {
       return this.subscription;
     } catch (error) {
       console.error('Failed to subscribe to push notifications:', error);
-      
+
       // Provide specific error guidance for mobile devices
       if (this.deviceType === 'mobile') {
         if (error instanceof Error && error.message.includes('permission')) {
-          console.error('Permission denied on mobile device. User may need to enable notifications in browser settings.');
+          console.error(
+            'Permission denied on mobile device. User may need to enable notifications in browser settings.'
+          );
         }
       }
-      
+
       return null;
     }
   }
@@ -306,7 +332,7 @@ export class PushNotificationService {
       if (result) {
         this.subscription = null;
         console.log('Unsubscribed from push notifications');
-        
+
         // Notify server about unsubscription
         await this.removeSubscriptionFromServer();
       }
@@ -320,7 +346,9 @@ export class PushNotificationService {
   /**
    * Send subscription to server with device information
    */
-  private async sendSubscriptionToServer(subscription: PushSubscription): Promise<void> {
+  private async sendSubscriptionToServer(
+    subscription: PushSubscription
+  ): Promise<void> {
     try {
       const response = await fetch('/api/push/subscribe', {
         method: 'POST',
@@ -337,10 +365,14 @@ export class PushNotificationService {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to send subscription to server: ${response.statusText}`);
+        throw new Error(
+          `Failed to send subscription to server: ${response.statusText}`
+        );
       }
 
-      console.log(`Subscription sent to server successfully (${this.deviceType})`);
+      console.log(
+        `Subscription sent to server successfully (${this.deviceType})`
+      );
     } catch (error) {
       console.error('Failed to send subscription to server:', error);
     }
@@ -362,7 +394,9 @@ export class PushNotificationService {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to remove subscription from server: ${response.statusText}`);
+        throw new Error(
+          `Failed to remove subscription from server: ${response.statusText}`
+        );
       }
 
       console.log('Subscription removed from server successfully');
@@ -370,7 +404,6 @@ export class PushNotificationService {
       console.error('Failed to remove subscription from server:', error);
     }
   }
-
 
   /**
    * Get device and browser information
@@ -383,10 +416,10 @@ export class PushNotificationService {
     isAndroid: boolean;
     isStandalone: boolean;
   } {
-    const isStandalone = typeof window !== 'undefined' && (
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as { standalone?: boolean }).standalone === true
-    );
+    const isStandalone =
+      typeof window !== 'undefined' &&
+      (window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as { standalone?: boolean }).standalone === true);
 
     return {
       deviceType: this.deviceType,
@@ -419,7 +452,7 @@ export class PushNotificationService {
     const isSupported = this.isSupported();
     const isReady = this.isReady();
     const hasPermission = isSupported ? Notification.permission : 'denied';
-    
+
     let isSubscribed = false;
     let subscription: PushSubscription | null = null;
 
@@ -443,14 +476,16 @@ export class PushNotificationService {
    */
   public async showTestNotification(): Promise<void> {
     if (!this.isSupported() || Notification.permission !== 'granted') {
-      console.warn('Cannot show notification: not supported or permission denied');
+      console.warn(
+        'Cannot show notification: not supported or permission denied'
+      );
       return;
     }
 
     try {
       const deviceInfo = this.getDeviceInfo();
       const notificationTitle = `StockPulse Test (${deviceInfo.deviceType})`;
-      const notificationBody = deviceInfo.isMobile 
+      const notificationBody = deviceInfo.isMobile
         ? 'Mobile push notifications are working! 📱🎉'
         : 'Push notifications are working! 🎉';
 
@@ -473,7 +508,9 @@ export class PushNotificationService {
         notification.close();
       }, autoCloseDelay);
 
-      console.log(`Test notification shown for ${deviceInfo.deviceType} device`);
+      console.log(
+        `Test notification shown for ${deviceInfo.deviceType} device`
+      );
     } catch (error) {
       console.error('Failed to show test notification:', error);
     }
@@ -481,4 +518,5 @@ export class PushNotificationService {
 }
 
 // Lazy-loaded service to prevent SSR issues
-export const getPushNotificationService = () => PushNotificationService.getInstance();
+export const getPushNotificationService = () =>
+  PushNotificationService.getInstance();
