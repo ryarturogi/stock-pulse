@@ -94,16 +94,17 @@ export const useStockStore = create<StockStoreState>()(
             webSocketStatus: 'disconnected',
           });
 
-          // Reconnect after a short delay to allow UI to update
+          // Reconnect after a shorter delay to allow UI to update
           setTimeout(() => {
             const currentState = get();
             if (
               currentState.watchedStocks.some(s => s.symbol === symbol) &&
-              currentState.isLiveDataEnabled
+              currentState.isLiveDataEnabled &&
+              currentState.webSocketStatus === 'disconnected'
             ) {
               currentState.connectWebSocket();
             }
-          }, 5000); // 5 seconds - reasonable delay
+          }, 1000); // 1 second - shorter delay
         }
         // Note: If not connected, the useEffect in the main page will handle the connection
       },
@@ -254,6 +255,7 @@ export const useStockStore = create<StockStoreState>()(
               set({ lastConnectionAttempt: timestamp }),
             onDisableLiveData: () => set({ isLiveDataEnabled: false }),
             onStartPeriodicRefresh: () => get().startPeriodicRefresh(),
+            onStopPeriodicRefresh: () => get().stopPeriodicRefresh(),
             onUpdateStockPrice: (symbol, quote) =>
               get().updateStockPrice(symbol, quote),
             getWatchedStocks: () => get().watchedStocks,
@@ -356,8 +358,7 @@ export const useStockStore = create<StockStoreState>()(
           return;
         }
 
-        // WebSocket provides real-time data, but we still want periodic refresh for reliability
-        // and to respect user's chosen refresh interval
+        // Periodic refresh as fallback when WebSocket is not connected or for initial data loading
         console.log(
           `🔄 Starting periodic refresh every ${state.refreshTimeInterval} (WebSocket: ${state.webSocketStatus})`
         );
@@ -408,10 +409,10 @@ export const useStockStore = create<StockStoreState>()(
                   if (response.ok) {
                     const data = await response.json();
                     // Check if response has the expected structure
-                    if (data.current) {
-                      currentState.updateStockPrice(stock.symbol, data);
-                    } else if (data.data && data.data.current) {
+                    if (data.data && data.data.current) {
                       currentState.updateStockPrice(stock.symbol, data.data);
+                    } else if (data.current) {
+                      currentState.updateStockPrice(stock.symbol, data);
                     }
                   }
                 } catch (error) {
