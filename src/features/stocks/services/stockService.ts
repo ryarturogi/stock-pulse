@@ -302,8 +302,9 @@ export class StockService {
     const { exchange = 'US', page = 1, limit = 50, search = '' } = options;
     const requestId = Math.random().toString(36).substr(2, 9);
 
-    // Create cache key
-    const cacheKey = `${exchange}-${page}-${limit}-${search}`;
+    // Create cache key - normalize to avoid duplicate calls for similar requests
+    const normalizedSearch = search.trim().toLowerCase();
+    const cacheKey = `${exchange}-${page}-${limit}-${normalizedSearch}`;
 
     // Check cache first
     const cached = this.stockListCache.get(cacheKey);
@@ -404,6 +405,8 @@ export class StockService {
         console.error('❌ [API] Failed to fetch stock symbols', {
           status: response.status,
           statusText: response.statusText,
+          url: url,
+          requestId: requestId,
         });
         // Fallback to default options
         return {
@@ -549,8 +552,8 @@ export class StockService {
   async getAvailableStocksLegacy(
     exchange: string = 'US'
   ): Promise<StockOption[]> {
-    // Reduced limit to prevent timeouts - use pagination if more data is needed
-    const result = await this.getAvailableStocks({ exchange, limit: 200 });
+    // Use the same limit as InfiniteStockSelector to avoid duplicate calls
+    const result = await this.getAvailableStocks({ exchange, limit: 50 });
     return result.data;
   }
 
