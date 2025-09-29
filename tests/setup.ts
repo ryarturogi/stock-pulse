@@ -390,6 +390,38 @@ if (typeof global.AbortSignal === 'undefined') {
   } as any;
 }
 
+// Mock NextRequest for API route tests
+if (typeof (global as any).NextRequest === 'undefined') {
+  (global as any).NextRequest = class NextRequest extends Request {
+    public url: string;
+    public method: string;
+    public headers: Headers;
+    public cookies: any;
+
+    constructor(input: string | URL | Request, init?: RequestInit) {
+      super(input, init);
+      this.url = typeof input === 'string' ? input : input.toString();
+      this.method = init?.method || 'GET';
+      this.headers = new Headers(init?.headers || {});
+      this.cookies = {
+        get: jest.fn().mockReturnValue(null),
+        set: jest.fn(),
+        delete: jest.fn(),
+        has: jest.fn().mockReturnValue(false),
+        getAll: jest.fn().mockReturnValue([]),
+      };
+    }
+
+    async json() {
+      return JSON.parse(this.body || '{}');
+    }
+
+    async text() {
+      return this.body || '';
+    }
+  } as any;
+}
+
 // Mock NextResponse for API route tests
 if (typeof (global as any).NextResponse === 'undefined') {
   (global as any).NextResponse = class NextResponse extends Response {
@@ -413,9 +445,18 @@ if (typeof (global as any).NextResponse === 'undefined') {
       return this._status;
     }
 
-    static override json(data: any, init?: ResponseInit) {
+    static json(data: any, init?: ResponseInit) {
+      console.log('NextResponse.json called with:', data, init);
       const body = JSON.stringify(data);
-      return new NextResponse(body, init);
+      const response = new NextResponse(body, init);
+      console.log('NextResponse.json returning:', response);
+      return response;
     }
   } as any;
 }
+
+// Mock the next/server module
+jest.mock('next/server', () => ({
+  NextResponse: (global as any).NextResponse,
+  NextRequest: (global as any).NextRequest,
+}));

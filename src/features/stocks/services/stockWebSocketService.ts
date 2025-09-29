@@ -18,6 +18,7 @@ export interface StockWebSocketCallbacks {
   onUpdateLastConnectionAttempt: (_timestamp: number) => void;
   onDisableLiveData: () => void;
   onStartPeriodicRefresh: () => void;
+  onStopPeriodicRefresh: () => void;
   onUpdateStockPrice: (_symbol: string, _quote: FinnhubStockQuote) => void;
   getWatchedStocks: () => WatchedStock[];
   getState: () => {
@@ -178,11 +179,11 @@ export class StockWebSocketService {
         this.callbacks.onConnectionChange(this.eventSource);
         this.callbacks.onUpdateConnectionAttempts(0); // Reset connection attempts on successful connection
 
-        // WebSocket connected - real-time data is now available, but keep periodic refresh running
-        // for reliability and to honor user's refresh interval preference
+        // WebSocket connected - real-time data is now available alongside periodic refresh
         console.log(
-          '🔌 WebSocket connected - real-time data active, periodic refresh continues for reliability'
+          '🔌 WebSocket connected - real-time data active alongside periodic refresh'
         );
+        // Keep periodic refresh running as backup in case WebSocket fails
       };
 
       this.eventSource.onerror = error => {
