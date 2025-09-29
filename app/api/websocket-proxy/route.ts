@@ -89,17 +89,17 @@ export async function GET(request: NextRequest) {
   userLimit.attempts++;
   userLimit.lastAttempt = now;
 
-  // Block user if more than 10 attempts in 5 minutes (reasonable limit)
-  if (userLimit.attempts > 10) {
+  // Block user if more than 20 attempts in 5 minutes (more lenient)
+  if (userLimit.attempts > 20) {
     userLimit.blocked = true;
-    userLimit.blockUntil = now + 2 * 60 * 1000; // 2 minutes
-    console.log(`🚫 User rate limit: IP ${userIP} blocked for 2 minutes`);
+    userLimit.blockUntil = now + 1 * 60 * 1000; // 1 minute
+    console.log(`🚫 User rate limit: IP ${userIP} blocked for 1 minute`);
     return new Response(
       JSON.stringify({
         type: 'error',
-        message: 'Rate limit exceeded. Try again in 2 minutes.',
+        message: 'Rate limit exceeded. Try again in 1 minute.',
         code: 'USER_RATE_LIMITED',
-        remainingTime: 120,
+        remainingTime: 60,
       }),
       {
         status: 429,
@@ -112,33 +112,28 @@ export async function GET(request: NextRequest) {
   }
 
   // Check if we already have an active connection for these symbols
-  if (activeConnections.has(connectionKey)) {
+  const existingConnection = activeConnections.get(connectionKey);
+  if (existingConnection) {
     console.log(
-      '⚠️ Duplicate connection attempt blocked for symbols:',
+      '⚠️ Cleaning up existing connection and allowing new one for symbols:',
       symbols
     );
-    return new Response(
-      JSON.stringify({
-        type: 'error',
-        message: 'Connection already exists for these symbols',
-        code: 'DUPLICATE_CONNECTION',
-        symbols: symbols,
-      }),
-      {
-        status: 409,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-        },
+    // Clean up the existing connection to allow a fresh one
+    if (existingConnection.webSocket) {
+      try {
+        existingConnection.webSocket.close();
+      } catch (error) {
+        console.log('Error closing existing WebSocket:', error);
       }
-    );
+    }
+    activeConnections.delete(connectionKey);
   }
 
   // Check circuit breaker state
   const breaker = circuitBreaker.get(connectionKey);
   if (breaker && breaker.state === 'open') {
     const timeSinceLastFailure = Date.now() - breaker.lastFailure;
-    const resetTimeout = 5 * 60 * 1000; // 5 minutes - more reasonable
+    const resetTimeout = 2 * 60 * 1000; // 2 minutes - more reasonable
 
     if (timeSinceLastFailure < resetTimeout) {
       const remainingTime = Math.ceil(
@@ -195,9 +190,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const apiKey = process.env.FINNHUB_API_KEY;
+  const apiKey = process.env.FINNHUB_API_KEY || process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
   if (!apiKey) {
-    console.error('❌ API key not configured');
+    console.error('❌ API key not configured - missing FINNHUB_API_KEY or NEXT_PUBLIC_FINNHUB_API_KEY');
     return new Response('API key not configured', { status: 500 });
   }
 
@@ -370,11 +365,11 @@ export async function GET(request: NextRequest) {
               const isDevelopment = process.env.NODE_ENV === 'development';
               const cooldownMs = isRateLimited
                 ? isDevelopment
-                  ? 15000
-                  : 30000 // 15s dev, 30s prod for rate limits
-                : isDevelopment
                   ? 5000
-                  : 15000; // 5s dev, 15s prod for other errors
+                  : 10000 // 5s dev, 10s prod for rate limits
+                : isDevelopment
+                  ? 2000
+                  : 5000; // 2s dev, 5s prod for other errors
               connectionCooldowns.set(connectionKey, Date.now() + cooldownMs);
               return;
             }

@@ -146,11 +146,11 @@ export default function HomePage() {
     }
 
     if (watchedStocks.length > 0 && isLiveDataEnabled) {
-      // Start periodic refresh immediately when stocks are available and live data is enabled
-      console.log('📊 Starting periodic refresh for stock updates...');
+      // Always start periodic refresh as fallback
+      console.log('📊 Starting periodic refresh as fallback...');
       startPeriodicRefresh();
 
-      // Only connect if not already connected or connecting
+      // Only connect WebSocket if not already connected or connecting
       if (
         !isConnectedRef.current &&
         webSocketStatus !== 'connecting' &&
@@ -164,7 +164,7 @@ export default function HomePage() {
         // Add a short delay to prevent race conditions
         connectionTimeoutRef.current = setTimeout(() => {
           connectWebSocket();
-        }, 2000); // 2 seconds - reasonable delay for UI to settle
+        }, 1000); // Reduced to 1 second for faster connection
       }
     } else {
       // If no stocks or live data disabled, disconnect and stop refresh
