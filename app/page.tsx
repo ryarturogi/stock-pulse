@@ -192,7 +192,7 @@ export default function HomePage() {
     connectWebSocket,
     startPeriodicRefresh,
     stopPeriodicRefresh,
-    // Note: disconnectWebSocket removed from deps to prevent cleanup loop
+    // Note: disconnectWebSocket intentionally excluded to prevent cleanup loop
   ]);
 
   /**

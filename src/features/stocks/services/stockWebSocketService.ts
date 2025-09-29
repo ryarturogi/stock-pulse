@@ -277,10 +277,11 @@ export class StockWebSocketService {
         } else if (data.type === 'connected') {
           console.log('✅ WebSocket proxy connected:', data.message);
         } else if (data.type === 'error') {
-          console.warn('⚠️ WebSocket proxy message:', data.message);
+          const errorMessage = (data as any).message || 'Unknown error';
+          console.warn('⚠️ WebSocket proxy message:', errorMessage);
           this.callbacks.onStatusChange('error');
           this.callbacks.onConnectingChange(false);
-          this.callbacks.onErrorChange(data.message || 'Unknown error');
+          this.callbacks.onErrorChange(errorMessage);
         }
       };
 

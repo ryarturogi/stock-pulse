@@ -82,6 +82,38 @@ export async function GET(request: NextRequest) {
         return;
       }
 
+      // Mock data fallback function
+      const startMockData = () => {
+        console.log('📡 Starting mock data mode as fallback');
+        sendEvent({
+          type: 'connected',
+          message: 'Using mock data (Finnhub API unavailable)',
+          symbols: symbolList,
+        });
+
+        // Send mock trade data every 5 seconds
+        const mockInterval = setInterval(() => {
+          try {
+            symbolList.forEach((symbol, index) => {
+              const basePrice = 100 + index * 50; // Different base prices for different symbols
+              const mockPrice = basePrice + (Math.random() - 0.5) * 10; // ±5 price variation
+              sendEvent({
+                type: 'trade',
+                data: {
+                  symbol: symbol,
+                  price: Math.round(mockPrice * 100) / 100, // Round to 2 decimal places
+                  timestamp: Date.now(),
+                  volume: Math.floor(Math.random() * 1000) + 100,
+                },
+              });
+            });
+          } catch (error) {
+            console.error('❌ Error sending mock data:', error);
+            clearInterval(mockInterval);
+          }
+        }, 5000);
+      };
+
       // Use reliable Finnhub REST API instead of WebSocket
       const apiKey =
         process.env.FINNHUB_API_KEY || process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
@@ -186,38 +218,6 @@ export async function GET(request: NextRequest) {
 
       // Initial update
       updateAllSymbols();
-
-      // Mock data fallback function
-      const startMockData = () => {
-        console.log('📡 Starting mock data mode as fallback');
-        sendEvent({
-          type: 'connected',
-          message: 'Using mock data (Finnhub API unavailable)',
-          symbols: symbolList,
-        });
-
-        // Send mock trade data every 5 seconds
-        const mockInterval = setInterval(() => {
-          try {
-            symbolList.forEach((symbol, index) => {
-              const basePrice = 100 + index * 50; // Different base prices for different symbols
-              const mockPrice = basePrice + (Math.random() - 0.5) * 10; // ±5 price variation
-              sendEvent({
-                type: 'trade',
-                data: {
-                  symbol: symbol,
-                  price: Math.round(mockPrice * 100) / 100, // Round to 2 decimal places
-                  timestamp: Date.now(),
-                  volume: Math.floor(Math.random() * 1000) + 100,
-                },
-              });
-            });
-          } catch (error) {
-            console.error('❌ Error sending mock data:', error);
-            clearInterval(mockInterval);
-          }
-        }, 5000);
-      };
 
       // Cleanup function
       const cleanup = () => {

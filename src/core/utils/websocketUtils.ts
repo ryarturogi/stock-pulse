@@ -97,7 +97,7 @@ export function createEventSource(
           timeoutId = null;
         }
         state.status = 'connected';
-        state.error = null;
+        delete state.error;
         state.attempts = 0; // Reset attempts on success
       };
 
