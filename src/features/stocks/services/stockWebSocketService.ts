@@ -8,6 +8,8 @@
  */
 
 import { FinnhubStockQuote, WebSocketStatus, WatchedStock } from '@/core/types';
+import { normalizeTimestamp } from '@/core/utils/dateUtils';
+import { createEventSource, parseSSEData } from '@/core/utils/websocketUtils';
 
 export interface StockWebSocketCallbacks {
   onStatusChange: (_status: WebSocketStatus) => void;
@@ -36,6 +38,7 @@ export class StockWebSocketService {
   private callbacks: StockWebSocketCallbacks;
   private connectionTimeout: NodeJS.Timeout | null = null;
   private eventSource: EventSource | null = null;
+  private cleanup: (() => void) | null = null;
 
   constructor(callbacks: StockWebSocketCallbacks) {
     this.callbacks = callbacks;
@@ -139,33 +142,21 @@ export class StockWebSocketService {
       const proxyUrl = `/api/websocket-proxy?symbols=${symbols}`;
       console.log('🔗 Proxy URL:', proxyUrl);
 
-      this.eventSource = new EventSource(proxyUrl);
+      // Use the robust EventSource creator
+      const connection = createEventSource(proxyUrl, {
+        maxAttempts: 3,
+        timeoutMs: 15000,
+        debugMode: true,
+      });
 
-      // Set connection timeout
-      this.connectionTimeout = setTimeout(() => {
-        const currentState = this.callbacks.getState();
-        if (currentState.webSocketStatus === 'connecting') {
-          console.log(
-            '⏰ WebSocket proxy connection timeout, switching to API mode...'
-          );
-          this.cleanup();
-          this.callbacks.onStatusChange('error');
-          this.callbacks.onConnectingChange(false);
-          this.callbacks.onErrorChange(
-            'Connection timeout - using API fallback'
-          );
-          this.callbacks.onConnectionChange(null);
+      this.eventSource = connection.eventSource;
+      this.cleanup = connection.cleanup;
 
-          // Start periodic refresh as fallback
-          const errorState = this.callbacks.getState();
-          if (
-            errorState.isLiveDataEnabled &&
-            errorState.watchedStocks.length > 0
-          ) {
-            this.callbacks.onStartPeriodicRefresh();
-          }
-        }
-      }, 60000); // 60 second timeout (increased for better reliability and rate limit handling)
+      if (!this.eventSource) {
+        throw new Error('Failed to create EventSource connection');
+      }
+
+      console.log('📡 EventSource created using utilities');
 
       this.eventSource.onopen = () => {
         console.log('✅ Connected to secure WebSocket proxy');
@@ -188,6 +179,19 @@ export class StockWebSocketService {
 
       this.eventSource.onerror = error => {
         console.error('❌ WebSocket proxy connection error:', error);
+        console.log(
+          '📡 EventSource readyState on error:',
+          this.eventSource?.readyState
+        );
+        console.log('📡 EventSource error details:', {
+          type: error.type,
+          target: error.target,
+          currentTarget: error.currentTarget,
+          eventPhase: error.eventPhase,
+        });
+        console.log('📡 Connection URL:', proxyUrl);
+        console.log('📡 Symbols being tracked:', symbols);
+
         if (this.connectionTimeout) {
           clearTimeout(this.connectionTimeout);
           this.connectionTimeout = null;
@@ -201,7 +205,7 @@ export class StockWebSocketService {
           console.log(
             '🔌 WebSocket connection closed, likely due to rate limiting or circuit breaker'
           );
-          this.cleanup();
+          this.cleanupConnection();
           this.callbacks.onStatusChange('error');
           this.callbacks.onConnectingChange(false);
           this.callbacks.onErrorChange(
@@ -224,54 +228,59 @@ export class StockWebSocketService {
       // EventSource doesn't have onclose - using onerror for connection management instead
 
       this.eventSource.onmessage = event => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('📨 WebSocket proxy message received:', data);
+        const data = parseSSEData(event.data);
+        if (!data) {
+          console.warn('Failed to parse SSE message:', event.data);
+          return;
+        }
 
-          if (data.type === 'trade' && data.data) {
-            const trade = data.data;
-            if (trade.symbol && trade.price) {
-              const symbol = trade.symbol;
-              const price = trade.price;
+        console.log('📨 WebSocket proxy message received:', data);
 
-              console.log(`💰 Real-time trade update: ${symbol} = $${price}`);
+        if (data.type === 'trade' && data.data) {
+          const trade = data.data as {
+            symbol?: string;
+            price?: number;
+            timestamp?: number;
+          };
+          if (trade.symbol && trade.price) {
+            const symbol = trade.symbol;
+            const price = trade.price;
 
-              // Update stock price in store
-              const currentState = this.callbacks.getState();
-              const stock = currentState.watchedStocks.find(
-                (s: WatchedStock) => s.symbol === symbol
-              );
-              if (stock) {
-                // Calculate change if we have previous data
-                const previousPrice =
-                  stock.previousClose || stock.currentPrice || price;
-                const change = price - previousPrice;
-                const percentChange =
-                  previousPrice > 0 ? (change / previousPrice) * 100 : 0;
+            console.log(`💰 Real-time trade update: ${symbol} = $${price}`);
 
-                this.callbacks.onUpdateStockPrice(symbol, {
-                  symbol,
-                  current: price,
-                  change: change,
-                  percentChange: percentChange,
-                  high: Math.max(stock.high || price, price),
-                  low: Math.min(stock.low || price, price),
-                  open: stock.open || price,
-                  previousClose: stock.previousClose || price,
-                  timestamp: trade.timestamp || Date.now(),
-                });
-              }
+            // Update stock price in store
+            const currentState = this.callbacks.getState();
+            const stock = currentState.watchedStocks.find(
+              (s: WatchedStock) => s.symbol === symbol
+            );
+            if (stock) {
+              // Calculate change if we have previous data
+              const previousPrice =
+                stock.previousClose || stock.currentPrice || price;
+              const change = price - previousPrice;
+              const percentChange =
+                previousPrice > 0 ? (change / previousPrice) * 100 : 0;
+
+              this.callbacks.onUpdateStockPrice(symbol, {
+                symbol,
+                current: price,
+                change: change,
+                percentChange: percentChange,
+                high: Math.max(stock.high || price, price),
+                low: Math.min(stock.low || price, price),
+                open: stock.open || price,
+                previousClose: stock.previousClose || price,
+                timestamp: normalizeTimestamp(trade.timestamp || Date.now()),
+              });
             }
-          } else if (data.type === 'connected') {
-            console.log('✅ WebSocket proxy connected:', data.message);
-          } else if (data.type === 'error') {
-            console.warn('⚠️ WebSocket proxy message:', data.message);
-            this.callbacks.onStatusChange('error');
-            this.callbacks.onConnectingChange(false);
-            this.callbacks.onErrorChange(data.message);
           }
-        } catch (error) {
-          console.error('Failed to parse WebSocket proxy message:', error);
+        } else if (data.type === 'connected') {
+          console.log('✅ WebSocket proxy connected:', data.message);
+        } else if (data.type === 'error') {
+          console.warn('⚠️ WebSocket proxy message:', data.message);
+          this.callbacks.onStatusChange('error');
+          this.callbacks.onConnectingChange(false);
+          this.callbacks.onErrorChange(data.message || 'Unknown error');
         }
       };
 
@@ -400,28 +409,30 @@ export class StockWebSocketService {
   /**
    * Clean up resources
    */
-  private cleanup(): void {
+  private cleanupConnection(): void {
     if (this.connectionTimeout) {
       clearTimeout(this.connectionTimeout);
       this.connectionTimeout = null;
     }
 
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+    if (this.cleanup) {
+      this.cleanup();
+      this.cleanup = null;
     }
+
+    this.eventSource = null;
   }
 
   /**
    * Disconnect WebSocket
    */
   disconnectWebSocket(): void {
-    this.cleanup();
+    console.log('🔌 Manually disconnecting WebSocket...');
+    this.cleanupConnection();
 
     const state = this.callbacks.getState();
 
     if (state.webSocketConnection) {
-      state.webSocketConnection.close();
       this.callbacks.onConnectionChange(null);
       this.callbacks.onStatusChange('disconnected');
     }
