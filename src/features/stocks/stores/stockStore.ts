@@ -18,6 +18,7 @@ import {
   RefreshInterval,
   REFRESH_INTERVALS,
 } from '@/core/types';
+import { normalizeTimestamp } from '@/core/utils/dateUtils';
 import { getNotificationService } from '@/features/notifications';
 import { StockWebSocketService } from '@/features/stocks/services/stockWebSocketService';
 
@@ -186,33 +187,6 @@ export const useStockStore = create<StockStoreState>()(
         set(state => ({
           watchedStocks: state.watchedStocks.map(stock => {
             if (stock.symbol === symbol) {
-              // Normalize and validate timestamp
-              const normalizeTimestamp = (timestamp: number): number => {
-                if (!timestamp || !isFinite(timestamp) || timestamp <= 0) {
-                  return now;
-                }
-
-                // Use 2010 threshold for more conservative conversion
-                const year2010InMs = 1262304000000;
-                const normalizedTimestamp =
-                  timestamp < year2010InMs ? timestamp * 1000 : timestamp;
-
-                // Validate timestamp is reasonable (between 2010 and 10 years from now)
-                const tenYearsFromNow = now + 10 * 365 * 24 * 60 * 60 * 1000;
-
-                if (
-                  normalizedTimestamp < year2010InMs ||
-                  normalizedTimestamp > tenYearsFromNow
-                ) {
-                  console.warn(
-                    `Invalid timestamp in stock update: ${timestamp} -> ${normalizedTimestamp}, using current time`
-                  );
-                  return now;
-                }
-
-                return normalizedTimestamp;
-              };
-
               const timestampMs = normalizeTimestamp(quote.timestamp || now);
 
               // Validate and convert price to number

@@ -190,9 +190,9 @@ export default function HomePage() {
     isLiveDataEnabled,
     webSocketStatus,
     connectWebSocket,
-    disconnectWebSocket,
     startPeriodicRefresh,
     stopPeriodicRefresh,
+    // Note: disconnectWebSocket intentionally excluded to prevent cleanup loop
   ]);
 
   /**
@@ -417,17 +417,17 @@ export default function HomePage() {
   return (
     <ErrorBoundary
       fallback={
-        <div className='min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center'>
+        <div className='flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900'>
           <div className='text-center'>
-            <h1 className='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+            <h1 className='mb-4 text-2xl font-bold text-gray-900 dark:text-white'>
               Something went wrong
             </h1>
-            <p className='text-gray-600 dark:text-gray-400 mb-4'>
+            <p className='mb-4 text-gray-600 dark:text-gray-400'>
               We&apos;re having trouble loading your dashboard.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700'
+              className='px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700'
             >
               Reload Page
             </button>
@@ -460,11 +460,11 @@ export default function HomePage() {
           {/* Main Content */}
           <div className='flex-1 min-w-0'>
             {/* Responsive Header */}
-            <header className='bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm border-b'>
+            <header className='bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700'>
               {/* Desktop Header */}
               <div className='hidden lg:block'>
                 <div className='px-6 py-4'>
-                  <div className='flex items-center justify-between'>
+                  <div className='flex justify-between items-center'>
                     {/* Left Section - Search & Data Controls */}
                     <div className='flex-1 max-w-3xl'>
                       <div className='flex items-center space-x-4'>
@@ -480,7 +480,7 @@ export default function HomePage() {
                             placeholder='Search stocks...'
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            className='w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400'
+                            className='py-2 pr-4 pl-10 w-full placeholder-gray-500 text-gray-900 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400'
                           />
                         </div>
 
@@ -498,7 +498,7 @@ export default function HomePage() {
                                 onChange={e =>
                                   setLiveDataEnabled(e.target.checked)
                                 }
-                                className='w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
+                                className='w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
                               />
                               <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
                                 Live Data
@@ -522,13 +522,13 @@ export default function HomePage() {
                       {/* Manual Refresh */}
                       <button
                         onClick={handleManualRefresh}
-                        className='p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors'
+                        className='p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700'
                         title='Refresh stock data'
                         data-intro='Toggle Live Data to automatically refresh stock prices. You can also manually refresh anytime with this button. Choose your refresh interval (15s, 30s, 1min, 5min) to control how often prices update.'
                         data-title='🔄 Live Data & Refresh'
                         data-desktop-step='6'
                       >
-                        <RefreshCw className='text-gray-500 dark:text-gray-400 w-5 h-5' />
+                        <RefreshCw className='w-5 h-5 text-gray-500 dark:text-gray-400' />
                       </button>
 
                       {/* Notifications */}
@@ -536,7 +536,7 @@ export default function HomePage() {
                         {notificationPermission === 'default' && (
                           <button
                             onClick={requestNotificationPermission}
-                            className='flex items-center space-x-2 px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors'
+                            className='flex items-center px-3 py-2 space-x-2 text-sm text-blue-700 bg-blue-100 rounded-lg transition-colors dark:bg-blue-900/20 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/30'
                             title='Enable webpush notifications for price alerts'
                             data-intro='Enable browser notifications to receive real-time alerts when your stocks hit target prices. Click this button to grant notification permissions and stay updated on your investments.'
                             data-title='📱 Enable Notifications'
@@ -552,8 +552,8 @@ export default function HomePage() {
                             onClick={handleToggleNotifications}
                             className={`flex items-center space-x-2 px-3 py-2 text-sm rounded-lg transition-colors ${
                               notificationsEnabled
-                                ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/30'
-                                : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30'
+                                ? 'text-green-700 bg-green-100 dark:bg-green-900/20 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/30'
+                                : 'text-yellow-700 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30'
                             }`}
                             title={
                               notificationsEnabled
@@ -579,7 +579,7 @@ export default function HomePage() {
 
                         {notificationPermission === 'denied' && (
                           <div
-                            className='flex items-center space-x-2 px-3 py-2 text-sm bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg'
+                            className='flex items-center px-3 py-2 space-x-2 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-900/20 dark:text-red-300'
                             data-intro='Enable browser notifications to receive real-time alerts when your stocks hit target prices. Click this button to grant notification permissions and stay updated on your investments.'
                             data-title='📱 Enable Notifications'
                             data-desktop-step='7'
@@ -593,7 +593,7 @@ export default function HomePage() {
                       {/* Help - Restart Tour */}
                       <button
                         onClick={handleRestartTour}
-                        className='p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors'
+                        className='p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700'
                         title='Restart guided tour'
                       >
                         <HelpCircle className='w-5 h-5 text-gray-500 dark:text-gray-400' />
@@ -602,7 +602,7 @@ export default function HomePage() {
                       {/* Theme Toggle */}
                       <button
                         onClick={toggleTheme}
-                        className='p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors'
+                        className='p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700'
                         title={
                           isDarkMode
                             ? 'Switch to light mode'
@@ -622,12 +622,12 @@ export default function HomePage() {
               {/* Mobile Header */}
               <div className='lg:hidden'>
                 {/* Top Row - Logo, Status, Menu */}
-                <div className='px-4 py-3 flex items-center justify-between'>
+                <div className='flex justify-between items-center px-4 py-3'>
                   <div className='flex items-center space-x-3'>
                     {/* Sidebar Toggle Button */}
                     <button
                       onClick={openSidebar}
-                      className='p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors'
+                      className='p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700'
                       title='Open sidebar'
                       data-intro="Click the Plus (+) button to open the stock form sidebar where you can add stocks to your watchlist. This is where you'll manage your stock portfolio and set up price alerts."
                       data-title='➕ Add Your First Stock'
@@ -648,7 +648,7 @@ export default function HomePage() {
                     {/* Help - Restart Tour */}
                     <button
                       onClick={handleRestartTour}
-                      className='p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors'
+                      className='p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700'
                       title='Restart guided tour'
                     >
                       <HelpCircle className='w-5 h-5 text-gray-500 dark:text-gray-400' />
@@ -657,7 +657,7 @@ export default function HomePage() {
                     {/* Theme Toggle */}
                     <button
                       onClick={toggleTheme}
-                      className='p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors'
+                      className='p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700'
                       title={
                         isDarkMode
                           ? 'Switch to light mode'
@@ -670,7 +670,7 @@ export default function HomePage() {
                     {/* Mobile Menu Toggle */}
                     <button
                       onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                      className='p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors'
+                      className='p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700'
                       title='Toggle menu'
                       data-intro='Tap here to access Live Data controls, refresh intervals, and notification settings. This menu keeps your mobile interface clean while giving you full control.'
                       data-title='☰ Mobile Menu'
@@ -694,24 +694,24 @@ export default function HomePage() {
                       placeholder='Search stocks...'
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      className='w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400'
+                      className='py-2 pr-4 pl-10 w-full placeholder-gray-500 text-gray-900 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400'
                     />
                   </div>
                 </div>
 
                 {/* Mobile Menu Dropdown */}
                 {isMobileMenuOpen && (
-                  <div className='border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'>
+                  <div className='bg-gray-50 border-t border-gray-200 dark:border-gray-700 dark:bg-gray-800'>
                     <div className='px-4 py-3 space-y-3'>
                       {/* Live Data Toggle */}
                       {watchedStocks.length > 0 && (
-                        <div className='flex items-center justify-between'>
+                        <div className='flex justify-between items-center'>
                           <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
                             Live Data
                           </span>
                           <label
                             htmlFor='mobile-live-data-toggle'
-                            className='relative inline-flex items-center cursor-pointer'
+                            className='inline-flex relative items-center cursor-pointer'
                           >
                             <span className='sr-only'>Enable live data</span>
                             <input
@@ -731,7 +731,7 @@ export default function HomePage() {
                       {/* Refresh Interval */}
                       {watchedStocks.length > 0 && isLiveDataEnabled && (
                         <div>
-                          <span className='text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2'>
+                          <span className='block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'>
                             Refresh Interval
                           </span>
                           <RefreshIntervalSelector
@@ -744,7 +744,7 @@ export default function HomePage() {
                       {/* Manual Refresh */}
                       <button
                         onClick={handleManualRefresh}
-                        className='w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
+                        className='flex justify-center items-center px-4 py-2 space-x-2 w-full text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700'
                       >
                         <RefreshCw className='w-4 h-4' />
                         <span>Refresh Data</span>
@@ -755,7 +755,7 @@ export default function HomePage() {
                         {notificationPermission === 'default' && (
                           <button
                             onClick={requestNotificationPermission}
-                            className='w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors'
+                            className='flex justify-center items-center px-4 py-2 space-x-2 w-full text-blue-700 bg-blue-100 rounded-lg transition-colors dark:bg-blue-900/20 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/30'
                           >
                             <Bell className='w-4 h-4' />
                             <span>Enable Alerts</span>
@@ -767,8 +767,8 @@ export default function HomePage() {
                             onClick={handleToggleNotifications}
                             className={`w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                               notificationsEnabled
-                                ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/30'
-                                : 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30'
+                                ? 'text-green-700 bg-green-100 dark:bg-green-900/20 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/30'
+                                : 'text-yellow-700 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/30'
                             }`}
                           >
                             {notificationsEnabled ? (
@@ -785,7 +785,7 @@ export default function HomePage() {
                         )}
 
                         {notificationPermission === 'denied' && (
-                          <div className='w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg'>
+                          <div className='flex justify-center items-center px-4 py-2 space-x-2 w-full text-red-700 bg-red-100 rounded-lg dark:bg-red-900/20 dark:text-red-300'>
                             <BellOff className='w-4 h-4' />
                             <span>Alerts Disabled</span>
                           </div>
@@ -799,11 +799,11 @@ export default function HomePage() {
 
             {/* Error Display */}
             {error && (
-              <div className='border-l-4 p-4 mx-4 lg:mx-6 mt-4 bg-red-50 dark:bg-red-900/20 border-red-400 dark:border-red-500'>
+              <div className='p-4 mx-4 mt-4 bg-red-50 border-l-4 border-red-400 lg:mx-6 dark:bg-red-900/20 dark:border-red-500'>
                 <div className='flex'>
                   <div className='flex-shrink-0'>
                     <svg
-                      className='h-5 w-5 text-red-400'
+                      className='w-5 h-5 text-red-400'
                       viewBox='0 0 20 20'
                       fill='currentColor'
                     >
@@ -819,7 +819,7 @@ export default function HomePage() {
                       {error}
                     </p>
                   </div>
-                  <div className='ml-auto pl-3'>
+                  <div className='pl-3 ml-auto'>
                     <div className='-mx-1.5 -my-1.5'>
                       <button
                         onClick={clearError}
@@ -827,7 +827,7 @@ export default function HomePage() {
                       >
                         <span className='sr-only'>Dismiss</span>
                         <svg
-                          className='h-3 w-3'
+                          className='w-3 h-3'
                           viewBox='0 0 20 20'
                           fill='currentColor'
                         >
@@ -848,7 +848,7 @@ export default function HomePage() {
             <main className='p-4 lg:p-6'>
               {/* Search Results Info */}
               {searchQuery && (
-                <div className='mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border dark:border-blue-800'>
+                <div className='p-3 mb-4 bg-blue-50 rounded-lg dark:bg-blue-900/20 dark:border dark:border-blue-800'>
                   <p className='text-sm text-blue-800 dark:text-blue-300'>
                     Showing {filteredWatchedStocks.length} of{' '}
                     {watchedStocks.length} stocks matching &ldquo;{searchQuery}
