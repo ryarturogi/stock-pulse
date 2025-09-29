@@ -179,11 +179,11 @@ export class StockWebSocketService {
         this.callbacks.onConnectionChange(this.eventSource);
         this.callbacks.onUpdateConnectionAttempts(0); // Reset connection attempts on successful connection
 
-        // WebSocket connected - real-time data is now available, stop periodic refresh to avoid redundant API calls
+        // WebSocket connected - real-time data is now available alongside periodic refresh
         console.log(
-          '🔌 WebSocket connected - real-time data active, stopping periodic refresh to avoid redundant API calls'
+          '🔌 WebSocket connected - real-time data active alongside periodic refresh'
         );
-        this.callbacks.onStopPeriodicRefresh();
+        // Keep periodic refresh running as backup in case WebSocket fails
       };
 
       this.eventSource.onerror = error => {

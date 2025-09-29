@@ -33,6 +33,7 @@ interface ApiHealthCheck {
  * @returns JSON response with health status
  */
 export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
+  console.log('Health route GET function called');
   const startTime = Date.now();
 
   try {
@@ -70,14 +71,24 @@ export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
       },
     };
 
-    return NextResponse.json<HealthCheckResponse>(healthResponse, {
-      status: 200,
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        Pragma: 'no-cache',
-        Expires: '0',
-      },
-    });
+    console.log('Returning NextResponse.json with:', healthResponse);
+    console.log('NextResponse type:', typeof NextResponse);
+    console.log('NextResponse.json type:', typeof NextResponse.json);
+    try {
+      const response = NextResponse.json<HealthCheckResponse>(healthResponse, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      });
+      console.log('NextResponse.json result:', response);
+      return response;
+    } catch (error) {
+      console.log('Error in NextResponse.json:', error);
+      throw error;
+    }
   } catch (error) {
     const responseTime = Date.now() - startTime;
 

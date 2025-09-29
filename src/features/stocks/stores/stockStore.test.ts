@@ -10,14 +10,6 @@ const mockWebSocketServiceInstance = {
   connectWebSocket: jest.fn().mockResolvedValue(undefined),
   disconnectWebSocket: jest.fn(),
   resetWebSocketState: jest.fn(),
-};
-
-const mockWebSocketService = {
-  connectWebSocket: jest.fn().mockResolvedValue(undefined),
-  disconnectWebSocket: jest.fn(),
-  subscribeToStock: jest.fn(),
-  unsubscribeFromStock: jest.fn(),
-  resetWebSocketState: jest.fn(),
   cleanup: jest.fn(),
 };
 
@@ -36,7 +28,7 @@ jest.mock('@/features/notifications', () => ({
 }));
 
 import { act } from '@testing-library/react';
-import { useStockStore } from './stockStore';
+import { useStockStore, resetWebSocketService } from './stockStore';
 import type { FinnhubStockQuote } from '@/core/types';
 
 // Mock EventSource for WebSocket tests
@@ -63,10 +55,13 @@ describe('Stock Store', () => {
     // Clear all mocks
     jest.clearAllMocks();
 
+    // Reset WebSocket service instance
+    resetWebSocketService();
+
     // Reset mock service methods
-    mockWebSocketService.connectWebSocket.mockResolvedValue(undefined);
-    mockWebSocketService.disconnectWebSocket.mockClear();
-    mockWebSocketService.resetWebSocketState.mockClear();
+    mockWebSocketServiceInstance.connectWebSocket.mockResolvedValue(undefined);
+    mockWebSocketServiceInstance.disconnectWebSocket.mockClear();
+    mockWebSocketServiceInstance.resetWebSocketState.mockClear();
 
     // Manually reset store state to avoid webSocketService issues
     useStockStore.setState({

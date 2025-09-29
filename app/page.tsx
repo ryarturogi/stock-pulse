@@ -146,7 +146,11 @@ export default function HomePage() {
     }
 
     if (watchedStocks.length > 0 && isLiveDataEnabled) {
-      // Only connect if not already connected or connecting
+      // Always start periodic refresh as fallback
+      console.log('📊 Starting periodic refresh as fallback...');
+      startPeriodicRefresh();
+
+      // Only connect WebSocket if not already connected or connecting
       if (
         !isConnectedRef.current &&
         webSocketStatus !== 'connecting' &&
@@ -157,20 +161,11 @@ export default function HomePage() {
         );
         isConnectedRef.current = true;
 
-        // Start periodic refresh as immediate fallback while WebSocket connects
-        console.log('📊 Starting periodic refresh as fallback while connecting...');
-        startPeriodicRefresh();
-
         // Add a short delay to prevent race conditions
         connectionTimeoutRef.current = setTimeout(() => {
           connectWebSocket();
-        }, 2000); // 2 seconds - reasonable delay for UI to settle
-      } else if (webSocketStatus === 'error' || webSocketStatus === 'disconnected') {
-        // If WebSocket failed, ensure periodic refresh is running as fallback
-        console.log('📊 Starting periodic refresh as WebSocket fallback...');
-        startPeriodicRefresh();
+        }, 1000); // Reduced to 1 second for faster connection
       }
-      // Note: If WebSocket is connected, don't start periodic refresh to avoid redundant API calls
     } else {
       // If no stocks or live data disabled, disconnect and stop refresh
       if (isConnectedRef.current) {

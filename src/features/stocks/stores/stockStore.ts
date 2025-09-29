@@ -162,14 +162,14 @@ export const useStockStore = create<StockStoreState>()(
         );
       },
 
-      // Update stock price with throttling to prevent excessive updates
+      // Update stock price with minimal throttling to ensure real-time updates
       updateStockPrice: (symbol: string, quote: FinnhubStockQuote) => {
         const state = get();
         const now = Date.now();
         const lastUpdate = state.lastUpdateTimes.get(symbol) || 0;
-        const throttleMs = 500; // Reduced to 500ms for better chart responsiveness
+        const throttleMs = 100; // Reduced to 100ms for better real-time responsiveness
 
-        // Throttle updates to prevent excessive re-renders but allow chart updates
+        // Minimal throttling to prevent excessive re-renders but allow real-time updates
         if (now - lastUpdate < throttleMs) {
           return;
         }
@@ -186,24 +186,73 @@ export const useStockStore = create<StockStoreState>()(
         set(state => ({
           watchedStocks: state.watchedStocks.map(stock => {
             if (stock.symbol === symbol) {
+              // Normalize and validate timestamp
+              const normalizeTimestamp = (timestamp: number): number => {
+                if (!timestamp || !isFinite(timestamp) || timestamp <= 0) {
+                  return now;
+                }
+
+                // Use 2010 threshold for more conservative conversion
+                const year2010InMs = 1262304000000;
+                const normalizedTimestamp =
+                  timestamp < year2010InMs ? timestamp * 1000 : timestamp;
+
+                // Validate timestamp is reasonable (between 2010 and 10 years from now)
+                const tenYearsFromNow = now + 10 * 365 * 24 * 60 * 60 * 1000;
+
+                if (
+                  normalizedTimestamp < year2010InMs ||
+                  normalizedTimestamp > tenYearsFromNow
+                ) {
+                  console.warn(
+                    `Invalid timestamp in stock update: ${timestamp} -> ${normalizedTimestamp}, using current time`
+                  );
+                  return now;
+                }
+
+                return normalizedTimestamp;
+              };
+
+              const timestampMs = normalizeTimestamp(quote.timestamp || now);
+
+              // Validate and convert price to number
+              const currentPrice = Number(quote.current);
+              if (isNaN(currentPrice) || !isFinite(currentPrice)) {
+                console.warn(`Invalid price for ${symbol}:`, quote.current);
+                return stock; // Don't update with invalid data
+              }
+
               const newPriceHistory = [
                 ...(stock.priceHistory || []),
-                { time: quote.timestamp || now, price: quote.current },
+                {
+                  time: timestampMs,
+                  price: currentPrice,
+                },
               ].slice(-500); // Keep last 500 data points
 
               return {
                 ...stock,
-                currentPrice: quote.current,
-                change: quote.change,
-                percentChange: quote.percentChange,
-                high: quote.high || stock.high || quote.current,
-                low: quote.low || stock.low || quote.current,
-                open: quote.open || stock.open || quote.current,
+                currentPrice,
+                change: Number(quote.change) || 0,
+                percentChange: Number(quote.percentChange) || 0,
+                high: Math.max(
+                  Number(quote.high) || 0,
+                  Number(stock.high) || 0,
+                  currentPrice
+                ),
+                low: Math.min(
+                  Number(quote.low) || currentPrice,
+                  Number(stock.low) || currentPrice,
+                  currentPrice
+                ),
+                open: Number(quote.open) || Number(stock.open) || currentPrice,
                 previousClose:
-                  quote.previousClose || stock.previousClose || quote.current,
+                  Number(quote.previousClose) ||
+                  Number(stock.previousClose) ||
+                  currentPrice,
                 priceHistory: newPriceHistory,
                 isLoading: false,
-                lastUpdated: now,
+                lastUpdated: timestampMs,
                 isAlertTriggered: false, // Reset alert status - will be set by the alert check below
               };
             }
@@ -342,7 +391,7 @@ export const useStockStore = create<StockStoreState>()(
         }
       },
 
-      // Start periodic refresh only as fallback when WebSocket is not connected
+      // Start periodic refresh as fallback when WebSocket is not connected
       startPeriodicRefresh: () => {
         if (typeof window === 'undefined') {
           return;
@@ -358,7 +407,7 @@ export const useStockStore = create<StockStoreState>()(
           return;
         }
 
-        // Periodic refresh as fallback when WebSocket is not connected or for initial data loading
+        // Always start periodic refresh as fallback, regardless of WebSocket status
         console.log(
           `🔄 Starting periodic refresh every ${state.refreshTimeInterval} (WebSocket: ${state.webSocketStatus})`
         );
@@ -644,6 +693,11 @@ export const useStockStore = create<StockStoreState>()(
     }
   )
 );
+
+// Reset function for testing
+export const resetWebSocketService = () => {
+  webSocketService = null;
+};
 
 // Export store actions for external use
 export const {

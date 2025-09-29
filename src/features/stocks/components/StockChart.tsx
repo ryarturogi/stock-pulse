@@ -24,7 +24,16 @@ import {
 } from 'recharts';
 
 import { STOCK_COLORS } from '@/core/constants/constants';
-import { StockChartProps, ChartDataPoint } from '@/core/types';
+import {
+  StockChartProps,
+  ChartDataPoint,
+  WatchedStock,
+  PriceDataPoint,
+} from '@/core/types';
+import {
+  normalizeTimestamp,
+  formatChartTimeLabel,
+} from '@/core/utils/dateUtils';
 
 /**
  * Stock Chart Component
@@ -45,8 +54,7 @@ export const StockChart: React.FC<
 
   // Get stock store methods (no methods needed for chart)
 
-  // Memoize stocks with data to prevent unnecessary recalculations
-  // Only recalculate when stocks array changes or when price history actually changes
+  // Memoize stocks with data - use a more efficient dependency
   const stocksWithData = useMemo(() => {
     return stocks.filter(
       stock =>
@@ -60,12 +68,63 @@ export const StockChart: React.FC<
     return stocksWithData.map(stock => stock.symbol);
   }, [stocksWithData]);
 
-  // Generate chart data from stock price history - fixed to properly show real-time updates
+  // Helper function to safely convert and validate numeric values
+  const safeNumber = useCallback((value: unknown, fallback = 0): number => {
+    const num = Number(value);
+    return isNaN(num) || !isFinite(num) ? fallback : num;
+  }, []);
+
+  // Helper function to get price for a stock at a specific timestamp
+  const getStockPriceAtTimestamp = useCallback(
+    (
+      stock: WatchedStock,
+      timestamp: number,
+      isLatestTimestamp: boolean
+    ): number | undefined => {
+      // First, try to find exact timestamp match
+      const exactMatch = stock.priceHistory?.find(
+        (point: PriceDataPoint) => normalizeTimestamp(point.time) === timestamp
+      );
+
+      if (exactMatch) {
+        return safeNumber(exactMatch.price);
+      }
+
+      // If no exact match, use last known price before this timestamp
+      const historicalPoints =
+        stock.priceHistory
+          ?.filter(
+            (point: PriceDataPoint) =>
+              normalizeTimestamp(point.time) <= timestamp
+          )
+          .sort(
+            (a: PriceDataPoint, b: PriceDataPoint) =>
+              normalizeTimestamp(a.time) - normalizeTimestamp(b.time)
+          ) || [];
+
+      const lastKnownPoint = historicalPoints[historicalPoints.length - 1];
+
+      if (lastKnownPoint) {
+        return safeNumber(lastKnownPoint.price);
+      }
+
+      // For the latest timestamp, use current price if available
+      if (isLatestTimestamp && stock.currentPrice !== undefined) {
+        return safeNumber(stock.currentPrice);
+      }
+
+      // No data available for this timestamp
+      return undefined;
+    },
+    [safeNumber]
+  );
+
+  // Generate chart data from stock price history with improved logic
   const chartData = useMemo((): ChartDataPoint[] => {
     if (stocksWithData.length === 0) return [];
 
     const now = Date.now();
-    // Only log in development and when there are actual changes
+
     if (process.env.NODE_ENV === 'development') {
       console.log(
         '📊 Chart data recalculating for',
@@ -74,76 +133,83 @@ export const StockChart: React.FC<
       );
     }
 
-    // Get all unique timestamps from all stocks
+    // Collect all unique timestamps from all stocks, normalizing them
     const allTimestamps = new Set<number>();
+
     stocksWithData.forEach(stock => {
+      // Add timestamps from price history
       stock.priceHistory?.forEach(point => {
-        allTimestamps.add(point.time);
+        const normalizedTime = normalizeTimestamp(point.time);
+        allTimestamps.add(normalizedTime);
       });
-      // Add current timestamp if we have current price but no history
-      if (
-        stock.currentPrice &&
-        (!stock.priceHistory || stock.priceHistory.length === 0)
-      ) {
-        allTimestamps.add(stock.lastUpdated || now);
+
+      // Add current timestamp if we have current price
+      if (stock.currentPrice !== undefined && stock.lastUpdated) {
+        const normalizedTime = normalizeTimestamp(stock.lastUpdated);
+        allTimestamps.add(normalizedTime);
       }
     });
 
-    // If no historical data, show current prices as single point
+    // If no timestamps, create a single point with current data
     if (allTimestamps.size === 0) {
-      return [
-        {
-          timestamp: new Date(now).toLocaleTimeString(),
-          index: 0,
-          price: 0,
-          ...Object.fromEntries(
-            stocksWithData.map(stock => [stock.symbol, stock.currentPrice || 0])
-          ),
-        },
-      ];
-    }
-
-    // Convert to array, sort chronologically, and show all data points for better UX
-    const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => a - b); // Show all collected data points
-
-    // Create chart data points with unique timestamp formatting
-    return sortedTimestamps.map((timestamp, index) => {
-      const date = new Date(timestamp);
-      // Create unique time labels to prevent duplicate timestamps
-      // Use milliseconds for precision when multiple points in same second
-      const timeLabel =
-        sortedTimestamps.length > 20
-          ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          : date.toLocaleTimeString();
-
-      const dataPoint: ChartDataPoint = {
-        timestamp: timeLabel,
-        index: index, // Add numeric index for Brush component
-        price: 0, // This will be overridden by individual stock prices
+      const currentPoint: ChartDataPoint = {
+        timestamp: new Date(now).toLocaleTimeString(),
+        index: 0,
+        price: 0,
       };
 
-      // Add price data for each stock at this timestamp
       stocksWithData.forEach(stock => {
-        const pricePoint = stock.priceHistory?.find(
-          point => point.time === timestamp
-        );
-        if (pricePoint) {
-          dataPoint[stock.symbol] = pricePoint.price;
-        } else {
-          // For missing data points, use the most recent available price
-          const sortedHistory =
-            stock.priceHistory?.sort((a, b) => a.time - b.time) || [];
-          const mostRecentPoint =
-            sortedHistory.find(point => point.time <= timestamp) ||
-            sortedHistory[sortedHistory.length - 1];
-          dataPoint[stock.symbol] =
-            mostRecentPoint?.price || stock.currentPrice || 0;
-        }
+        currentPoint[stock.symbol] = safeNumber(stock.currentPrice);
       });
 
-      return dataPoint;
-    });
-  }, [stocksWithData]);
+      return [currentPoint];
+    }
+
+    // Sort timestamps chronologically
+    const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => a - b);
+
+    // Create chart data points using helper functions
+    return sortedTimestamps
+      .map((timestamp, index) => {
+        const dataPoint: ChartDataPoint = {
+          timestamp: formatChartTimeLabel(timestamp, sortedTimestamps.length),
+          index,
+          price: 0,
+        };
+
+        const isLatestTimestamp =
+          timestamp === sortedTimestamps[sortedTimestamps.length - 1];
+
+        // Add price data for each stock at this timestamp
+        stocksWithData.forEach(stock => {
+          const price = getStockPriceAtTimestamp(
+            stock,
+            timestamp,
+            isLatestTimestamp
+          );
+          if (price !== undefined) {
+            dataPoint[stock.symbol] = price;
+          }
+        });
+
+        return dataPoint;
+      })
+      .filter(dataPoint => {
+        // Ensure dataPoint has at least one stock price and all values are valid
+        const stockPrices = Object.entries(dataPoint)
+          .filter(([key]) => !['timestamp', 'index', 'price'].includes(key))
+          .map(([, value]) => value);
+
+        return (
+          stockPrices.length > 0 &&
+          Object.values(dataPoint).every(
+            value =>
+              typeof value === 'string' ||
+              (typeof value === 'number' && isFinite(value))
+          )
+        );
+      });
+  }, [stocksWithData, safeNumber, getStockPriceAtTimestamp]);
 
   // Custom tooltip component for better visibility
   const CustomTooltip = useCallback(
@@ -164,7 +230,9 @@ export const StockChart: React.FC<
       if (active && payload && payload.length) {
         return (
           <div className='bg-white border border-gray-300 rounded-lg shadow-lg p-3 dark:bg-gray-800 dark:border-gray-600'>
-            <p className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>{`Time: ${label}`}</p>
+            <p className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+              {label}
+            </p>
             {payload.map((entry, index: number) => (
               <div
                 key={index}
@@ -228,7 +296,8 @@ export const StockChart: React.FC<
             </p>
             <p className='text-xs text-gray-500 dark:text-gray-400'>
               {chartData.length > 0 &&
-                `Latest: ${chartData[chartData.length - 1]?.timestamp}`}
+                chartData[chartData.length - 1]?.timestamp &&
+                `Latest: ${chartData[chartData.length - 1].timestamp}`}
             </p>
           </div>
         </div>
