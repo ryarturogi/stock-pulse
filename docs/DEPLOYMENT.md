@@ -67,7 +67,7 @@ management.
      publish = ".next"
 
    [build.environment]
-     NODE_VERSION = "20"
+     NODE_VERSION = "24.22.1"
      PNPM_VERSION = "8"
    ```
 
@@ -103,7 +103,7 @@ management.
 
    provider:
      name: aws
-     runtime: nodejs20.x
+     runtime: nodejs24.x
      environment:
        NODE_ENV: production
        FINNHUB_API_KEY: ${env:FINNHUB_API_KEY}
@@ -120,7 +120,7 @@ management.
 1. **Dockerfile Configuration**
 
    ```dockerfile
-   FROM node:20-alpine
+   FROM node:24.22.1-alpine
 
    WORKDIR /app
    COPY package*.json ./
@@ -332,7 +332,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24.22.1'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
