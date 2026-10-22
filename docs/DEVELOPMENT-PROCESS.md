@@ -84,7 +84,7 @@ pnpm install
 // package.json - Package manager enforcement
 {
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=24.22.1",
     "pnpm": ">=8.0.0"
   },
   "packageManager": "pnpm@8.12.1"
@@ -771,7 +771,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24.22.1'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

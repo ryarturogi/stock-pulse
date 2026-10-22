@@ -78,7 +78,7 @@ properly load your environment.
 ## Environment Details
 
 - **Shell**: zsh (`/bin/zsh`)
-- **Node Version**: v20.19.5 (managed by Volta)
+- **Node Version**: v24.22.1 (managed by Volta)
 - **Package Manager**: pnpm@8.12.1
 - **Project**: Next.js 15 + React 19 + TypeScript
 
